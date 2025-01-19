@@ -1,0 +1,118 @@
+---
+title: "Constrained optimization"
+author: "Pedro Amaral"
+date: "2025-01-13"
+output:
+  html_document: default
+  pdf_document: default
+css: style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+
+
+```{r, include=FALSE}
+setwd("C:/Users/pamaral/CSU Fullerton Dropbox/Pedro Amaral/CSUF/Teaching/Econ 503/Resources/R")
+```
+One common definition of economics is that it is the study of how to best allocate scarce resources. Technically this is a process of constrained optimization (e.g., how to maximize utility subject to a limited income).
+
+Consider the canonical example of a consumer that draws utility from the consumption of two goods $X$ and $Y$ according to a Cobb-Douglas utility function $U(X,Y)=X^{\alpha}Y^{1-\alpha},$ where $0<\alpha<1$. This consumer has an income of $m$ and the price of the two goods is $p_X$ and $p_Y,$ respectively. How much of each good should this consumer buy?
+
+This problem can be expressed as:
+$$ \max_{X,Y}\quad  U=X^{\alpha}Y^{1-\alpha}\\
+  s.t. \quad p_X X\cdot p_Y Y \leq m.$$
+  
+There is more than way to solve this problem but we will concentrate on finding the optimal amounts by writing down the Lagrangian, taking first-order (necessary) conditions (FONC), and verifying the second-order (sufficient) conditions.
+
+Write down the Lagrangian:
+
+$\mathcal{L}(X,Y,\lambda)=X^{\alpha}Y^{1-\alpha}+\lambda\left(m-p_XX- p_YY \right)$
+
+The FONC are:
+
+$\frac{\partial \mathcal{L}}{\partial X} = \alpha \left(\frac{Y}{X}\right)^{1-\alpha}  -\lambda p_X =  0\\
+     \frac{\partial \mathcal{L}}{\partial Y} = (1-\alpha) \left(\frac{X}{Y}\right)^{\alpha} -\lambda p_Y =  0\\
+     \lambda \left(m-p_XX-p_XY\right) =  0\\
+     \lambda \geq 0\\
+     X p_X + Y p_Y \leq  m$
+
+We can write the first two equations as 
+
+$\lambda p_X = \alpha \left(\frac{Y}{X}\right)^{1-\alpha}\\
+\lambda p_Y= (1-\alpha) \left(\frac{X}{Y}\right)^{\alpha}$
+
+Dividing one by the other yields
+
+$\frac{p_X}{p_Y}=\frac{\alpha}{1-\alpha}\frac{Y}{X},$
+
+which we can solve for $Y$ as 
+
+$Y=\frac{p_X}{p_Y}\frac{1-\alpha}{\alpha}X.$
+
+Replacing this in the budget constraint with equality
+
+$X p_X+ \left(\frac{p_X}{p_Y}\frac{1-\alpha}{\alpha}X\right) p_Y=m$
+
+Simplifying and solving for $X$, yields
+
+$X=\alpha \frac{m}{p_X},$
+
+and solving for $Y$ using the equation above yields
+
+$Y=(1-\alpha)\frac{m}{p_Y}.$
+
+Suppose that $\alpha=0.5,$ $m=1,000$, $p_X=0.4,$ and $p_Y=0.6.$ Then the optimal solutions are
+
+$X=\alpha \frac{m}{p_X}=0.5\frac{1,000}{0.4}=1,250\\
+Y=(1-\alpha)\frac{m}{p_Y}=0.5\frac{1,000}{0.6}=833.(3)$
+
+
+## Using R to solve constrained maximization problems
+     
+One of the routines we can use to solve a constrained optimization problem in R is `solnl` (but there are others). See [here](https://www.rdocumentation.org/packages/NlcOptim/versions/0.6/topics/solnl).
+
+```{r}
+# Call the library that contains the routine solnl
+library(NlcOptim)
+
+# define the problem's parameters 
+alpha<-0.5
+m<-1000
+p_x<-0.4
+p_y<-0.6
+
+# initial guess for the optimal values
+guess<-c(1,1)
+
+# objective function
+# specify the negative of the objective function if you want to maximize 
+utility<-function(x){-x[1]^alpha*x[2]^(1-alpha)}
+
+# now define the constraint
+# start with a null space and use rbind to row bind them together
+# then specify that we do not have an equality constraint ceq=NULL
+# and we have an inequality constraint (<0)
+constraint<-function(x){
+  f=NULL
+  f=rbind(f,p_x*x[1]+p_y*x[2]-m)
+  return(list(ceq=NULL,c=f))
+  }
+
+optimal<-solnl(guess,utility,constraint)
+```
+
+Note that the solutions are exactly the same as the ones we obtained above analytically using the Lagrangian
+```{r}
+# print the results
+sprintf("Optimal quantity of X is %.2f", optimal$par[1])
+sprintf("Optimal quantity of Y is %.2f", optimal$par[2])
+
+
+```
+
+
+
+     
+     

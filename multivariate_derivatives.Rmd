@@ -1,0 +1,138 @@
+---
+title: "Multivariate derivatives"
+author: "Pedro Amaral"
+date: "2025-01-10"
+output:
+  html_document: default
+  pdf_document: default
+css: style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+
+
+```{r, include=FALSE}
+setwd("C:/Users/pamaral/CSU Fullerton Dropbox/Pedro Amaral/CSUF/Teaching/Econ 503/Resources/R")
+```
+# Partial derivatives of multivariate functions
+
+Consider the function $z=f(x,y).$
+
+The partial derivative of $f$ with respect to $x$ at the point $(x_0,y_0)$ is $\frac{\partial f}{\partial x} (x_0,y_0)=\lim_{|\Delta x \rightarrow 0}\frac{f(x_0+\Delta x,y_0)-f(x_0,y_0)}{\Delta x}.$
+
+The partial derivative $\frac{\partial f}{\partial y} (x_0,y_0)$is similarly defined.
+
+We can think of $\frac{\partial f}{\partial x}(x,y)$ and $\frac{\partial f}{\partial y}(x,y)$ as functions of $x$ and $y.$ 
+
+R can be used to take not only numerical derivatives, but also symbolic derivatives.
+
+Take for example the function $z=f(x,y)=-x^2-2y^2+3x-2y+20.$
+
+Let's plot it first.
+
+```{r}
+# Load libraries
+library(ggplot2)
+library(plotly)
+
+# Generate data
+x <- seq(-5, 5, length.out = 50)
+y <- seq(-5, 5, length.out = 50)
+f <- function(x, y) { -x^2-2*y^2 +3*x-2*y+20 }
+
+# Create surface plot
+plot_ly(x = x, y = y, z = outer(x, y, f), type = "surface")
+
+```
+## Numerical derivatives
+Say we want to know the two first-derivatives at $(x_0,y_0)=(1,-1).$ Numerically, we can approximate it (albeit with some error) in the following way:
+```{r}
+# Define the point where you want to evaluate the derivative
+x_0 <- 1
+y_0 <- -1
+
+# Create very small increments
+delta <- 1e-6
+
+
+# Numerically evaluate the partial derivative with respect to x
+df_dx_num <- (f(x_0 + delta, y_0) - f(x_0, y_0)) / delta
+
+# Print the result
+print(df_dx_num)
+
+# and do the same with respect to y
+df_dy_num <- (f(x_0, y_0 + delta) - f(x_0, y_0)) / delta
+
+# Print the result
+print(df_dy_num)
+```
+## Symbolic derivatives
+
+Alternatively, maybe you want to know what the partials $\frac{\partial f}{\partial x}$ and $\frac{\partial f}{\partial y}$ are.
+
+R can deal with that too using the package "Deriv"
+```{r}
+library(Deriv)
+
+# Calculate the partial derivative with respect to x
+df_dx <- Deriv(f, "x") 
+# print it
+print(df_dx)
+
+# Calculate the partial derivative with respect to y
+df_dy <- Deriv(f,"y") 
+# print it
+print(df_dy) 
+
+```
+## Partial derivatives of a utility function
+
+Consider the following utility function $u(c,h)=\frac{c^{1-\gamma}}{1-\gamma}-\psi\frac{h^{1+\theta}}{1+\theta}$ that depends on consumption $c$, and hours worked $h$, and has parameters $0<\gamma<1,$ $\psi>0,$ and $\theta>0.$ 
+
+```{r}
+u <- function(c,h,gamma,psi,theta) { c^(1-gamma)/(1-gamma)-psi*h^(1+theta)/(1+theta)}
+```
+We can calculate the partial derivatives, the marginal utilities, with respect to consumption and hours worked:
+```{r}
+# Calculate the partial derivative with respect to c
+du_dc <- Deriv(u, "c") 
+# print it
+print(du_dc)
+
+# Calculate the partial derivative with respect to h
+du_dh <- Deriv(u, "h") 
+# print it
+print(du_dh)
+```
+Note how the marginal utility with respect to consumption is positive, while the marginal utility with respect to hours worked is negative.
+
+We can now compute the second partial derivatives:
+```{r}
+# second derivative wrt consumption
+d2u_dc2 <- Deriv(du_dc, "c") 
+print(d2u_dc2)
+
+# second derivative wrt hours worked
+d2u_dh2 <- Deriv(du_dh, "h") 
+print(d2u_dh2)
+
+```
+Note how the marginal utility of consumption is decreasing in consumption and the marginal utility of hours worked is decreasing in hours worked.
+
+Finally we can compute the cross-derivatives:
+```{r}
+# cross-derivative of u_c wrt h
+d2u_dcdh <- Deriv(du_dc, "h") 
+print(d2u_dcdh)
+
+# cross-derivative of u_h wrt c
+d2u_dhdc <- Deriv(du_dh, "c") 
+print(d2u_dhdc)
+```
+Note how the marginal utility of consumption is independent of hours worked and how the marginal utility of hours worked is independent of consumption.
+
+
+

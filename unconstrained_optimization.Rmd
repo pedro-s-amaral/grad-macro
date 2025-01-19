@@ -1,0 +1,148 @@
+---
+title: "Unconstrained optimization"
+author: "Pedro Amaral"
+date: "2025-01-12"
+output:
+  html_document: default
+  pdf_document: default
+css: style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+
+
+```{r, include=FALSE}
+setwd("C:/Users/pamaral/CSU Fullerton Dropbox/Pedro Amaral/CSUF/Teaching/Econ 503/Resources/R")
+```
+Optimization, whether in the form of utility maximization, or cost minimization, lies at the heart of economics. When dealing with continuous functions, we are looking for a point, or points, where the derivative is zero. This is known as the first-order (necessary) condition. We then need to verify whether it is a maximum or minimum, by verifying whether the second derivative is positive (a minimum) or negative (a maximum). This is known as the second-order (sufficient) condition. 
+
+## Univariate optimization
+
+For unconstrained general purpose optimization, R offers the built-in function `optim()`.
+
+Start by defining a function
+```{r}
+f <- function(x) { x^2 -3*x + 1}
+```
+
+The syntax for the optimization is `optim(par = <initial parameter>, fn = <obj. function>, method = <opt. routine>)`. The first argument is an initial guess. The second argument is the function to be optimized, and the third argument is the optimization method to be used. See [here](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/optim) for the different methods and a general description of the function.By default, `optim()` minimizes the objective function.
+```{r}
+optimum <- optim(par = 1, fn = f, method = "BFGS") 
+print(optimum)
+```
+The important things to look at in the results are: `par`, which is the solution, `value`, which is the function value at the solution, and `convergence` is an integer code, where a 0 indicates successful completion. 
+
+Let's say you want to see it graphically, using the `ggplot2` library for the graph
+```{r}
+library(ggplot2)
+
+# Create a sequence of x values
+x <- seq(-2, 5, length.out = 100)
+
+# Compute y values
+y <- f(x)
+
+# Find the minimum point
+x_min <- optimum$par
+y_min <- optimum$value
+
+# Create a data frame
+df <- data.frame(x, y)
+
+# Plot the function with vertical and horizontal lines at the minimum
+ggplot(df, aes(x, y)) +
+  geom_line(color = "blue") + 
+  geom_vline(xintercept = x_min, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = y_min, linetype = "dashed", color = "red") +
+  theme_minimal() +
+  labs(title = "Minimizer example", x = "x", y = "y=f(x)")
+```
+
+Since `optim` only finds minima, to find a maximum we simply use the negative of the function we are interested in:
+```{r}
+f_neg <- function(x) { -x^2 +3*x - 1}
+
+# Compute y values
+y_neg <- f_neg(x)
+
+
+# Create a data frame
+df <- data.frame(x, y_neg)
+
+# Plot the function with vertical and horizontal lines at the minimum
+ggplot(df, aes(x, y_neg)) +
+  geom_line(color = "blue") + 
+  geom_vline(xintercept = x_min, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = -y_min, linetype = "dashed", color = "red") +
+  theme_minimal() +
+  labs(title = "Maximizer example", x = "x", y = "y=-f(x)")
+
+
+```
+
+## Multivariate optimization
+
+Consider the function $f(x)=3x^2+2xy+y^2-4x+5y$
+```{r}
+# Define the function using a ,multivariate vector x
+g<-function(x){3*x[1]^2+2*x[1]*x[2]+x[2]^2-4*x[1]+5*x[2]}
+
+# Call the optimizer
+optimum2 <- optim(par = c(0,0), fn = g, method = "BFGS")
+print(optimum2)
+```
+To check the second derivative we need to compute the Hessian matrix evaluated at the optimal point
+$\left| {\begin{array}{cc} \frac{\partial ^2f}{\partial x^2} & \frac{\partial ^2f}{\partial x \partial y} \\  \frac{\partial ^2f}{\partial y \partial x} & \frac{\partial ^2f}{\partial y^2} \end{array} } \right|_{x_0,y_0}.$
+
+
+```{r}
+# Load library
+library(numDeriv)
+# Use hessian function
+M<-hessian(g, c(optimum2$par[1], optimum2$par[2])) 
+```
+
+If the Hessian, evaluated at the optimizer, is positive definite, the optimizer is a minimum, if it is negative definite it is a maximum. 
+
+A real  symmetric $n \times n$ (all our Hessians are symmetric since the order of differentiation does not matter) matrix $M$ is positive definite if, for all nonzero $x \in \mathbb{R}^n,$ $x^TMx>0.$
+
+A real  symmetric $n \times n$ (all our Hessians are symmetric since the order of differentiation does not matter) matrix $M$ is positive definite if, for all nonzero $x \in \mathbb{R}^n,$ $x^TMx<0.$
+
+Equivalently, $M$ is positive definite if all of its eigenvalues are positive, and negative definite if all its eigenvalues are negative. 
+
+To compute the eigenvalues of a matrix $M,$ you solve the equation $\det(M-\lambda I_n)=0,$ for $\lambda,$ where $I_n$ is the appropriately-sized identity matrix. In our case we have a 2 by 2 matrix, so the determinant is just the product of the elements in the main diagonal minus the product of the off-diagonal elements (in higher-order matrices the determinant is more complicated to compute, but don't worry about that). Therefore we need to solve $\left| {\begin{array}{cc} 6-\lambda & 2 \\  2 & 2-\lambda \end{array} } \right|=(6-\lambda)(2-\lambda)-4=0,$ which is equivalent to the quadratic equation $\lambda^2-8\lambda+8=0.$ This is also known as the characteristic equation of matrix $M$.
+
+
+To compute polynomial roots (also known as the eigenvalues of $M$) in R, use the polynomial coefficients for matrix $M.$.
+```{r}
+# Find the roots of the characteristic polynomial by using the polynomial coefficients from lowest to highest order
+Re(polyroot(c(8, -8, 1)))
+```
+Notice how the two eigenvalues are positive, so  matrix $M$ is positive definite and our optimizer is a minimum.
+Of course we could have saved ourselves a lot of work by letting R compute the eigenvalues directly.
+
+```{R}
+eigenv<-eigen(M)
+print(eigenv$values)
+```
+Or by plotting the function and simply inspecting it:
+```{r}
+# Load libraries
+library(ggplot2)
+library(plotly)
+
+# Generate data
+x <- seq(-10, 10, length.out = 500)
+y <- seq(-20, 10, length.out = 500)
+f <- function(x, y) { 3*x^2+2*x*y+y^2-4*x+5*y }
+
+# Create surface plot
+plot_ly(x = x, y = y, z = outer(x, y, f), type = "surface")
+
+```
+
+
+
+

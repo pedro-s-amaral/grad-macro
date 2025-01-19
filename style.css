@@ -1,0 +1,16 @@
+body{
+  background-color: #fbfbf0;
+  font-family: perpetua;
+  font-size: 16pt;
+  font-weight: 500;
+}
+/* Headers */
+h1{
+  font-size: 24pt;
+  color:DarkBlue;}
+  
+  
+h2,h3,h4,h5{
+  font-size: 18pt;
+  color:CornflowerBlue;
+}  

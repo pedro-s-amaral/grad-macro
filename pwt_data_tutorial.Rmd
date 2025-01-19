@@ -1,0 +1,115 @@
+---
+title: "Using PWT data in R"
+author: "Pedro Amaral"
+date: "2025-01-17"
+output:
+  html_document: default
+  pdf_document: default
+css: style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+
+This is a short tutorial on downloading and preparing Penn World Tables data using R.
+
+The PWT is a database with information on relative levels of income, output, input, and productivity, covering 183 countries between 1950 and 2019. You can see more details \href{https://www.rug.nl/ggdc/productivity/pwt/}{here}.
+
+Let's start by installing and loading the package \verb"pwt10". This package contains all the data in the PWT. You only need to install the package once (that is why have it commented out), but you need to load it at the start of every session.
+
+```{r}
+#install.packages("pwt10")
+library(pwt10)
+```
+
+By running the command \texttt{data("pwt10.0")} you have access to an R data frame (also called \verb"pwt10.0") with all the information in the data base. Take your time to examine the database py clicking on it in the \emph{Environment} box on the top-right side. 
+
+```{r}
+data("pwt10.0")
+```
+
+Part of what you need to do in the assignment is to filter out countries that do not have available data for some series. Let's say you needed to compute the capital-output ratio for countries that strictly positive levels of capital and output in 1970. You can use piping \verb"%>%" to do this, but you need to install the package \verb"dplyr"
+
+```{r}
+# filter the database by those countries that have data available for capital and output in 1970 
+#install.packages("dplyr")
+library(dplyr)
+k70 <- pwt10.0 %>% filter(year==1970 & cn>0 & cgdpo>0)
+
+# now you can compute the employment to population ratio and add it to your new data frame
+k70$ky <- k70$cn/k70$cgdpo 
+```
+
+Now suppose that instead of just one year, you are interested in the average capital output ratio from 1970 to 2019 for each country 
+
+```{r}
+# compute the capital-output ratio for every year and every country
+pwt10.0$ky <- pwt10.0$cn/pwt10.0$cgdpo 
+
+# Calculate means by country
+df <- pwt10.0 %>% 
+  group_by(isocode) %>% filter(year>=1970 & cn>0 & cgdpo>0)%>%
+  summarise_at(vars(ky), list(mean)) 
+```
+
+To create a histogram of the average capital to output ratio you need to install and load the graphics package \verb"ggplot2" 
+
+```{r}
+#install.packages("ggplot2")
+library(ggplot2)
+
+# histogram
+ggplot(df, aes(x=ky)) + 
+  geom_histogram(color="black", fill="blue", binwidth = 0.5)+
+  labs(x="Capital-output ratio")
+
+```
+
+Now suppose that you are interested in whether there is a relationship between how rich a country was in 1970 and its subsequent average capital-output ratio. 
+
+Let's start by computing GDP per worker in 1970 and plot its histogram.
+
+```{r}
+# compute the GDP per worker and save it
+pwt10.0$gdp_pw <- pwt10.0$rgdpe/pwt10.0$emp 
+
+# save GDP per worker for the countries we already had (I'm sure there is a way to do this in one step)
+df_dummy<- pwt10.0 %>% filter(year==1970 & (isocode %in% df$isocode))
+df$gdp_pw<-df_dummy$gdp_pw   
+
+# histogram
+ggplot(df, aes(x=gdp_pw)) + 
+  geom_histogram(color="black", fill="blue",binwidth=10000)+
+  labs(x="Capital-output ratio")
+
+```
+
+Clearly there are outliers in both the capital-output and GDP per worker, so before running the regression, let's get rid of outliers that have a capital-output ratio above 8 or a GDP per worker above 100,000.
+
+```{r}
+# Use the subset function to get rid of outliers
+df <- subset(df, df$ky <8 & df$gdp_pw < 100000 ) 
+
+```
+
+Now we can regress the capital output ratio on GDP per worker using the function \verb"lm()". Don't worry if for some countries GDP per worker is not available, they will be automatically excluded from the regression.
+
+```{r}
+reg_ky <- lm(ky ~ gdp_pw, data=df)
+summary(reg_ky)
+```
+
+Now plot one variable against the other together with the regressions line.
+
+```{r}
+# chart
+ggplot(df, aes(x=gdp_pw, y=ky)) + 
+  geom_point()+
+  geom_smooth(method='lm')+
+  labs(x="GDP per worker in 1970") +
+    labs(y="Average capital-output ratio (1970-2019)")
+```
+
+Seems like low GDP per worker is statistically associated with subsequent low capital-output ratios. 
+

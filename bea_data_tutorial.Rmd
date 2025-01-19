@@ -1,0 +1,166 @@
+---
+title: "Using BEA data in R"
+author: "Pedro Amaral"
+date: "2025-01-17"
+output:
+  html_document: default
+  pdf_document: default
+css: style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+
+This is a short tutorial on downloading and preparing BEA data using R.
+
+The BEA maintains a set of very important macroeconomic data sets for the US economy. Among them are the National Income and Product Accounts (NIPAs). The NIPAs present the value and composition of national output and the types of incomes generated in its production.
+
+There are a variety of ways to access BEA data in general, and the NIPAs in particular. One can download the data from the BEA website, where they are accessible as interactive tables [here](https://apps.bea.gov/iTable/?reqid=19&step=2&isuri=1&categories=survey&_gl=1*znt1c4*_ga*MTMzNTQzMTEyMC4xNzM2NzkxMjQ5*_ga_J4698JNNFT*MTczNzA4MTI0NS42LjEuMTczNzA4MTU1MS41Ny4wLjA.) and can be downloaded as as \verb".xls" or \verb".csv" files. These files can then be converted to data frames in R.
+
+A more efficient way is to use the package \verb"bea.R", an R client for the BEA's API that allows you to easily retrieve BEA data.
+
+The first thing you need to do is to obtain a data key from the BEA. To do this you need to register for an API key on their website by providing your name and email address at the following [link](https://apps.bea.gov/API/signup/index.cfm). This key will be emailed to you and is required to access BEA data through their API.
+
+Once you have they key you need to install the \verb"bea.R" package in R. This is done by running
+
+```{r}
+# install.packages("bea.R") # this is commented out because I have already installed this package 
+library(bea.R)
+```
+
+Next, you will want to save your API key so you have a shorthand way to use it
+
+```{r}
+# save your private key
+beaKey <- "4B9DECDE-6546-48B7-9C1A-9E095519217A"
+```
+
+The next step is to call up the BEA API to retrieve the series you are interested in. To do this you need to specify a list containing different details. To wit, your key, the kind of call this is (we will focus on retrieving series through \verb"GetData"), the data set you are interested in (NIPA in this case), the table name (this is a table identifier, which in our case is T10105, for NIPA table 1.1.5-- that has GDP components in current dollars), the frequency (quarterly in our case), the years (we will get them all since you can always through stuff away later), and the data format (json).
+
+```{r}
+# Set up a list with the specifications to retrieve the appropriate table 
+beaSpecs <- list(
+  'UserID' = beaKey ,
+  'Method' = 'GetData',
+  'datasetname' = 'NIPA',
+  'TableName' = 'T10105',
+  'Frequency' = 'Q',
+  'Year' = 'ALL',
+  'ResultFormat' = 'json'
+)
+```
+
+You can learn more details about this package in its vignette [here](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://cran.r-project.org/web/packages/bea.R/bea.R.pdf), while [this document](https://apps.bea.gov/api/_pdf/bea_web_service_api_user_guide.pdf) contains a list of the table codes among other things. 
+
+You are now ready to call up the BEA's API
+```{r}
+# Retrieve data and save it
+NIPA115_raw <- beaGet(beaSpecs)
+```
+Although this is already technically a data frame, it contains a bunch of extraneous information, like codes, an units, that you may not be necessarily interested in. Moreover, it has the variables as rows, and the observations (quarters in this case) as columns. In the following I will get rid of anything that's not data (or variable names) and transpose the table, so we have a nice standard data frame.
+
+```{r}
+# Remove all info except quarterly values
+# You need to inspect the data to know which columns to eliminate) 
+NIPA115_clean <- NIPA115_raw[, -c(1:7)] 
+
+# Transpose columns. 
+#Here you will need the data.frame() function 
+NIPA115_clean<- data.frame(t(NIPA115_clean))
+```
+
+When you transpose the data the columns get generic names (like $X1$), so you'll need to rename the columns with the actual variable names. Moreover, while the observations (quarters) are now in rows, they have awkward names (like \verb"DataValue_1947Q1"). It will be useful to include a column with a time series variable. For this we will use the package \verb"zoo".  
+
+```{r}
+# Rename columns. 
+#Select the series you want by row number (these are vectors).
+gdp<-NIPA115_clean[,1]
+cons<-NIPA115_clean[,2]
+goods<-NIPA115_clean[,3]
+dur<-NIPA115_clean[,4]
+ndur<-NIPA115_clean[,5]
+serv<-NIPA115_clean[,6]
+inv<-NIPA115_clean[,7]
+fixinv<-NIPA115_clean[,8]
+nres<-NIPA115_clean[,9]
+struct<-NIPA115_clean[,10]
+equip<-NIPA115_clean[,11]
+ip<-NIPA115_clean[,12]
+res<-NIPA115_clean[,13]
+deltainv<-NIPA115_clean[,14]
+nx<-NIPA115_clean[,15]
+exp<-NIPA115_clean[,16]
+expgoods<-NIPA115_clean[,17]
+expserv<-NIPA115_clean[,18]
+imp<-NIPA115_clean[,19]
+impgoods<-NIPA115_clean[,20]
+impserv<-NIPA115_clean[,21]
+gov<-NIPA115_clean[,22]
+fed<-NIPA115_clean[,23]
+def<-NIPA115_clean[,24]
+ndef<-NIPA115_clean[,25]
+stateloc<-NIPA115_clean[,26]
+
+# Find the total number of quarters in our data
+t_q<-nrow(NIPA115_clean)
+
+# Install the zoo package if you have not done so
+# install.packages("zoo") 
+# Load the zoo package
+library(zoo)
+
+# Define your starting quarter
+s_q <- "1947 Q1"
+
+# Create sequence of quarters from first (s_q) with length t_q
+quarters <- as.yearqtr(s_q) + seq(0, length = t_q) / 4
+
+# Note that format of quarters is "yearqtr", a class used to represent quarterly data 
+# we need to transform this into a data frame with function fortify.zoo()
+dfquarters<-fortify.zoo(quarters)
+# remove the first column which is just and index, and keep the quarters
+quarters<-dfquarters[-c(1)]
+```
+
+Finally, we are ready to create a nice data frame with the quarters in the first column followed by the 26 variables we got from NIPA Table 1.1.5
+
+```{r}
+# Create a data frame with the above vectors
+NIPA115<-data.frame(quarters,gdp,cons,goods,dur,ndur,serv,inv,fixinv,nres,struct,equip,ip,
+                     res,deltainv,nx,exp,expgoods,expserv,imp,impgoods,impserv,gov,fed,def,ndef,stateloc)
+```
+
+Now we are ready to use the data. To illustrate this let's look at how the composition of consumption (between non-durable goods, durable goods and services) as evolved over time in the form of a stacked are chart. For this we will use the \verb"areaplot" package.
+
+```{r}
+# Compute the shares of consumption and put them in a data frame
+df<-data.frame(NIPA115$quarters,NIPA115$dur/(NIPA115$dur+NIPA115$ndur+NIPA115$serv),
+               NIPA115$ndur/(NIPA115$dur+NIPA115$ndur+NIPA115$serv),NIPA115$serv/(NIPA115$dur+NIPA115$ndur+NIPA115$serv))
+
+# Name our columns for legend purposes
+colnames(df)<-c("quarters","durables","non-durables","services")
+
+# Create x and y variables
+x<-df$quarters
+y<-df[,c(2,3,4)]
+
+# Install the areaplot package if you have not done so
+# install.packages("areaplot") 
+
+# Load areaplot package
+library(areaplot)
+
+# Define your color palette
+cols<-hcl.colors(3,palette = "Dynamic",alpha=1)
+
+# create the stacked area chart
+areaplot(x,y, main= "Shares of consumption",
+         xlab="Quarters",col=cols,legend = TRUE,
+         border="white",lwd=1,lty=1,
+         args.legend=list(x='bottomleft',cex=0.75))
+
+```
+
+Look at how the importance of services in consumption has gone from under 40% in the post-war period to over two-thirds today, largely at the expense of non-durable goods.
+

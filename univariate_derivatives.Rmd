@@ -1,0 +1,109 @@
+---
+title: "Univariate derivatives"
+author: "Pedro Amaral"
+date: "2025-01-10"
+output:
+  html_document: default
+  pdf_document: default
+css: style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+
+
+```{r, include=FALSE}
+setwd("C:/Users/pamaral/CSU Fullerton Dropbox/Pedro Amaral/CSUF/Teaching/Econ 503/Resources/R")
+```
+
+
+# Derivatives of univariate functions
+
+A derivative of a univariate function $y=f(x)$ at point $x_0$ is $f^\prime (x_0)=\lim_{\Delta \rightarrow 0}\frac{f(x_0+\Delta)-f(x_0)}{\Delta}.$
+
+In words, it is the slope of the graph of $f$ at $(x_0,f(x_0).$
+
+We can also think of $f^\prime (x)$ as a function of $x.$
+
+R can be used to take not only numerical derivatives, but also symbolic (algebraic) derivatives (using libraries for that effect).
+
+Take for example the quadratic function $f(x)=x^2+x-2.$
+
+Let's plot it first
+```{r}
+# create a vector for x
+x <- seq(-4, 3, length.out = 100)
+# define the function
+y <- function(x) x^2 + x - 2
+# plot x versus f(x)
+plot(x, y(x), type = "l", col = "blue", lwd = 2, xlab = "x", ylab = "y", main = "f(x) = x^2 + x - 2")
+
+```
+
+## Numerical derivatives
+
+Say we want to know the derivative at $x_0=-2.$ Numerically, we can approximate it (albeit with some error) in the following way:
+```{r}
+# Define the point where you want to evaluate the derivative
+x_0 <- -2
+
+# Create a very small increment
+delta_x <- 1e-6
+
+# Numerically evaluate the derivative using the function y we defined above 
+derivative <- (y(x_0 + delta_x) - y(x_0)) / delta_x
+
+# Print the result
+print(derivative)
+```
+## Symbolic derivatives
+
+Alternatively, maybe you want to know what the derivative function  is.
+
+R can help you here also. 
+
+```{r}
+# Install the Deriv package
+#install.packages("Deriv")
+library(Deriv)
+
+# Calculate the derivative of y
+d_y <- Deriv(y, "x") 
+
+# print results
+print(d_y) 
+```
+And we can also plot this derivative as a function of $x$ 
+```{r}
+plot(x, d_y(x), type = "l", col = "red", lwd = 2, xlab = "x", ylab = "y", main = "f'(x) = 2x+1")
+
+```
+Finally, we can confirm our numerical approximation to the derivative evaluated at $x_0=-2.$
+```{r}
+d_y(-2)
+```
+## Higher-order derivatives
+
+With what we learned, it is trivial to obtain higher order derivatives. They are simply derivatives of derivatives, after all.
+```{r}
+# This time let's use a log function that we can keep on differentiating
+z <- function(x) log(x)
+
+# Calculate the first derivative of z
+d_z <- Deriv(z, "x") 
+print(d_z)
+
+# Calculate the second derivative of z
+d2_z <- Deriv(d_z, "x") 
+print(d2_z)
+
+
+# Calculate the third derivative of z
+d3_z <- Deriv(d2_z, "x") 
+print(d3_z)
+
+```
+
+
+
