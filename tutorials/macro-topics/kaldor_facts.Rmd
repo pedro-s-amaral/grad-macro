@@ -1,0 +1,144 @@
+---
+title: "Kaldor stylized facts"
+output:
+  html_document: default
+css: ../style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+## Pedro Amaral
+
+## 2026-01-24
+
+# Kaldor stylized fact I
+
+In class I stated the first Kaldor stylized fact: the growth rate of real output per worker is roughly constant over long periods of time.
+
+This small tutorial shows you how to show this using US data using the BEA's NIPAs and data from FRED.
+
+As a measure of real GDP we will use Real Gross Domestic Product, in billions of chained (2017) dollars, seasonally adjusted. This is in Table 1.1.6 of the NIPAs. So let's start by downloading that using R's client for the BEA's API. To do this we need to install and load the package \verb"bea.R".
+
+```{r}
+# install.packages("bea.R") # this is commented out because I have already installed this package 
+library(bea.R)
+```
+
+Next, you need to obtain a data key from the BEA. To do this you need to [register for an API key on their website](https://apps.bea.gov/API/signup/index.cfm)  by providing your name and email address at the following . This key will be emailed to you and is required to access BEA data through their API.
+
+You will want to save your API key so you have a shorthand way to use it
+
+```{r}
+# save your private key
+beaKey <- Sys.getenv("BEA_API_KEY")
+```
+
+The next step is to call up the BEA API to retrieve the series you are interested in. To do this you need to specify a list containing different details. To wit, your key, the kind of call this is (we will focus on retrieving series through \verb"GetData"), the data set you are interested in (NIPA in this case), the table name (this is a table identifier, which in our case is T10105, for NIPA table 1.1.6 -- that has GDP components in real chained dollars), the frequency (yearly in our case), the years (we will get them all since you can always through stuff away later), and the data format (json).
+
+```{r}
+# Set up a list with the specifications to retrieve the appropriate table 
+beaSpecs <- list(
+  'UserID' = beaKey ,
+  'Method' = 'GetData',
+  'datasetname' = 'NIPA',
+  'TableName' = 'T10106',
+  'Frequency' = 'A',
+  'Year' = 'ALL',
+  'ResultFormat' = 'json'
+)
+```
+
+You can learn more details about this package  [in its vignette](https://cran.r-project.org/web/packages/bea.R/bea.R.pdf), while [this document](https://apps.bea.gov/api/_pdf/bea_web_service_api_user_guide.pdf) contains a list of the table codes among other things. 
+
+You are now ready to call up the BEA's API:
+```{r}
+# Retrieve data and save it
+NIPA116_raw <- beaGet(beaSpecs)
+```
+Although this is already technically a data frame, it contains a bunch of extraneous information, like codes, and units, that you may not be necessarily interested in. Moreover, it has the variables as rows, and the observations (quarters in this case) as columns. In the following I will get rid of anything that's not data (or variable names) and transpose the table, so we have a nice standard data frame.
+
+```{r}
+# Remove all info except yearly values
+# You need to inspect the data to know which columns to eliminate) 
+NIPA116_clean <- NIPA116_raw[, -c(1:7)] 
+
+# Transpose columns. 
+#Here you will need the data.frame() function 
+NIPA116_clean<- data.frame(t(NIPA116_clean))
+```
+
+When you transpose the data the columns get generic names (like $X1$), so you'll need to rename the columns with the actual variable names. Moreover, while the observations (years) are now in rows, they have awkward names (like \verb"DataValue_1929"). It will be useful to include a column with a time series variable. For this we will use the function \verb"ts". Since we are only using GDP here (on the first row), we will discard anything else.  
+
+```{r}
+# Rename columns. 
+# Select the series you want by row number (these are vectors).
+gdp<-NIPA116_clean[,1]
+
+# Find the total number of years in the data
+t_y<-nrow(NIPA116_clean)
+
+# Create a sequence of years from 1929 to today
+years <- ts(seq(1929, 1929+t_y-1, by = 1), start = 1929) 
+```
+
+We are now ready to create a data frame with the years and GDP
+```{r}
+# Create a data frame with the above vectors
+NIPA116<-data.frame(years,gdp)
+```   
+
+Next, to calculate GDP per worker, we need to get data for the number of people employed. Let's do that using data from the Bureau of Labor Statistics that we can download from FRED, the database maintained by the St. Louis Fed. 
+To use their R API client we first need to install the \verb"fredr" library. See [the dcumentation](https://cran.r-project.org/web/packages/fredr/fredr.pdf) for more.
+
+
+```{r}
+# install.packages(fredr)
+library(fredr)
+```
+
+Next we need to obtain an API key from FRED
+
+```{r}
+# Once you have your key use the following command
+
+fredr_set_key(Sys.getenv("FRED_API_KEY"))
+```
+
+Finally we are ready to retrieve the data we want. Make sure you get the series id from the FRED website:
+
+```{r}
+# This data is available from 1948
+workers_raw <-fredr(
+  series_id = "CE16OV",
+  observation_start = as.Date("1948-01-01"),
+  observation_end = as.Date("2025-01-01"),
+  frequency = "a" 
+)
+```
+
+This series is only available from 1947 to 2023, so the first thing we need to do is to shorten our NIPA series to start in 1947 and add the employment series (the unit is thousands of workers).
+
+```{r}
+kaldor <-NIPA116[-c(1:18),]
+kaldor$emp<-workers_raw$value
+```
+
+Finally, add a column with the log of the GDP per worker 
+```{r}
+kaldor$log_gdp_w <- log(kaldor$gdp/kaldor$emp)
+```
+                    
+Create a chart with the \verb"ggplo2" package. As you can see from the trendline, over the long run, the growth rate of real output per worker is roughly constant.
+
+```{r, fig.alt="Figure with log GDP per worker in US from 1947 to 2025 and its linear trend"}
+library(ggplot2)
+ggplot(kaldor, aes(x=years,y=log_gdp_w))+
+  geom_line()+
+  geom_smooth(method = "lm",color="red")+
+  labs(y="log(GDP per worker)")+
+  labs(x="Years")
+```
+
+
+

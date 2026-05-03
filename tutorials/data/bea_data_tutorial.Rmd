@@ -1,26 +1,27 @@
 ---
 title: "Using BEA data in R"
-author: "Pedro Amaral"
-date: "2025-01-17"
 output:
   html_document: default
-  pdf_document: default
-css: style.css
+css: ../style.css
 ---
 
 ```{r setup, include=FALSE,}
 knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
 ```
+## Pedro Amaral
+
+## 2026-01-24
+
 
 This is a short tutorial on downloading and preparing BEA data using R.
 
 The BEA maintains a set of very important macroeconomic data sets for the US economy. Among them are the National Income and Product Accounts (NIPAs). The NIPAs present the value and composition of national output and the types of incomes generated in its production.
 
-There are a variety of ways to access BEA data in general, and the NIPAs in particular. One can download the data from the BEA website, where they are accessible as interactive tables [here](https://apps.bea.gov/iTable/?reqid=19&step=2&isuri=1&categories=survey&_gl=1*znt1c4*_ga*MTMzNTQzMTEyMC4xNzM2NzkxMjQ5*_ga_J4698JNNFT*MTczNzA4MTI0NS42LjEuMTczNzA4MTU1MS41Ny4wLjA.) and can be downloaded as as \verb".xls" or \verb".csv" files. These files can then be converted to data frames in R.
+There are a variety of ways to access BEA data in general, and the NIPAs in particular. One can download the data from the BEA website, where they are  [accessible as interactive tables](https://apps.bea.gov/iTable/?reqid=19&step=2&isuri=1&categories=survey&_gl=1*znt1c4*_ga*MTMzNTQzMTEyMC4xNzM2NzkxMjQ5*_ga_J4698JNNFT*MTczNzA4MTI0NS42LjEuMTczNzA4MTU1MS41Ny4wLjA.) and can be downloaded as as \verb".xls" or \verb".csv" files. These files can then be converted to data frames in R.
 
 A more efficient way is to use the package \verb"bea.R", an R client for the BEA's API that allows you to easily retrieve BEA data.
 
-The first thing you need to do is to obtain a data key from the BEA. To do this you need to register for an API key on their website by providing your name and email address at the following [link](https://apps.bea.gov/API/signup/index.cfm). This key will be emailed to you and is required to access BEA data through their API.
+The first thing you need to do is to obtain a data key from the BEA. To do this you need to register for an API key on their website by providing your name and email address [at their website](https://apps.bea.gov/API/signup/index.cfm). This key will be emailed to you and is required to access BEA data through their API.
 
 Once you have they key you need to install the \verb"bea.R" package in R. This is done by running
 
@@ -33,7 +34,7 @@ Next, you will want to save your API key so you have a shorthand way to use it
 
 ```{r}
 # save your private key
-beaKey <- "4B9DECDE-6546-48B7-9C1A-9E095519217A"
+beaKey <- Sys.getenv("BEA_API_KEY")
 ```
 
 The next step is to call up the BEA API to retrieve the series you are interested in. To do this you need to specify a list containing different details. To wit, your key, the kind of call this is (we will focus on retrieving series through \verb"GetData"), the data set you are interested in (NIPA in this case), the table name (this is a table identifier, which in our case is T10105, for NIPA table 1.1.5-- that has GDP components in current dollars), the frequency (quarterly in our case), the years (we will get them all since you can always through stuff away later), and the data format (json).
@@ -51,7 +52,7 @@ beaSpecs <- list(
 )
 ```
 
-You can learn more details about this package in its vignette [here](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://cran.r-project.org/web/packages/bea.R/bea.R.pdf), while [this document](https://apps.bea.gov/api/_pdf/bea_web_service_api_user_guide.pdf) contains a list of the table codes among other things. 
+You can learn more details about this package  [in its vignette](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://cran.r-project.org/web/packages/bea.R/bea.R.pdf), while [this document works like a dictionary](https://apps.bea.gov/api/_pdf/bea_web_service_api_user_guide.pdf) and contains a list of the table codes among other things. 
 
 You are now ready to call up the BEA's API
 ```{r}
@@ -133,7 +134,7 @@ NIPA115<-data.frame(quarters,gdp,cons,goods,dur,ndur,serv,inv,fixinv,nres,struct
 
 Now we are ready to use the data. To illustrate this let's look at how the composition of consumption (between non-durable goods, durable goods and services) as evolved over time in the form of a stacked are chart. For this we will use the \verb"areaplot" package.
 
-```{r}
+```{r, fig.alt="Figure showing shares of nondurable goods, durable goods, and services in overall consumption"}
 # Compute the shares of consumption and put them in a data frame
 df<-data.frame(NIPA115$quarters,NIPA115$dur/(NIPA115$dur+NIPA115$ndur+NIPA115$serv),
                NIPA115$ndur/(NIPA115$dur+NIPA115$ndur+NIPA115$serv),NIPA115$serv/(NIPA115$dur+NIPA115$ndur+NIPA115$serv))
@@ -163,4 +164,6 @@ areaplot(x,y, main= "Shares of consumption",
 ```
 
 Look at how the importance of services in consumption has gone from under 40% in the post-war period to over two-thirds today, largely at the expense of non-durable goods.
+
+
 

@@ -1,0 +1,227 @@
+/* ===================================================
+   Econ 503 — Style Option C: Modern Editorial Serif
+   Warm off-white · Lora · Navy / slate blue
+   =================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+/* --- Body --- */
+body {
+  background-color: #fdfcf8;
+  color: #2d2d2d;
+  font-family: "Source Serif 4", Cambria, Georgia, "Times New Roman", serif;
+  font-size: 15pt;
+  font-weight: 500;
+  line-height: 1.8;
+}
+
+/* --- Headers --- */
+h1 {
+  font-size: 21pt;
+  font-weight: 600;
+  color: #1a3a6b;
+  margin-top: 44px;
+  margin-bottom: 6px;
+}
+
+h2 {
+  font-size: 16pt;
+  font-weight: 600;
+  color: #2c5282;
+  margin-top: 32px;
+}
+
+h3 {
+  font-size: 13.5pt;
+  font-weight: 600;
+  color: #2c5282;
+  margin-top: 22px;
+}
+
+h4 {
+  font-size: 13pt;
+  font-weight: 500;
+  color: #4a5568;
+  font-style: italic;
+}
+
+h5 {
+  font-size: 12pt;
+  color: #718096;
+}
+
+/* --- Title block --- */
+.title {
+  font-size: 25pt;
+  font-weight: 600;
+  color: #1a3a6b;
+  margin-bottom: 4px;
+}
+
+.author {
+  font-size: 14pt;
+  color: #2d2d2d;
+  font-style: italic;
+}
+
+.date {
+  font-size: 12pt;
+  color: #718096;
+  margin-bottom: 30px;
+}
+
+/* --- Links --- */
+a {
+  color: #2c5282;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #1a3a6b;
+  text-decoration: underline;
+}
+
+/* --- Code blocks --- */
+pre {
+  background-color: #f1f0eb;
+  color: #2d2d2d;
+  border: 1px solid #d6d3c9;
+  border-left: 3px solid #2b4590;
+  border-radius: 0 4px 4px 0;
+  padding: 14px 18px;
+  font-size: 11pt;
+  line-height: 1.6;
+}
+
+code {
+  font-family: "Source Code Pro", "Fira Code", Consolas, monospace;
+  font-size: 11pt;
+}
+
+pre code {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* Inline code */
+p > code, li > code {
+  background-color: #f1f0eb;
+  color: #2b4590;
+  border: 1px solid #d6d3c9;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 12pt;
+}
+
+/* --- Tables --- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 13pt;
+}
+
+thead th {
+  background-color: #1a3a6b;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+tbody td {
+  padding: 8px 14px;
+  border-bottom: 1px solid #e2ddd4;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f7f5f0;
+}
+
+tbody tr:hover {
+  background-color: #eeeae0;
+}
+
+caption {
+  font-size: 13pt;
+  font-style: italic;
+  color: #2c5282;
+  caption-side: top;
+  text-align: left;
+  margin-bottom: 6px;
+}
+
+/* --- Floating TOC --- */
+.tocify {
+  font-family: "Source Serif 4", Cambria, Georgia, serif;
+  background-color: #fdfcf8;
+  border: 1px solid #e2ddd4;
+  border-radius: 4px;
+  font-size: 12pt;
+}
+
+.tocify .tocify-item {
+  padding: 5px 14px;
+  color: #2d2d2d;
+  border-left: 3px solid transparent;
+}
+
+.tocify .tocify-item.active {
+  background-color: #eef1f8;
+  color: #1a3a6b;
+  border-left: 3px solid #1a3a6b;
+  font-weight: 600;
+}
+
+.tocify a {
+  color: inherit;
+}
+
+/* --- Plot / figure containers --- */
+.figure, p > img {
+  border: 1px solid #e2ddd4;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 20px 0;
+  background-color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+img {
+  max-width: 100%;
+}
+
+/* --- Horizontal rules --- */
+hr {
+  border: none;
+  border-top: 1px solid #cbd5e0;
+  margin: 38px 0;
+}
+
+/* --- Math color (MathJax) --- */
+mjx-container, .MathJax { color: #5a5a5a; }
+
+/* --- Math blocks (MathJax) --- */
+.MathJax_Display {
+  background-color: #f5f2ea;
+  padding: 14px 20px;
+  border-left: 3px solid #2c5282;
+  border-radius: 0 4px 4px 0;
+  margin: 18px 0;
+}
+
+/* --- Code folding button --- */
+.btn-default {
+  color: #2c5282;
+  border-color: #d6d3c9;
+  background-color: #f1f0eb;
+  font-family: "Source Serif 4", Cambria, Georgia, serif;
+  font-size: 11pt;
+}
+
+.btn-default:hover {
+  background-color: #eeeae0;
+  border-color: #2c5282;
+  color: #1a3a6b;
+}

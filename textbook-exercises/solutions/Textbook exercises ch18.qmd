@@ -1,0 +1,535 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 18"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 18.1 — Deriving the IS Curve
+
+**Problem.** This exercise asks you to work through the derivation of the IS curve under
+various different scenarios.
+
+**(a)** Graphically derive the IS curve for a generic specification of the consumption
+function and the investment demand function.
+
+**(b)** Suppose that investment demand is relatively more sensitive to the real interest
+rate than in (a). Relative to (a), how will this impact the shape of the IS curve?
+
+**(c)** Suppose that the MPC is larger than in (a). How will this affect the shape of
+the IS curve?
+
+---
+
+## Solution
+
+### Setup
+
+In the Neoclassical model (GLS Chapter 18) the goods market equilibrium condition is:
+
+$$Y_t = C_t^d + I_t^d + G_t$$
+
+where:
+
+- **Consumption demand** $C_t^d = C^d(Y_t - G_t,\; Y_{t+1} - G_{t+1},\; r_t)$ — increasing in both periods' disposable income and decreasing in $r_t$.
+
+- **Investment demand** $I_t^d = I^d(r_t,\; A_{t+1},\; K_t)$ — decreasing in $r_t$ and increasing in expected future productivity $A_{t+1}$ and current capital $K_t$.
+
+- **Government purchases** $G_t$ — exogenous.
+
+Define **autonomous expenditure** at a given interest rate as level of desired expenditure which is independent of current income:
+
+$$E_0(r_t) \;:=\; C^d(-G_t,Y_{t+1}-G_{t+1},r_t) + I^d(r_t) + G_t.$$
+Note that because both consumption and investment are decreasing in $r_t$, we have $E_o'(r_t) < 0$.
+
+Recall that the marginal propensity to consume out of current income is $\partial C^d / \partial Y_t = \text{MPC} \in (0, 1)$.
+
+---
+
+### Part (a) — Generic graphical derivation
+
+The IS curve is derived in two steps using the **Keynesian cross**.
+
+**Step 1 (top panel).** For a given $r_t$, plot aggregate expenditure $Y_t^d = C_t^d + I_t^d + G_t$ as a function of $Y_t$. The schedule has slope MPC $\in (0, 1)$ and intercept $E_0(r_t)$. The goods market equilibrium occurs where the expenditure schedule crosses the 45° line ($Y_t^d = Y_t$). A higher $r_t$ reduces $E_0$ — it simultaneously lowers both consumption (intertemporal substitution) and investment — shifting the expenditure schedule **down** and reducing equilibrium $Y_t^*$.
+
+**Step 2 (bottom panel).** Each pair $(Y_t^*, r_t)$ obtained from Step 1 is one point on the IS curve. Connecting these points traces out a **downward-sloping** IS schedule in $(Y_t, r_t)$ space.
+
+```{r}
+#| label: fig-ex181-part-a
+#| fig-cap: "Keynesian cross (top panel) and IS curve (bottom panel) for a generic consumption and investment demand specification. When the real interest rate rises from $r_{\\text{lo}}$ (blue) to $r_{\\text{hi}}$ (red), the expenditure schedule shifts down and equilibrium output falls from $Y_1^*$ to $Y_2^*$. Each $(Y_t^*, r_t)$ pair maps to one point on the downward-sloping IS curve."
+#| fig-alt: "Two stacked panels. Top: 45-degree line with two expenditure schedules; blue line intersects at higher output Y1, red at lower output Y2. Bottom: downward-sloping IS curve through both equilibria."
+#| fig-height: 6
+
+# ── Parameters ────────────────────────────────────────────────────────────────
+mpc   <- 0.5
+r_lo  <- 0.03;  a_lo <- 55   # autonomous spending at low r → Y* = 55/0.5 = 110
+r_hi  <- 0.09;  a_hi <- 49   # autonomous spending at high r → Y* = 49/0.5 = 98
+
+Y1 <- a_lo / (1 - mpc)   # 110
+Y2 <- a_hi / (1 - mpc)   # 98
+Y_range <- c(75, 130)
+
+# IS slope for extension
+is_slope <- (r_hi - r_lo) / (Y2 - Y1)
+is_ext   <- tibble(
+  Y = c(82, 122),
+  r = c(r_lo + (82  - Y1) * is_slope,
+        r_lo + (122 - Y1) * is_slope)
+)
+
+# ── Top panel: Keynesian cross ────────────────────────────────────────────────
+p_top <- ggplot() +
+  geom_abline(slope = 1, intercept = 0,
+              color = "gray40", linetype = "dashed", linewidth = 0.8) +
+  geom_abline(slope = mpc, intercept = a_lo,
+              color = "steelblue", linewidth = 1.1) +
+  geom_abline(slope = mpc, intercept = a_hi,
+              color = "firebrick", linewidth = 1.1) +
+  geom_segment(aes(x = Y1, xend = Y1, y = 75, yend = Y1),
+               linetype = "dotted", color = "steelblue") +
+  geom_segment(aes(x = Y2, xend = Y2, y = 75, yend = Y2),
+               linetype = "dotted", color = "firebrick") +
+  geom_point(aes(x = c(Y1, Y2), y = c(Y1, Y2)),
+             color = c("steelblue", "firebrick"), size = 3) +
+  annotate("text", x = 127, y = 127 * mpc + a_lo + 3.5,
+           label = expression(Y[t]^d ~ "(low" ~ r[t] * ")"),
+           color = "steelblue", size = 4) +
+  annotate("text", x = 127, y = 127 * mpc + a_hi - 4.5,
+           label = expression(Y[t]^d ~ "(high" ~ r[t] * ")"),
+           color = "firebrick", size = 4) +
+  annotate("text", x = Y1+1, y = 77,
+           label = expression(Y[1]^"*"), color = "steelblue", size = 4) +
+  annotate("text", x = Y2+1, y = 77,
+           label = expression(Y[2]^"*"), color = "firebrick", size = 4) +
+  annotate("text", x = 125, y = 130,
+           label = "45°", color = "gray40", hjust = 0, size = 4) +
+  coord_cartesian(xlim = Y_range, ylim = Y_range) +
+  labs(x = NULL, y = expression(Y[t]^d),
+       title = "Step 1: Keynesian cross",
+       subtitle = expression(
+         "Higher" ~ r[t] ~ "lowers both C and I" %->%
+           "expenditure schedule shifts down" %->% "lower" ~ Y[t]^"*"
+       )) +
+  theme(axis.text.x  = element_blank(),
+        axis.ticks.x = element_blank())
+
+# ── Bottom panel: IS curve ────────────────────────────────────────────────────
+p_bot <- ggplot() +
+  geom_line(data = is_ext, aes(x = Y, y = r),
+            color = "darkgreen", linewidth = 1.3) +
+  geom_point(aes(x = c(Y1, Y2), y = c(r_lo, r_hi)),
+             color = c("steelblue", "firebrick"), size = 3) +
+  geom_segment(aes(x = Y1, xend = Y1, y = -Inf, yend = r_lo),
+               linetype = "dotted", color = "steelblue") +
+  geom_segment(aes(x = Y2, xend = Y2, y = -Inf, yend = r_hi),
+               linetype = "dotted", color = "firebrick") +
+  geom_segment(aes(x = -Inf, xend = Y1, y = r_lo, yend = r_lo),
+               linetype = "dotted", color = "steelblue") +
+  geom_segment(aes(x = -Inf, xend = Y2, y = r_hi, yend = r_hi),
+               linetype = "dotted", color = "firebrick") +
+  annotate("text", x = 104, y = 0.08,
+           label = "IS", color = "darkgreen", fontface = "bold", size = 4.5) +
+  annotate("text", x = Y1 + 1, y = r_lo + 0.01,
+           label = expression("(" * Y[1]^"*" * "," ~ r[lo] * ")"),
+           color = "steelblue", hjust = 0, size = 4) +
+  annotate("text", x = Y2 - 1, y = r_hi - 0.015,
+           label = expression("(" * Y[2]^"*" * "," ~ r[hi] * ")"),
+           color = "firebrick", hjust = 1, size = 4) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     breaks = c(r_lo, r_hi)) +
+  coord_cartesian(xlim = Y_range, ylim = c(0, 0.12)) +
+  labs(x = expression(Y[t]), y = expression(r[t]),
+       title = "Step 2: IS curve")
+
+# ── Align widths and arrange ──────────────────────────────────────────────────
+p_top_g <- ggplotGrob(p_top)
+p_bot_g <- ggplotGrob(p_bot)
+p_top_g$widths <- p_bot_g$widths <-
+  grid::unit.pmax(p_top_g$widths, p_bot_g$widths)
+gridExtra::grid.arrange(p_top_g, p_bot_g, nrow = 2, heights = c(2, 1))
+```
+
+**Algebraic derivation of the IS curve.** The IS represents the combinations of $(Y_t,r_t)$ for which the aggregate resource constraint holds and the household and firm choose consumption and investment optimally:
+
+$$Y_t=C^d(Y_t-G_t,Y_{t+1}-G_{t+1},r_t) + I^d(r_t) + G_t.$$
+
+**Economic intuition for the downward slope.** A higher real interest rate raises the cost of borrowing and the return to saving. Households respond to an increase in $r_t$ by consuming less today (substituting future consumption for present consumption). Firms respond by investing less (the hurdle rate for profitable investment rises). Both channels lower aggregate demand, the RHS of the above equation. For aggregate demand to equal income, it has to be that income falls, lowering the LHS and increasing the RHS until they are equal. The IS curve captures precisely this negative relationship between $r_t$ and $Y_t^*$.
+
+**Slope formula.** Defining aggregate demand as
+
+$$Y^d_t:=C^d(Y_t-G_t,Y_{t+1}-G_{t+1},r_t) + I^d(r_t) + G_t,$$
+
+we can write the IS as $Y_tY^d_t.$ Taking the total differential on both sides:
+
+$$d Y_t = \frac{\partial Y^d_t}{\partial Y_t} d Y_t+\frac{\partial Y^d_t}{\partial r_t} dr_t.$$
+Noting that $\frac{\partial Y^d_t}{\partial Y_t}=MPC$ and solving, we get:
+
+$$\frac{d Y_t}{d r_t}=\frac{\partial Y^d_t / \partial r_t}{1-MPC}<0.$$
+
+Two forces govern the magnitude of this slope: (i) how strongly aggregate expenditure responds to interest rates ($|\partial Y^d_t / \partial r_t|$) and (ii) the expenditure multiplier $1/(1-\text{MPC})$. Both parts (b) and (c) below vary one of these forces.
+
+---
+
+### Part (b) — More interest-sensitive investment demand
+
+If investment demand is more sensitive to $r_t$ — that is, $|\partial I^d / \partial r_t|$ is larger — then $|\partial Y^d_t / \partial r_t|$ is larger. For a given increase in $r_t$, autonomous expenditure falls by **more**, shifting the Keynesian cross schedule down by a greater amount and reducing equilibrium output by more. In $(Y_t, r_t)$ space this means the IS curve is **flatter**: the same change in $r_t$ generates a larger change in $Y_t^*$.
+
+```{r}
+#| label: fig-ex181-part-b
+#| fig-cap: "Effect of higher investment interest-sensitivity on the IS curve. With a larger $|\\partial I^d/\\partial r_t|$ (orange dashed curve), the same rise in $r_t$ depresses output by more, producing a flatter IS curve than the baseline (green solid)."
+#| fig-alt: "Two downward-sloping IS curves from a common point at r-lo. The steeper baseline IS and the flatter high-sensitivity IS diverge as r rises, with the flatter curve reaching a much lower output level."
+#| fig-height: 4
+
+# ── Parameters ────────────────────────────────────────────────────────────────
+# Baseline (same as part a): Y1=110 at r_lo=0.03, Y2=98 at r_hi=0.09
+# High sensitivity: same r values but larger drop in AE → larger drop in Y*
+
+mpc     <- 0.5
+r_lo    <- 0.03;  r_hi <- 0.09
+
+# Baseline IS (from part a)
+Y1_base <- 110;  Y2_base <- 98
+
+# High-sensitivity IS: autonomous spending falls twice as much for same Δr
+# Δ(autonomous) goes from 6 to 18  →  ΔY* goes from 12 to 36
+Y1_sens <- 110;  Y2_sens <- 74    # same starting point, larger drop
+
+# Build IS line segments extended beyond the two anchor points
+build_is <- function(Y_lo, Y_hi, r_lo, r_hi, extend = 10) {
+  slope <- (r_hi - r_lo) / (Y_hi - Y_lo)
+  tibble(
+    Y = c(Y_lo + extend, Y_hi - extend),
+    r = c(r_lo + extend * slope, r_hi - extend * slope)
+  )
+}
+
+is_base <- build_is(Y1_base, Y2_base, r_lo, r_hi)
+is_sens <- build_is(Y1_sens, Y2_sens, r_lo, r_hi)
+
+ggplot() +
+  geom_line(data = is_base, aes(x = Y, y = r, color = "Baseline IS"),
+            linewidth = 1.2) +
+  geom_line(data = is_sens, aes(x = Y, y = r, color = "Higher |∂I/∂r|"),
+            linewidth = 1.2, linetype = "dashed") +
+  geom_point(aes(x = c(Y1_base, Y2_base), y = c(r_lo, r_hi),
+                 color = rep("Baseline IS", 2)), size = 3) +
+  geom_point(aes(x = c(Y1_sens, Y2_sens), y = c(r_lo, r_hi),
+                 color = rep("Higher |∂I/∂r|", 2)), size = 3) +
+  scale_color_manual(
+    values = c("Baseline IS" = "darkgreen", "Higher |∂I/∂r|" = "darkorange"),
+    name   = NULL
+  ) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_cartesian(xlim = c(60, 125), ylim = c(0, 0.12)) +
+  labs(
+    x        = expression(Y[t]),
+    y        = expression(r[t]),
+    title    = "IS curve: baseline vs. higher investment interest-sensitivity",
+    subtitle = expression(
+      "Both curves pass through (" * Y[1]^"*" * "," ~ r[lo] * "); " ~
+      "higher |" * partialdiff * I^d * "/" * partialdiff * r[t] * "| flattens the IS"
+    )
+  ) +
+  theme(legend.position = "bottom")
+```
+
+**Why the IS curve flattens.** The slope of the IS curve in $(Y_t, r_t)$ space is:
+
+$$\frac{dr_t}{dY_t^*} = \frac{1 - \text{MPC}}{\partial Y^d_t / \partial r_t} < 0$$
+
+If the denominator grows in absolute value this slope gets **closer to zero** — the IS curve tilts toward the horizontal. Intuitively, when investment is highly responsive to interest rates, a small rise in $r_t$ chokes off a lot of investment and contracts output sharply, so the curve must be very flat to reflect this large horizontal movement per unit of vertical movement.
+
+---
+
+### Part (c) — Larger marginal propensity to consume
+
+If the MPC is larger, the expenditure multiplier $1/(1 - \text{MPC})$ increases. For the **same** downward shift in the intercept caused by a given rise in $r_t$, equilibrium output falls by **more** (the multiplier amplifies the direct effect). In $(Y_t, r_t)$ space the IS curve is again **flatter**.
+
+```{r}
+#| label: fig-ex181-part-c
+#| fig-cap: "Effect of a higher MPC on the IS curve. With a larger MPC (purple dashed), the multiplier is bigger: the same interest-rate-induced fall in autonomous spending is amplified into a larger output decline, flattening the IS curve relative to the baseline (green solid)."
+#| fig-alt: "Two downward-sloping IS curves. The baseline IS has moderate slope. The high-MPC IS starts at the same point at r-lo but falls further to the right at r-hi, illustrating a flatter slope."
+#| fig-height: 4
+
+# ── Parameters ────────────────────────────────────────────────────────────────
+r_lo <- 0.03;  r_hi <- 0.09
+
+# Autonomous spending: identical across scenarios
+# Δ(autonomous) = a_lo - a_hi = 6  for Δr = 0.06
+a_lo <- 55;  a_hi <- 49
+
+# Baseline MPC = 0.5 → multiplier = 2
+mpc_base <- 0.5
+Y1_base  <- a_lo / (1 - mpc_base)   # 110
+Y2_base  <- a_hi / (1 - mpc_base)   # 98
+
+# High MPC = 0.75 → multiplier = 4
+mpc_high <- 0.75
+Y1_high  <- a_lo / (1 - mpc_high)   # 220
+Y2_high  <- a_hi / (1 - mpc_high)   # 196
+
+is_base_c <- build_is(Y1_base, Y2_base, r_lo, r_hi, extend = 8)
+is_high_c <- build_is(Y1_high, Y2_high, r_lo, r_hi, extend = 12)
+
+ggplot() +
+  geom_line(data = is_base_c, aes(x = Y, y = r, color = "Baseline MPC = 0.5"),
+            linewidth = 1.2) +
+  geom_line(data = is_high_c, aes(x = Y, y = r, color = "Higher MPC = 0.75"),
+            linewidth = 1.2, linetype = "dashed") +
+  geom_point(aes(x = c(Y1_base, Y2_base), y = c(r_lo, r_hi),
+                 color = rep("Baseline MPC = 0.5", 2)), size = 3) +
+  geom_point(aes(x = c(Y1_high, Y2_high), y = c(r_lo, r_hi),
+                 color = rep("Higher MPC = 0.75", 2)), size = 3) +
+  scale_color_manual(
+    values = c("Baseline MPC = 0.5" = "darkgreen", "Higher MPC = 0.75" = "purple4"),
+    name   = NULL
+  ) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_cartesian(xlim = c(80, 235), ylim = c(0, 0.12)) +
+  labs(
+    x        = expression(Y[t]),
+    y        = expression(r[t]),
+    title    = "IS curve: baseline MPC vs. higher MPC",
+    subtitle = "Same Δ(autonomous expenditure) per unit Δr; larger multiplier flattens the IS"
+  ) +
+  theme(legend.position = "bottom")
+```
+
+**Intuition via the Keynesian cross.** With a higher MPC, the expenditure schedule in the Keynesian cross is **steeper** (the slope of $Y_t^d$ vs. $Y_t$ is closer to 1). A steeper expenditure schedule implies a larger multiplier — any downward shift in the intercept generates a bigger horizontal movement in the equilibrium point. Equivalently, the positive feedback loop from income to consumption is stronger, so a demand contraction snowballs further before equilibrating. The IS curve must therefore be flatter to record the larger output response per unit of interest rate change.
+
+---
+
+# Exercise 18.2 — Labor Supply and the $Y^s$ Curve
+
+**Problem.** Suppose that labor supply were a function of the real interest rate.
+In particular, suppose that $N_t = N^s(w_t, \theta_t, r_t)$, where
+$\dfrac{\partial N^s}{\partial r_t} > 0$.
+
+**(a)** Can you provide any intuition for why labor supply might positively depend
+on the real interest rate?
+
+**(b)** Suppose that labor supply is increasing in the real interest rate. Derive
+the $Y^s$ curve graphically.
+
+---
+
+## Solution
+
+### Part (a) — Intuition for $\partial N^s/\partial r_t > 0$
+
+In the standard neoclassical model the household faces an **intertemporal** consumption-leisure choice. A higher real interest rate $r_t$ raises the return to saving, which changes the relative price of leisure *today* versus leisure *in the future*.
+
+The key mechanism is **intertemporal substitution of leisure** (or labor):
+
+- Working an extra hour today earns real wage $w_t$ that yields $(1 + r_t) w_t$ units of future consumption.
+- When $r_t$ rises, the future payoff from working *today* is higher.
+- Equivalently, leisure today becomes relatively more expensive (in terms of foregone future consumption), inducing the household to substitute away from current leisure toward current work.
+
+This is the same logic as the consumption Euler equation: a higher $r_t$ makes current consumption relatively more expensive and future consumption relatively cheaper, so households save more. On the labor margin, a higher $r_t$ makes current leisure more expensive, so households work more *today* — even if the current real wage $w_t$ is unchanged. The effect is sometimes called **intertemporal labor substitution** and is a central mechanism in Real Business Cycle models.
+
+**Summary:** $\partial N^s/\partial r_t > 0$ because a higher real interest rate raises the opportunity cost of current leisure, inducing households to substitute current leisure for future leisure by working more today.
+
+---
+
+### Part (b) — Graphical derivation of the $Y^s$ curve
+
+In the standard model, labor supply depends only on $w_t$ (and preference parameter $\theta_t$), so the labor market equilibrium — and hence output — is independent of $r_t$. The $Y^s$ curve is a **vertical line** in $(Y_t, r_t)$ space.
+
+When $\partial N^s/\partial r_t > 0$, a higher $r_t$ shifts the labor supply curve to the right in the $(N_t, w_t)$ plane (more labor supplied at every wage). This has two effects in the labor market:
+
+1. **Employment rises**: the new equilibrium has $N_t^* \uparrow$.
+2. **Real wage falls**: labor demand is unchanged, so the equilibrium wage must fall to clear the market.
+
+More employment feeds through the production function $Y_t = A_t F(K_t, N_t)$ to produce **more output**. Therefore, higher $r_t$ leads to higher $Y_t$, and the $Y^s$ curve is now **upward-sloping**.
+
+```{r}
+#| label: fig-ex182-ys-curve
+#| fig-cap: "Graphical derivation of the $Y^s$ curve when $\\partial N^s/\\partial r_t > 0$. Left panel: labor market. At the higher interest rate $r_{\\text{hi}}$ (red), labor supply shifts right, raising equilibrium employment from $N_1^*$ to $N_2^*$ and lowering the real wage from $w_1^*$ to $w_2^*$. Right panel: the resulting $Y^s$ curve is upward-sloping in $(Y_t, r_t)$ space, in contrast to the vertical $Y^s$ of the standard model (green dashed)."
+#| fig-alt: "Two side-by-side panels. Left: labor market with downward-sloping labor demand and two upward-sloping labor supply curves; the red curve (high r) lies to the right, giving a higher N* and lower w*. Right: upward-sloping Ys curve through two equilibrium points, with a vertical dashed line showing the standard-model Ys for comparison."
+#| fig-height: 5
+#| fig-width: 10
+
+# ── Parameters ────────────────────────────────────────────────────────────────
+r_lo <- 0.03;  r_hi <- 0.09
+
+# Labor market (N on x-axis, w on y-axis)
+# Labor demand:  w = 12 - N  (downward sloping)
+# Labor supply at r_lo: w = N      → eq: 12 - N = N  → N1* = 6, w1* = 6
+# Labor supply at r_hi: w = N - 2  → eq: 12 - N = N - 2  → N2* = 7, w2* = 5
+N1_eq <- 6;  w1_eq <- 6
+N2_eq <- 7;  w2_eq <- 5
+
+# Production function: Y = 2*N  (linear for clear exposition)
+Y1_eq <- 2 * N1_eq   # 12
+Y2_eq <- 2 * N2_eq   # 14
+
+# ── Left panel: labor market ──────────────────────────────────────────────────
+N_range <- c(0, 10)
+w_range <- c(0, 13)
+
+# Build curve data
+N_vals <- seq(0, 10, by = 0.1)
+ld     <- tibble(N = N_vals, w = 12 - N_vals)        # labor demand
+ls_lo  <- tibble(N = N_vals, w = N_vals)              # LS at r_lo
+ls_hi  <- tibble(N = N_vals, w = N_vals - 2)          # LS at r_hi (shifted right)
+
+p_labor <- ggplot() +
+  # Curves
+  geom_line(data = ld,    aes(x = N, y = w), color = "gray30",    linewidth = 1.1) +
+  geom_line(data = ls_lo, aes(x = N, y = w), color = "steelblue", linewidth = 1.1) +
+  geom_line(data = ls_hi, aes(x = N, y = w), color = "firebrick", linewidth = 1.1,
+            linetype = "dashed") +
+  # Equilibrium points
+  geom_point(aes(x = c(N1_eq, N2_eq), y = c(w1_eq, w2_eq)),
+             color = c("steelblue", "firebrick"), size = 3.5) +
+  # Drop lines — vertical (N to x-axis)
+  geom_segment(aes(x = N1_eq, xend = N1_eq, y = 0, yend = w1_eq),
+               linetype = "dotted", color = "steelblue") +
+  geom_segment(aes(x = N2_eq, xend = N2_eq, y = 0, yend = w2_eq),
+               linetype = "dotted", color = "firebrick") +
+  # Drop lines — horizontal (w to y-axis)
+  geom_segment(aes(x = 0, xend = N1_eq, y = w1_eq, yend = w1_eq),
+               linetype = "dotted", color = "steelblue") +
+  geom_segment(aes(x = 0, xend = N2_eq, y = w2_eq, yend = w2_eq),
+               linetype = "dotted", color = "firebrick") +
+  # Curve labels
+  annotate("text", x = 9.3, y = 12 - 9.3 - 1,
+           label = expression(N^d * "(w"[t] * ")"),
+           color = "gray30", size = 4) +
+  annotate("text", x = 9.3, y = 9.3 + 1.5,
+           label = expression(N^s * "(w"[t] * ",r"[lo] * ")"),
+           color = "steelblue", size = 4) +
+  annotate("text", x = 9.3, y = 9.3 - 3.5,
+           label = expression(N^s * "(w"[t] * ",r"[hi] * ")"),
+           color = "firebrick", size = 4) +
+  # Equilibrium labels
+  annotate("text", x = N1_eq + 0.25, y = 0.4,
+           label = expression(N[1]^"*"), color = "steelblue", size = 4) +
+  annotate("text", x = N2_eq + 0.25, y = 0.4,
+           label = expression(N[2]^"*"), color = "firebrick", size = 4) +
+  annotate("text", x = 0.2, y = w1_eq,
+           label = expression(w[1]^"*"), color = "steelblue", size = 4, vjust = -0.3) +
+  annotate("text", x = 0.2, y = w2_eq,
+           label = expression(w[2]^"*"), color = "firebrick", size = 4, vjust = -0.3) +
+  # Arrow showing rightward shift
+  annotate("segment", x = 6.5, xend = 7.5, y = 5.8, yend = 5.8,
+           arrow = arrow(length = unit(0.2, "cm"), ends = "last"),
+           color = "firebrick", linewidth = 0.7) +
+  annotate("text", x = 7, y = 6.2,
+           label = expression(r[t] ~ "rises"),
+           color = "firebrick", size = 3, hjust = 0.5) +
+  coord_cartesian(xlim = N_range, ylim = w_range) +
+  labs(x = expression(N[t]), y = expression(w[t]),
+       title = "Labor market",
+       subtitle = expression(
+         "Higher" ~ r[t] ~ "shifts" ~ N^s ~ "right" %->%
+           "N" %up% "" ~ "," ~ "w" %down% ""
+       ))
+
+# ── Right panel: Ys curve ─────────────────────────────────────────────────────
+# Upward-sloping Ys through (Y1_eq, r_lo) and (Y2_eq, r_hi)
+ys_slope <- (r_hi - r_lo) / (Y2_eq - Y1_eq)   # = 0.06 / 2 = 0.03
+ys_data  <- tibble(
+  Y = c(Y1_eq - 2, Y2_eq + 2),
+  r = c(r_lo + (Y1_eq - 2 - Y1_eq) * ys_slope,
+        r_hi + (Y2_eq + 2 - Y2_eq) * ys_slope)
+)
+
+p_ys <- ggplot() +
+  # Standard vertical Ys (for comparison, at Y1_eq)
+  geom_vline(xintercept = Y1_eq, color = "darkgreen", linetype = "dashed",
+             linewidth = 0.9, alpha = 0.7) +
+  # Upward-sloping Ys
+  geom_line(data = ys_data, aes(x = Y, y = r),
+            color = "firebrick", linewidth = 1.3) +
+  # Equilibrium points
+  geom_point(aes(x = c(Y1_eq, Y2_eq), y = c(r_lo, r_hi)),
+             color = c("steelblue", "firebrick"), size = 3.5) +
+  # Drop lines
+  geom_segment(aes(x = Y1_eq, xend = Y1_eq, y = 0, yend = r_lo),
+               linetype = "dotted", color = "steelblue") +
+  geom_segment(aes(x = Y2_eq, xend = Y2_eq, y = 0, yend = r_hi),
+               linetype = "dotted", color = "firebrick") +
+  geom_segment(aes(x = 9,     xend = Y1_eq, y = r_lo, yend = r_lo),
+               linetype = "dotted", color = "steelblue") +
+  geom_segment(aes(x = 9,     xend = Y2_eq, y = r_hi, yend = r_hi),
+               linetype = "dotted", color = "firebrick") +
+  # Labels
+  annotate("text", x = Y2_eq + 0.4, y = r_hi + 0.003,
+           label = expression(Y^s ~ "(r"[t] * ")"),
+           color = "firebrick", size = 4, hjust = 0) +
+  annotate("text", x = Y1_eq - 0.3, y = r_hi - 0.005,
+           label = expression(Y^s ~ "(standard)"),
+           color = "darkgreen", size = 4, hjust = 1, alpha = 0.8) +
+  annotate("text", x = Y1_eq + 0.3, y = 0.005,
+           label = expression(Y[1]^"*"), color = "steelblue", size = 4) +
+  annotate("text", x = Y2_eq + 0.3, y = 0.005,
+           label = expression(Y[2]^"*"), color = "firebrick", size = 4) +
+  annotate("text", x = 9.2, y = r_lo,
+           label = expression(r[lo]), color = "steelblue", size = 4, vjust = -0.3) +
+  annotate("text", x = 9.2, y = r_hi,
+           label = expression(r[hi]), color = "firebrick", size = 4, vjust = -0.3) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     breaks = c(r_lo, r_hi)) +
+  coord_cartesian(xlim = c(9, 18), ylim = c(0, 0.13)) +
+  labs(x = expression(Y[t]), y = expression(r[t]),
+       title = expression(bold(Y^s ~ "curve")),
+       subtitle = expression(
+         "Upward-sloping: higher" ~ r[t] %->%
+           "more" ~ N[t]^"*" %->% "more" ~ Y[t]^s
+       ))
+
+# ── Arrange side by side ──────────────────────────────────────────────────────
+p_lab_g <- ggplotGrob(p_labor)
+p_ys_g  <- ggplotGrob(p_ys)
+gridExtra::grid.arrange(p_lab_g, p_ys_g, ncol = 2)
+```
+
+**Key results from the derivation:**
+
+| Variable | Standard model ($\partial N^s/\partial r_t = 0$) | This model ($\partial N^s/\partial r_t > 0$) |
+|----------|--------------------------------------------------|----------------------------------------------|
+| $N_t^*$     | Independent of $r_t$ | Increasing in $r_t$ |
+| $w_t^*$     | Independent of $r_t$ | Decreasing in $r_t$ |
+| $Y_t^*$     | Independent of $r_t$ | Increasing in $r_t$ |
+| $Y^s$ | Vertical             | **Upward-sloping**  |
+
+**Economic intuition.** In the standard neoclassical model the $Y^s$ curve is vertical because the real interest rate affects only the demand side of the economy (consumption and investment decisions), leaving labor supply, and hence production, unaffected. When $\partial N^s/\partial r_t > 0$, the interest rate becomes a supply-side variable too: a higher $r_t$ induces intertemporal labor substitution toward the current period, shifting the labor supply curve right, raising equilibrium employment, and expanding output. The supply side of the economy now responds to the interest rate, making $Y^s$ upward-sloping.
+
+**Implication for the $IS$–$Y^s$ equilibrium.** An upward-sloping $Y^s$ curve changes the model's predictions in important ways. In the standard model, demand shocks (e.g., an increase in $G_t$) shift the IS curve but leave output unchanged because $Y^s$ is vertical — only the interest rate adjusts. With an upward-sloping $Y^s$, the same demand shock raises both $r_t$ *and* $Y_t$, because higher $r_t$ induces more labor supply and more production. The government spending multiplier is therefore **positive** (rather than zero as in the standard neoclassical model), and supply-demand interaction plays a richer role in determining equilibrium.
+
+---
+

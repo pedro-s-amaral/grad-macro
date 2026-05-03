@@ -1,0 +1,304 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 13"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 13.1 — Government, Ricardian Equivalence, and Fiscal Multipliers
+
+**Problem.** Many identical households with $U = \ln C_t + \beta\ln C_{t+1}$. The household faces two within-period budget constraints:
+$$C_t + S_t = Y_t - T_t \qquad C_{t+1} = Y_{t+1} - T_{t+1} + (1+r_t)S_t$$
+
+**(a)** Combine the two budget constraints into one intertemporal budget constraint.
+
+**(b)** Use this to find the Euler equation. Is the Euler equation at all affected by the presence of taxes, $T_t$ and $T_{t+1}$?
+
+**(c)** Use the Euler equation and intertemporal budget constraint to derive an expression for the consumption function.
+
+The government faces two within-period budget constraints:
+$$G_t + S_t^G = T_t \qquad G_{t+1} = T_{t+1} + (1+r_t)S_t^G$$
+
+**(d)** In equilibrium, what must be true about $S_t$ and $S_t^G$?
+
+**(e)** Combine the two government budget constraints into one intertemporal budget constraint.
+
+**(f)** Suppose that the representative household knows that the government's intertemporal budget constraint must hold. Combine this with the consumption function from part (c). What happens to $T_t$ and $T_{t+1}$? What is your intuition for this?
+
+**(g)** Equilibrium requires $Y_t = C_t + G_t$. Plug in the consumption function from part (f) (assuming the household knows the government's IBC holds) to derive an expression for $Y_t$.
+
+**(h)** Derive an expression for the "fixed interest rate multiplier," $\dfrac{dY_t}{dG_t}\Big|_{dr_t=0}$.
+
+**(i)** Assuming that $Y_t$ is exogenous, what must happen to $r_t$ after an increase in $G_t$?
+
+**(j)** Now suppose the household does **not** anticipate that the government's IBC will hold — do not combine the government's IBC with the consumption function as in part (f). Repeat part (h), deriving the fixed interest rate multiplier. Is it bigger or smaller than what you found in (h)?
+
+**(k)** Since $Y_t$ is exogenous, what must happen to $r_t$ after an increase in $G_t$ in this setup? Will the change in $r_t$ be bigger or smaller than in part (i)?
+
+**(l)** For the setup where the household does not anticipate the government's IBC, what is the "fixed interest rate tax multiplier," $\dfrac{dY_t}{dT_t}\Big|_{dr_t=0}$? Is this different from the Ricardian case? Is it smaller or larger than the fixed interest rate spending multiplier from part (j)?
+
+---
+
+## Solution
+
+### Part (a) — Household intertemporal budget constraint
+
+From the period-$t$ constraint: $S_t = Y_t - T_t - C_t$. Substituting into the period-$(t+1)$ constraint and dividing by $(1+r_t)$:
+
+$$C_t + \frac{C_{t+1}}{1+r_t} = \left(Y_t - T_t\right) + \frac{Y_{t+1} - T_{t+1}}{1+r_t}$$
+
+The household's lifetime wealth is after-tax present-value income.
+
+### Part (b) — Euler equation
+
+Maximizing $\ln C_t + \beta\ln C_{t+1}$ subject to the IBC (with $C_{t+1}$ substituted out), the FOC gives:
+
+$$C_{t+1} = \beta(1+r_t)\,C_t$$
+
+**The Euler equation is not affected by lump-sum taxes.** Taxes shift the budget constraint (wealth effect) but do not alter the intertemporal relative price $1+r_t$. The optimality condition depends only on preferences ($\beta$) and the market price of future vs.\ present consumption.
+
+### Part (c) — Consumption function
+
+Let $\widetilde{W} \equiv (Y_t-T_t) + \dfrac{Y_{t+1}-T_{t+1}}{1+r_t}$ be after-tax wealth. Substituting the Euler equation into the IBC:
+
+$$C_t(1+\beta) = \widetilde{W} \implies C_t = \frac{1}{1+\beta}\!\left[(Y_t-T_t) + \frac{Y_{t+1}-T_{t+1}}{1+r_t}\right]$$
+
+### Part (d) — Equilibrium condition for $S_t$ and $S_t^G$
+
+In the endowment economy the only financial asset is the government bond. Households can only save by lending to the government; the government can only borrow from households. Bond-market clearing therefore requires:
+
+$$S_t + S_t^G = 0 \quad\Leftrightarrow\quad S_t = -S_t^G$$
+
+A government deficit ($S_t^G < 0$) is exactly offset by positive household saving.
+
+### Part (e) — Government intertemporal budget constraint
+
+From the period-$t$ government constraint: $S_t^G = T_t - G_t$. Substituting into period $t+1$ and dividing by $(1+r_t)$:
+
+$$G_t + \frac{G_{t+1}}{1+r_t} = T_t + \frac{T_{t+1}}{1+r_t}$$
+
+The present value of government spending must equal the present value of tax revenue.
+
+### Part (f) — Ricardian Equivalence: taxes drop out
+
+If the household knows the government's IBC must hold, it uses $T_t + T_{t+1}/(1+r_t) = G_t + G_{t+1}/(1+r_t)$ to replace taxes in the consumption function:
+
+$$C_t = \frac{1}{1+\beta}\!\left[Y_t + \frac{Y_{t+1}}{1+r_t} - \underbrace{\left(T_t + \frac{T_{t+1}}{1+r_t}\right)}_{=\,G_t\,+\,G_{t+1}/(1+r_t)}\right]$$
+
+$$C_t = \frac{1}{1+\beta}\!\left[\left(Y_t - G_t\right) + \frac{Y_{t+1}-G_{t+1}}{1+r_t}\right]$$
+
+**$T_t$ and $T_{t+1}$ vanish entirely.** A household that correctly internalizes the government's budget constraint cares only about the present value of government spending — the timing of taxes is irrelevant. A bond-financed tax cut today is simply a deferred tax increase of equal present value; the rational household saves the windfall to pay the future bill, leaving consumption unchanged.
+
+### Part (g) — IS curve
+
+Imposing equilibrium $Y_t = C_t + G_t$ and substituting the Ricardian consumption function:
+
+$$Y_t - G_t = \frac{1}{1+\beta}\!\left[(Y_t-G_t) + \frac{Y_{t+1}-G_{t+1}}{1+r_t}\right]$$
+
+$$\beta(Y_t-G_t) = \frac{Y_{t+1}-G_{t+1}}{1+r_t} \implies Y_t = G_t + \frac{Y_{t+1}-G_{t+1}}{\beta(1+r_t)}$$
+
+In an endowment economy $Y_t$, $Y_{t+1}$, $G_t$, and $G_{t+1}$, are all exogenous, so the equation pins down the equilibrium interest rate:
+
+$$1 + r_t = \frac{Y_{t+1}-G_{t+1}}{\beta(Y_t-G_t)}$$
+
+### Part (h) — Fixed-interest-rate multiplier (Ricardian)
+
+Differentiating the expression above for $Y_t$ with respect to $G_t$, holding $r_t$, $Y_{t+1}$, $G_{t+1}$ fixed:
+
+$$\frac{dY_t}{dG_t}\bigg|_{dr_t=0} = 1$$
+
+The Ricardian fixed-$r_t$ spending multiplier is exactly **1**. Consumption does not respond to $G_t$ (Ricardian equivalence), so the $\$1$ increase in $G$ raises output $\$1$ for $\$1$.
+
+### Part (i) — Effect on $r_t$ after $G_t$ increases (Ricardian)
+
+Since $Y_t$ is exogenous, differentiating the equilibrium condition $\beta(1+r_t)(Y_t-G_t) = Y_{t+1}-G_{t+1}$ with respect to $G_t$:
+
+$$-\beta(1+r_t)+\beta(Y_t-G_t)\frac{dr_t}{dG_t}=0$$
+
+$$\frac{dr_t}{dG_t} = \frac{1+r_t}{Y_t-G_t} > 0$$
+
+**$r_t$ rises.** A higher $G_t$ reduces private resources ($Y_t - G_t$ falls). Households must consume less today relative to tomorrow; $r_t$ rises until they are willing to do so. The crowding-out of consumption occurs entirely through the interest rate.
+
+### Part (j) — Fixed-interest-rate multiplier (non-Ricardian)
+
+When the household does **not** internalize the government IBC, the consumption function retains $T_t$ and $T_{t+1}$:
+
+$$C_t = \frac{1}{1+\beta}\!\left[(Y_t-T_t) + \frac{Y_{t+1}-T_{t+1}}{1+r_t}\right]$$
+
+Imposing $Y_t = C_t + G_t$ and solving for $Y_t$:
+
+$$(1+\beta)Y_t = Y_t - T_t + \frac{Y_{t+1}-T_{t+1}}{1+r_t} + (1+\beta)G_t$$
+
+$$Y_t = \frac{1+\beta}{\beta}\,G_t - \frac{T_t}{\beta} + \frac{Y_{t+1}-T_{t+1}}{\beta(1+r_t)}$$
+
+Differentiating with respect to $G_t$, holding $r_t$, $T_t$, $T_{t+1}$ fixed:
+
+$$\frac{dY_t}{dG_t}\bigg|_{dr_t=0} = \frac{1+\beta}{\beta} > 1$$
+
+The non-Ricardian multiplier **exceeds** the Ricardian multiplier of 1 (since $\beta<1$ implies $(1+\beta)/\beta > 1$). When the household does not foresee the future tax increase that will be required to repay the deficit, it does not save in response to the current tax cut — consumption is not crowded out, and output rises by more than the spending increase.
+
+### Part (k) — Effect on $r_t$ after $G_t$ increases (non-Ricardian)
+
+With $Y_t$ exogenous (endowment), differentiating the non-Ricardian expression for $Y_t$ above with respect to $G_t$ and $r_t$ (holding $T_t$, $T_{t+1}$, $Y_{t+1}$ fixed):
+
+$$0 = \frac{1+\beta}{\beta}\,dG_t - \frac{Y_{t+1}-T_{t+1}}{\beta(1+r_t)^2}\,dr_t \implies \frac{dr_t}{dG_t}\bigg|_{\text{Non-Ric}} = \frac{(1+\beta)(1+r_t)^2}{Y_{t+1}-T_{t+1}} > 0$$
+
+**$r_t$ rises, and by more than in the Ricardian case.** The intuition: the endowment constraint $C_t = Y_t - G_t$ must still be satisfied regardless of whether the household is Ricardian — resources are physically scarce. In the non-Ricardian case, the household does not voluntarily reduce consumption in response to anticipated future taxes, so a larger increase in $r_t$ is required to crowd out the same amount of consumption.
+
+### Part (l) — Fixed-interest-rate tax multiplier (non-Ricardian)
+
+From the non-Ricardian IS curve, differentiating with respect to $T_t$, holding $r_t$, $G_t$, $T_{t+1}$, $Y_{t+1}$ fixed:
+
+$$\frac{dY_t}{dT_t}\bigg|_{dr_t=0} = -\frac{1}{\beta}$$
+
+**Comparisons:**
+
+| Setup | $\dfrac{dY_t}{dG_t}\big|_{dr_t=0}$ | $\dfrac{dY_t}{dT_t}\big|_{dr_t=0}$ |
+|---|:---:|:---:|
+| Ricardian (household knows govt IBC) | $1$ | $0$ |
+| Non-Ricardian (household ignores govt IBC) | $\dfrac{1+\beta}{\beta}$ | $-\dfrac{1}{\beta}$ |
+
+- **Tax multiplier vs.\ Ricardian:** Under Ricardian equivalence the tax multiplier is **zero** — changing the timing of a lump-sum tax with no change in $G_t$ or $G_{t+1}$ leaves consumption unchanged (the household simply adjusts saving). Under non-Ricardian expectations the tax multiplier is $-1/\beta \neq 0$.
+- **Tax multiplier vs.\ spending multiplier (non-Ricardian):** $|{-1/\beta}| = 1/\beta < (1+\beta)/\beta$. A tax increase is a smaller contractionary force than a spending increase is expansionary. The asymmetry reflects the standard Keynesian first-round difference: a \$1 increase in $G_t$ directly injects \$1 into demand (first-round effect = 1), which the consumption multiplier $1/(1-\text{MPC}) = (1+\beta)/\beta$ then amplifies. A \$1 increase in $T_t$ reduces household disposable income by \$1, but households only cut spending by $\text{MPC} = 1/(1+\beta) < 1$ in the first round; this smaller initial impulse, run through the same multiplier, yields $-1/\beta$ — smaller in magnitude. In the non-Ricardian case households do not perceive any wealth effect from $G_t$ (they ignore the implied future tax liability), so the entire asymmetry comes from this direct-vs-indirect demand channel.
+
+---
+
+# Exercise 13.3 — Firm Investment and Taxation
+
+**Problem.** A firm operates for two periods with no-labor production $Y_t = A_t K_t^\alpha$, $0 < \alpha < 1$. Capital accumulates as:
+$$K_{t+1} = I_t + (1-\delta)K_t \qquad K_{t+2} = I_{t+1} + (1-\delta)K_{t+1}$$
+The firm liquidates at the end of period $t+1$ (sells all undepreciated capital). It borrows $I_t$ from a financial intermediary at rate $r_t$ to finance investment. Period-$t$ dividends are revenue alone; period-$(t+1)$ dividends include loan repayment:
+$$D_t = A_t K_t^\alpha \qquad D_{t+1} = A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1} - (1+r_t)I_t$$
+The firm maximizes present value of dividends:
+$$V = D_t + \frac{D_{t+1}}{1+r_t}$$
+
+**(a)** Write down expressions for $D_t$ and $D_{t+1}$. What is the terminal condition on $K_{t+2}$?
+
+**(b)** Write down the firm's optimization problem and state the choice variables.
+
+**(c)** Algebraically solve for the firm's optimal investment $I_t$.
+
+**(d)** Suppose there is a proportional tax $\tau$ on firm profits, the same in both periods ($\tau_t = \tau_{t+1} = \tau$). Solve for the optimal investment rule. What is the effect of $\tau$ on investment?
+
+**(e)** Instead, suppose the tax is on **revenue** (not profits): after-tax dividends are $(1-\tau_t)A_tK_t^\alpha$ in period $t$ (only output taxed; investment is separately debt-financed), and $(1-\tau_{t+1})A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1} - (1+r_t)I_t$ in period $t+1$ (only output taxed; liquidation proceeds and loan repayment are not taxed). Redo the problem. What is the effect of $\tau$ on investment? How does this compare with part (d)?
+
+---
+
+## Solution
+
+### Part (a) — Dividends and terminal condition
+
+**Period $t$:** The firm earns revenue $A_t K_t^\alpha$ and borrows $I_t$ from the financial intermediary to invest. Because investment is fully debt-financed, no investment expenditure is subtracted from period-$t$ dividends:
+$$D_t = A_t K_t^\alpha$$
+
+**Period $t+1$:** The firm earns revenue $A_{t+1}K_{t+1}^\alpha$, liquidates all undepreciated capital at unit price $(1-\delta)K_{t+1}$, and repays the loan with interest:
+$$D_{t+1} = A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1} - (1+r_t)I_t$$
+
+**Terminal condition:** $K_{t+2} = 0$. Since there is no period $t+2$ production, any capital remaining at the end of period $t+1$ generates no return. The firm sells all remaining capital, so $K_{t+2} = 0$.
+
+### Part (b) — Optimization problem
+
+Substituting the dividend expressions into $V$ and replacing $K_{t+1} = I_t + (1-\delta)K_t$:
+
+$$V = A_t K_t^\alpha + \frac{A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1} - (1+r_t)I_t}{1+r_t}$$
+
+The loan-repayment term simplifies: $-(1+r_t)I_t\,/\,(1+r_t) = -I_t$. Hence:
+
+$$\max_{I_t}\; V = A_t K_t^\alpha - I_t + \frac{A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1}}{1+r_t}$$
+
+where $K_{t+1} = I_t + (1-\delta)K_t$.
+
+**Key equivalence.** This value function is identical to the formulation in which the firm self-finances investment by paying $I_t$ out of period-$t$ revenue directly. The two approaches are equivalent because borrowing $I_t$ at rate $r_t$ and repaying $(1+r_t)I_t$ next period costs exactly $I_t$ in present value — discounting undoes the compounding.
+
+**Choice variable: $I_t$ (equivalently $K_{t+1}$).** The terminal condition $K_{t+2}=0$ pins $I_{t+1} = -(1-\delta)K_{t+1}$ automatically. The exogenous variables are $K_t$, $A_t$, $A_{t+1}$, $r_t$, and $\delta$.
+
+### Part (c) — Optimal investment
+
+Taking the FOC of $V$ with respect to $I_t$ (noting $dK_{t+1}/dI_t = 1$):
+
+$$\frac{\partial V}{\partial I_t} = -1 + \frac{\alpha A_{t+1}K_{t+1}^{\alpha-1} + (1-\delta)}{1+r_t} = 0$$
+
+$$\alpha A_{t+1}K_{t+1}^{\alpha-1} = r_t + \delta$$
+
+The firm invests until the **marginal product of capital** equals the **user cost** $r_t + \delta$. Solving:
+
+$$K_{t+1}^* = \left[\frac{\alpha A_{t+1}}{r_t+\delta}\right]^{1/(1-\alpha)}$$
+
+$$I_t^* = \left[\frac{\alpha A_{t+1}}{r_t+\delta}\right]^{1/(1-\alpha)} - (1-\delta)K_t$$
+
+Investment depends on **future** productivity $A_{t+1}$ and the user cost $r_t+\delta$, but not on current $A_t$ (which is sunk by period $t$).
+
+### Part (d) — Proportional profit tax $\tau$
+
+A proportional tax at rate $\tau = \tau_t = \tau_{t+1}$ is applied to dividends (profits) in each period:
+$$D_t^{AT} = (1-\tau)A_tK_t^\alpha \qquad D_{t+1}^{AT} = (1-\tau)\bigl[A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1} - (1+r_t)I_t\bigr]$$
+
+The value function becomes:
+
+$$V = (1-\tau)\left[A_tK_t^\alpha + \frac{A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1} - (1+r_t)I_t}{1+r_t}\right]$$
+
+$$= (1-\tau)\left[A_tK_t^\alpha - I_t + \frac{A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1}}{1+r_t}\right]$$
+
+Since $(1-\tau) > 0$ is a constant factor, the FOC is unchanged:
+
+$$\alpha A_{t+1}K_{t+1}^{\alpha-1} = r_t + \delta \implies I_t^* = \left[\frac{\alpha A_{t+1}}{r_t+\delta}\right]^{1/(1-\alpha)} - (1-\delta)K_t$$
+
+$$\frac{dI_t^*}{d\tau} = 0$$
+
+**The profit tax has no effect on investment.** Because the loan repayment $(1+r_t)I_t$ is part of taxable profit in period $t+1$, it is also scaled by $(1-\tau)$. As a result, the after-tax cost of borrowing to invest is $(1-\tau)I_t$ (in present value) and the after-tax return is $(1-\tau)\,\text{MPK}$ — the tax factor cancels from both sides, leaving the optimal investment rule unchanged.
+
+### Part (e) — Proportional revenue tax $\tau$ (loan repayment not in tax base)
+
+Under a revenue tax, only output is taxed. The loan repayment $(1+r_t)I_t$ and liquidation proceeds $(1-\delta)K_{t+1}$ are excluded from the tax base:
+$$D_t^{AT} = (1-\tau_t)A_tK_t^\alpha$$
+$$D_{t+1}^{AT} = (1-\tau_{t+1})A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1} - (1+r_t)I_t$$
+
+The value function is:
+
+$$V = (1-\tau_t)A_tK_t^\alpha + \frac{(1-\tau_{t+1})A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1} - (1+r_t)I_t}{1+r_t}$$
+
+$$= (1-\tau_t)A_tK_t^\alpha - I_t + \frac{(1-\tau_{t+1})A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1}}{1+r_t}$$
+
+FOC with respect to $I_t$:
+
+$$-1 + \frac{(1-\tau_{t+1})\alpha A_{t+1}K_{t+1}^{\alpha-1} + (1-\delta)}{1+r_t} = 0$$
+
+$$(1-\tau_{t+1})\alpha A_{t+1}K_{t+1}^{\alpha-1} = r_t + \delta$$
+
+$$K_{t+1}^* = \left[\frac{(1-\tau_{t+1})\,\alpha A_{t+1}}{r_t+\delta}\right]^{1/(1-\alpha)}, \qquad I_t^* = K_{t+1}^* - (1-\delta)K_t$$
+
+Since $(1-\tau_{t+1}) < 1$, we have $K_{t+1}^* < K_{t+1}^{*,\text{no tax}}$ and $\dfrac{dI_t^*}{d\tau_{t+1}} < 0$.
+
+**The revenue tax reduces investment.** Note that $\tau_t$ (the current-period tax) does not affect $I_t$ — it applies to period-$t$ revenue, which is predetermined by the inherited capital stock $K_t$.
+
+**Comparison with part (d).** The difference between the two tax regimes comes down to whether the loan repayment is in the tax base. Under the **profit tax**, the loan repayment $(1+r_t)I_t$ is deductible in period $t+1$, so the tax reduces both the cost and the benefit of investment by the same factor $(1-\tau)$, leaving the FOC unchanged. Under the **revenue tax**, the loan repayment is not deductible — the firm bears the full repayment cost $I_t$ (in present value) but receives only $(1-\tau_{t+1})\,\text{MPK}$ after tax on the return. The asymmetric treatment drives a wedge between the private cost and private benefit of capital, depressing investment below the socially optimal level.

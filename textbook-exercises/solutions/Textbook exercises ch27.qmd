@@ -1,0 +1,351 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 27"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: true
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(gridExtra)
+
+# ── Shared panel theme ────────────────────────────────────────────────────────
+th_tp <- theme_minimal(base_size = 11, base_family = "serif") +
+  theme(
+    plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid       = element_blank(),
+    axis.line.x      = element_line(color = "black", linewidth = 0.5),
+    axis.line.y      = element_line(color = "black", linewidth = 0.5),
+    axis.ticks.x     = element_line(color = "black", linewidth = 0.4),
+    axis.ticks.y     = element_blank(),
+    axis.text.y      = element_blank(),
+    axis.text.x      = element_text(size = 10, color = "black", family = "serif"),
+    axis.title.x     = element_text(hjust = 1, size = 11, family = "serif"),
+    axis.title.y     = element_text(hjust = 1, angle = 0, vjust = 1,
+                                    size = 11, family = "serif"),
+    plot.margin      = margin(10, 14, 10, 38)
+  )
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+# Build the data frame of horizontal segments for a step-function time series.
+# vals   : level in each epoch (length n)
+# breaks : times at which the level changes (length n-1)
+# t_max  : right edge of the plot
+make_hsegs <- function(vals, breaks, t_max = 5.4) {
+  t_L <- c(0, breaks)
+  t_R <- c(breaks, t_max)
+  tibble(x = t_L, xend = t_R, y = vals, yend = vals)
+}
+
+# Draw one time-series panel.
+# segs        : output of make_hsegs — drawn as solid lines
+# ylab        : y-axis title (expression or string)
+# ref_labels  : list of lists, each with $y (numeric) and $lab (expression/string)
+#               — placed as text just left of the y-axis
+# vert_lines  : x-positions of dotted vertical lines
+# xlim, ylim  : axis limits; ylim must leave room below 0 for the labels
+plot_tp <- function(segs, ylab, ref_labels,
+                    vert_lines = c(1, 3),
+                    xlim       = c(0, 5.4),
+                    ylim       = c(-18, 105),
+                    lw         = 1.3) {
+
+  p <- ggplot()
+
+  # dotted vertical lines at event times
+  for (xv in vert_lines)
+    p <- p + geom_vline(xintercept = xv, linetype = "dotted",
+                        color = "gray40", linewidth = 0.55)
+
+  # solid horizontal segments (step levels)
+  p <- p + geom_segment(data = segs,
+                        aes(x = x, xend = xend, y = y, yend = yend),
+                        linewidth = lw, color = "black", lineend = "square")
+
+  # left-side level labels
+  for (item in ref_labels)
+    p <- p + annotate("text",
+                      x = xlim[1] - 0.16, y = item$y,
+                      label = item$lab,
+                      size = 3.25, hjust = 1, vjust = 0.5, family = "serif")
+
+  p +
+    scale_x_continuous(breaks = c(1, 2, 3), labels = c("1", "2", "3"),
+                       limits = xlim, expand = c(0, 0)) +
+    scale_y_continuous(limits = ylim, breaks = NULL, expand = c(0, 0)) +
+    labs(x = "Time", y = ylab) +
+    coord_cartesian(clip = "off") +
+    th_tp
+}
+
+# ── Calibration (normalised [0, 100] space) ───────────────────────────────────
+theta0 <- 28;  theta1 <- 72          # permanent θ increase
+
+# Pre-shock baseline (original NCL equilibrium)
+Y0 <- 70;  P0 <- 32;  r0 <- 25
+
+# Long-run NCL equilibrium after permanent θ increase (same for both models)
+Y_ncl <- 30;  P_ncl <- 75;  r_ncl <- 68
+
+# PSP halfway values (midpoint between original and NCL)
+Y_mr <- (Y0 + Y_ncl) / 2   # 50
+P_mr <- (P0 + P_ncl) / 2   # 53.5
+r_mr <- (r0 + r_ncl) / 2   # 46.5
+```
+
+---
+
+# Exercise 27.1 — Increase in $\theta_t$
+
+**Problem.** Suppose the economy starts in the Neoclassical equilibrium and
+$\theta_t$ increases.
+
+**(a)** Draw the dynamics in the simple sticky-price case. Verbally describe
+what is going on.
+
+**(b)** Draw the dynamics in the partial sticky-price case. Verbally describe
+what is going on.
+
+---
+
+## Solution
+
+### Background: the shock and the long run
+
+$\theta_t$ is the **disutility-of-labor** parameter. A permanent rise in
+$\theta_t$ shifts the labor supply curve $N^s(w_t, \theta_t)$ permanently to
+the left: workers are less willing to supply any given number of hours at any
+given real wage. Because $\theta_t$ does not enter the IS curve, the LM curve,
+or the production function, its only direct effect is on labor supply.
+
+**Long-run (Neoclassical) outcome** — the equilibrium that both models converge
+to once prices have fully adjusted:
+
+| Variable | Direction | Reason |
+|----------|-----------|--------|
+| $Y_t^{ncl}$ | $\downarrow$ | lower labor supply → lower employment → lower output |
+| $P_t^{ncl}$ | $\uparrow$ | lower real money demand (lower $Y$, higher $r$) at fixed $M$ |
+| $r_t^{ncl}$ | $\uparrow$ | lower $Y^s$ moves up the IS curve |
+| $w_t^{ncl}$ | $\uparrow$ | labor-demand / shifted-labor-supply intersection |
+| $N_t^{ncl}$ | $\downarrow$ | labor-supply contraction |
+
+The question is how quickly — and along what path — each model reaches this
+long-run.
+
+---
+
+### Part (a) — Simple Sticky-Price Model
+
+**Mechanism.** The AS curve is the horizontal line $P_t = \bar P_{0,t}$,
+exogenous and independent of $\theta_t$. The AD curve is also unaffected
+($\theta_t$ enters neither IS nor LM). Therefore:
+
+- **Periods 1–3 (sticky-price regime):** The AS–AD intersection is *unchanged*.
+  Output stays at $Y_{0,t}$, the price level stays at $\bar P_{0,t}$, and
+  because both $Y_t$ and $P_t$ are unchanged the IS–LM equilibrium is also
+  unchanged: $r_t = r_{0,t}$.
+- The only variable that adjusts is the **real wage**: with employment pinned at
+  $N_{0,t}$ (output unchanged, production function unchanged) but labor supply
+  shifted left, the wage must rise to $w_{1,t}$ to induce the same amount of
+  labor at the higher disutility.
+- **Period 3+ (Neoclassical long run):** Prices fully adjust. Output falls to
+  $Y_t^{ncl}$, the price level rises to $P_t^{ncl}$, and the real interest
+  rate rises to $r_t^{ncl}$.
+
+**Key insight.** Nominal rigidities *completely* insulate output, prices, and
+the interest rate from a supply shock in the short and medium run. All
+adjustment in periods 1–3 is borne by the real wage alone.
+
+```{r}
+#| label: fig-ex271-ssp
+#| fig-cap: "Simple sticky-price model: permanent $\\theta_t$ increase. Horizontal lines are solid; vertical event markers are dotted. $\\theta_t$ rises at period 1 and stays elevated. Output, prices, and the real interest rate are unchanged through the sticky-price regime (periods 1–3); all three jump to their Neoclassical long-run levels from period 3 onward."
+#| fig-alt: "Four time-series panels for the SSP theta shock. Theta steps up at period 1 and stays high. Y, P, and r are flat during periods 1-3 then jump to NCL levels at period 3."
+#| fig-height: 5.5
+#| fig-width: 8.5
+
+# θ: permanent jump at t = 1; stays at θ₁ forever
+seg_th_a <- make_hsegs(c(theta0, theta1), breaks = 1)
+
+# Y: flat at Y₀ through t = 3, then falls to Y_ncl
+seg_Y_a  <- make_hsegs(c(Y0, Y0, Y_ncl),  breaks = c(1, 3))
+
+# P: flat at P₀ through t = 3, then rises to P_ncl
+seg_P_a  <- make_hsegs(c(P0, P0, P_ncl),  breaks = c(1, 3))
+
+# r: flat at r₀ through t = 3, then rises to r_ncl
+seg_r_a  <- make_hsegs(c(r0, r0, r_ncl),  breaks = c(1, 3))
+
+p_th_a <- plot_tp(
+  seg_th_a,
+  ylab       = expression(theta[t]),
+  ref_labels = list(
+    list(y = theta0, lab = expression(theta["0,t"])),
+    list(y = theta1, lab = expression(theta["1,t"]))
+  ),
+  vert_lines = c(1, 3)
+)
+
+p_Y_a <- plot_tp(
+  seg_Y_a,
+  ylab       = expression(Y[t]),
+  ref_labels = list(
+    list(y = Y_ncl, lab = expression(Y[t]^ncl)),
+    list(y = Y0,    lab = expression(Y["0,t"]))
+  ),
+  vert_lines = c(1, 3)
+)
+
+p_P_a <- plot_tp(
+  seg_P_a,
+  ylab       = expression(P[t]),
+  ref_labels = list(
+    list(y = P0,    lab = expression(bar(P)["0,t"])),
+    list(y = P_ncl, lab = expression(P[t]^ncl))
+  ),
+  vert_lines = c(1, 3)
+)
+
+p_r_a <- plot_tp(
+  seg_r_a,
+  ylab       = expression(r[t]),
+  ref_labels = list(
+    list(y = r0,    lab = expression(r["0,t"])),
+    list(y = r_ncl, lab = expression(r[t]^ncl))
+  ),
+  vert_lines = c(1, 3)
+)
+
+grid.arrange(p_th_a, p_Y_a,
+             p_P_a,  p_r_a,
+             nrow = 2, ncol = 2)
+```
+
+---
+
+### Part (b) — Partial Sticky-Price Model
+
+In the partial sticky-price model prices adjust gradually. The AS curve is
+
+$$P_t = \bar{P}_t + \gamma\!\left(Y_t - Y_t^f\right), \qquad \gamma > 0,$$
+
+where $Y_t^f$ is the Neoclassical (flex-price) output level. A higher $\theta_t$
+lowers $Y_t^f$, which shifts the AS curve **left** (upward).
+
+**Mechanism.**
+
+1. $\theta_t \uparrow$ permanently $\Rightarrow$ $Y_t^f \downarrow$
+   $\Rightarrow$ AS shifts left. AD unchanged.
+2. **Periods 1–2 (partial adjustment, halfway to NCL):** the new AS–AD
+   intersection lies halfway between the original equilibrium and the
+   Neoclassical long-run values. Output falls to $Y_t^{mr}$, prices rise to
+   $P_t^{mr}$, and the higher price level contracts real balances, pushing
+   the real interest rate up to $r_t^{mr}$.
+3. **Period 3+ (full NCL adjustment):** prices complete their adjustment.
+   The economy settles at $Y_t^{ncl}$, $P_t^{ncl}$, $r_t^{ncl}$ — the same
+   long-run destination as in the simple sticky-price model.
+
+**Labor market.** At every step, lower output requires less labor ($N_t
+\downarrow$). The real wage rises at each stage because workers are on the new,
+leftward $N^s$ curve: $w_t \uparrow$ throughout the adjustment.
+
+**Stagflation.** The combination of falling output and rising prices in periods
+1–2 is the hallmark of a supply-shock stagflation: the leftward AS shift moves
+the economy up and to the left along the unchanged AD curve.
+
+**Comparison with part (a).** In the SSP model output and prices are completely
+insulated from the supply shock in periods 1–3; adjustment is deferred entirely
+to the long run. In the PSP model there is partial but immediate pass-through:
+output falls and prices rise in periods 1–2, reaching the Neoclassical
+equilibrium one period earlier (from period 3). Nominal rigidities
+*dampen and delay* the real output losses from supply shocks but cannot
+prevent them entirely.
+
+```{r}
+#| label: fig-ex271-psp
+#| fig-cap: "Partial sticky-price model: permanent $\\theta_t$ increase. Horizontal lines are solid; vertical event markers are dotted. $\\theta_t$ rises at period 1 and stays elevated. Output, prices, and the real interest rate adjust halfway toward the Neoclassical long-run in periods 1–2 ($Y_t^{mr}$, $P_t^{mr}$, $r_t^{mr}$), then complete the adjustment from period 3 onward ($Y_t^{ncl}$, $P_t^{ncl}$, $r_t^{ncl}$)."
+#| fig-alt: "Four time-series panels for the PSP theta shock. Theta steps up permanently at period 1. Y falls in two steps: halfway at period 1, full NCL at period 3. P and r rise in two steps in the same fashion."
+#| fig-height: 5.5
+#| fig-width: 8.5
+
+# θ: same permanent jump as part (a)
+seg_th_b <- make_hsegs(c(theta0, theta1), breaks = 1)
+
+# Y: drops halfway at t=1 (periods 1–2), drops to NCL at t=3
+seg_Y_b  <- make_hsegs(c(Y0, Y_mr, Y_ncl),  breaks = c(1, 3))
+
+# P: rises halfway at t=1, rises to NCL at t=3
+seg_P_b  <- make_hsegs(c(P0, P_mr, P_ncl),  breaks = c(1, 3))
+
+# r: rises halfway at t=1, rises to NCL at t=3
+seg_r_b  <- make_hsegs(c(r0, r_mr, r_ncl),  breaks = c(1, 3))
+
+p_th_b <- plot_tp(
+  seg_th_b,
+  ylab       = expression(theta[t]),
+  ref_labels = list(
+    list(y = theta0, lab = expression(theta["0,t"])),
+    list(y = theta1, lab = expression(theta["1,t"]))
+  ),
+  vert_lines = c(1, 3)
+)
+
+p_Y_b <- plot_tp(
+  seg_Y_b,
+  ylab       = expression(Y[t]),
+  ref_labels = list(
+    list(y = Y_ncl, lab = expression(Y[t]^ncl)),
+    list(y = Y_mr,  lab = expression(Y[t]^mr)),
+    list(y = Y0,    lab = expression(Y["0,t"]))
+  ),
+  vert_lines = c(1, 3)
+)
+
+p_P_b <- plot_tp(
+  seg_P_b,
+  ylab       = expression(P[t]),
+  ref_labels = list(
+    list(y = P0,    lab = expression(P["0,t"])),
+    list(y = P_mr,  lab = expression(P[t]^mr)),
+    list(y = P_ncl, lab = expression(P[t]^ncl))
+  ),
+  vert_lines = c(1, 3)
+)
+
+p_r_b <- plot_tp(
+  seg_r_b,
+  ylab       = expression(r[t]),
+  ref_labels = list(
+    list(y = r0,    lab = expression(r["0,t"])),
+    list(y = r_mr,  lab = expression(r[t]^mr)),
+    list(y = r_ncl, lab = expression(r[t]^ncl))
+  ),
+  vert_lines = c(1, 3)
+)
+
+grid.arrange(p_th_b, p_Y_b,
+             p_P_b,  p_r_b,
+             nrow = 2, ncol = 2)
+```
+
+**Summary — cross-model comparison.**
+
+| Variable | SSP periods 1–3 | PSP periods 1–2 | Both period 3+ |
+|----------|:---------------:|:---------------:|:--------------:|
+| $Y_t$ | unchanged | $\downarrow$ (halfway) | $\downarrow$ to $Y_t^{ncl}$ |
+| $P_t$ | unchanged | $\uparrow$ (halfway) | $\uparrow$ to $P_t^{ncl}$ |
+| $r_t$ | unchanged | $\uparrow$ (halfway) | $\uparrow$ to $r_t^{ncl}$ |
+| $w_t$ | $\uparrow$ (large) | $\uparrow$ (moderate) | $\uparrow$ to $w_t^{ncl}$ |
+| $N_t$ | unchanged | $\downarrow$ (halfway) | $\downarrow$ to $N_t^{ncl}$ |

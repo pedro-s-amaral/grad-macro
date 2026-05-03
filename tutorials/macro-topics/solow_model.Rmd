@@ -1,0 +1,148 @@
+---
+title: "The simple Solow model"
+output:
+  html_document: default
+css: ../style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+
+## Pedro Amaral
+
+## 2026-01-24
+
+## The simple Solow model
+
+In this first approach to the Solow model we start by assuming that population and and total factor productivity (TFP) are constant over time. Consider a Cobb-Douglas production function $y_t=A k_t^{\alpha}$ in capital per worker.
+
+```{r}
+# Set parameters
+
+# Total factor productivity
+A=10
+
+# Capital's share of income
+alpha=0.4
+
+# Depreciation
+delta=0.1
+
+# Saving rate
+s=0.25
+```
+
+Let's fist solve for steady-state numerically by finding the zero for the capital accumulation equation $k_{t+1}-k_t=s A k_t^{\alpha}-\delta k_t=0.$ To do this let's use the function `uniroot` that finds the zero of a univariate function in a given interval. Recall this function has two zeros, one of them being $k=0$, which is the trivial steady-state. To make sure we don't get that back, we can tell `uniroot` to search for a zero within an interval that excludes zero. Just make sure the endpoints of your interval have different signs to make sure the function crosses the y-axis.
+
+```{r}
+# Define the function
+f<-function(k) {s*A*k^alpha-delta*k}
+
+# Call the root finder
+zero_k<-uniroot( f, c(1,300) )
+k_star<-zero_k$root
+```
+
+Next, let's obtain a path for capital per worker assuming we start somewhere below steady state
+
+```{r}
+# Initial period capital 
+k=10
+
+# Define number of periods you want the economy to run for
+T=99
+
+# Loop for each period
+for(i in 1:T){
+  k[i+1] <- (s*A*k[i]^alpha+(1-delta)*k[i])
+}
+```
+
+Let's plot this capital path
+
+```{r, fig.alt="A plot of the evolution of capital per worker over time"}
+# chart
+library(ggplot2)
+
+# chart
+library(ggplot2)
+
+# create a data fram just to make thngs easier
+periods <- 1:(T+1)
+df<-data.frame(periods,k)
+
+p1<-ggplot(df,aes(x = periods, y=k)) +
+  geom_line()+
+  geom_hline(yintercept = k_star, color = "red", linetype = "dashed")+
+  labs(x = "Periods", y="Capital per worker", title = "Capital")
+
+p1
+```
+
+With the capital per worker path in hand, we can obtain paths for all other variables in the model
+
+```{r}
+# output per worker
+y=A*k^alpha
+y_star=A*k_star^alpha
+
+# consumption per worker
+c=(1-s)*y
+c_star=(1-s)*y_star
+
+# investment per worker
+i=s*y
+i_star=s*y_star
+
+# rental rate of capital
+R=A*alpha*k^(alpha-1)
+R_star=A*alpha*k_star^(alpha-1)
+
+# wages
+w=y-k*R
+w_star=y_star-k_star*R_star
+
+# add all this to data frame
+df$y <- y
+df$c <- c
+df$i <- i
+df$R <- R
+df$w <- w
+```
+
+We can now plot all the variables together to appreciate the whole economy converging to steady-state
+
+```{r, fig.alt="Six sub-plots with the evolution of model variables over time"}
+
+p2<-ggplot(df,aes(x = periods, y=y)) +
+  geom_line()+
+  geom_hline(yintercept = y_star, color = "red", linetype = "dashed")+
+  labs(x = "Periods", y="Output per worker", title = "Output")
+
+p3<-ggplot(df,aes(x = periods, y=c)) +
+  geom_line()+
+  geom_hline(yintercept = c_star, color = "red", linetype = "dashed")+
+  labs(x = "Periods", y="Consumption per worker", title = "Consumption")
+
+p4<-ggplot(df,aes(x = periods, y=i)) +
+  geom_line()+
+  geom_hline(yintercept = i_star, color = "red", linetype = "dashed")+
+  labs(x = "Periods", y="Investment per worker", title = "Investment")
+
+p5<-ggplot(df,aes(x = periods, y=R)) +
+  geom_line()+
+  geom_hline(yintercept = R_star, color = "red", linetype = "dashed")+
+  labs(x = "Periods", y="Rental rate of capital", title = "Rental rate of capital")
+
+p6<-ggplot(df,aes(x = periods, y=w)) +
+  geom_line()+
+  geom_hline(yintercept = w_star, color = "red", linetype = "dashed")+
+  labs(x = "Periods", y="Wages", title = "Wages")
+
+# Arrange the plots in a grid
+library(gridExtra)
+
+p<- grid.arrange(p1, p2, p3, p4, p5, p6, ncol = 2)
+
+```

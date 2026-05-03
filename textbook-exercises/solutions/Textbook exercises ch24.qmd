@@ -1,0 +1,920 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 24"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+theme_set(theme_econ503)
+
+# Clean diagram theme for IS-LM-AD charts (no tick labels, no grid)
+th <- theme_minimal(base_size = 11, base_family = "serif") +
+  theme(
+    plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid       = element_blank(),
+    axis.line        = element_line(color = "black", linewidth = 0.4),
+    axis.ticks       = element_blank(),
+    axis.text        = element_blank(),
+    axis.title.x     = element_text(hjust = 1, vjust = 0,  size = 12),
+    axis.title.y     = element_text(hjust = 1, angle = 0, vjust = 1, size = 12)
+  )
+
+# Helper: solve IS-LM intersection (returns plain numerics, no names)
+islm_eq <- function(is_int, is_slope, lm_c, lm_d) {
+  Y <- as.numeric((is_int - lm_c) / (is_slope + lm_d))
+  r <- as.numeric(is_int - is_slope * Y)
+  list(Y = Y, r = r)
+}
+
+# Helper: build AD curve data frame from three (Y, P) points (direct linear formula)
+make_ad <- function(Y_pts, P_pts, extend = 0.8) {
+  # fit line through three (Y, P) pairs
+  slope <- (P_pts[3] - P_pts[1]) / (Y_pts[3] - Y_pts[1])
+  int   <- P_pts[1] - slope * Y_pts[1]
+  Y_seq <- seq(min(Y_pts) - extend, max(Y_pts) + extend, by = 0.05)
+  tibble(Y = Y_seq, P = int + slope * Y_seq)
+}
+```
+
+---
+
+# Exercise 24.1 — Shapes of the IS, LM, and AD Curves
+
+**Problem.** This question explores the shapes of the IS, LM, and AD curves on a deeper
+level.
+
+**(a)** Suppose the demand side of the economy is characterized by Equations (24.1)--(24.5).
+Graphically derive the AD curve.
+
+**(b)** Suppose Equation (24.1) is replaced with $C_t = C(Y_t - G_t,\, Y_{t+1} - G_{t+1})$.
+Every other equation remains the same. Derive the new AD curve.
+
+**(c)** Does an increase in the money supply shift the AD curve by more in part (a) or
+part (b)?
+
+**(d)** Now assume $C_t = C^d(Y_t - G_t,\, Y_{t+1} - G_{t+1},\, r_t)$ but Equation (24.4) is
+replaced with $M_t = P_t M^d(Y_t)$. Derive the LM and AD curves.
+
+**(e)** Instead assume $M_t = P_t M^d(r_t + \pi^e_{t+1})$. Derive the LM and AD curves.
+
+**(f)** Does an expansion of the IS curve shift the AD curve by more in part (d) or part (e)?
+
+---
+
+## Solution
+
+### Part (a) — Standard graphical derivation
+
+The demand side is:
+
+$$C_t = C^d(Y_t - G_t,\; Y_{t+1} - G_{t+1},\; r_t), \quad I_t = I^d(r_t, A_{t+1}, K_t), \quad Y_t = C_t + I_t + G_t \tag{IS}$$
+
+$$M_t = P_t M^d(r_t + \pi^e_{t+1},\; Y_t), \quad r_t = i_t - \pi^e_{t+1} \tag{LM}$$
+
+The **LM curve** plots $(r_t, Y_t)$ pairs clearing the money market for given $M_t$, $P_t$, $\pi^e_{t+1}$. It is **upward-sloping**: higher income raises money demand, requiring a higher real interest rate.
+
+The **IS curve** plots $(r_t, Y_t)$ for which the aggregate resource
+constraint holds where the household and firms choose consumption and investment optimally. It is **downward-sloping**: a lower $r_t$ stimulates both $C$ and $I$, requiring higher income to maintain equilibrium.
+
+The **AD curve** plots $(P_t, Y_t)$ pairs where both curves hold simultaneously. It is derived by varying $P_t$: a lower price level raises real balances $M_t/P_t$, shifts LM right, and raises the IS-LM intersection output. Connecting these $(P_t, Y_t)$ pairs gives a
+**downward-sloping** AD.
+
+```{r}
+#| label: fig-ex241-part-a
+#| fig-cap: "Standard AD derivation. Upper panel: IS-LM in $(r_t, Y_t)$ space with three LM curves for $P_{2,t}>P_{0,t}>P_{1,t}$. Lower panel: the three $(P_t,Y_t)$ pairs trace the downward-sloping AD curve."
+#| fig-alt: "Stacked panels. Upper: downward-sloping IS crossed by three upward-sloping LM curves at different price levels. Lower: downward-sloping AD through three labeled equilibrium points."
+#| fig-height: 7
+#| fig-width: 6
+
+# ── Parameters ────────────────────────────────────────────────────────────────
+is_int   <- 0.44
+is_slope <- 0.035
+lm_d     <- 0.025
+# LM intercepts for three price levels (lm_c increases with P)
+lm_c0 <- -0.080;  P0 <- 5.0   # baseline
+lm_c1 <- -0.150;  P1 <- 3.5   # lower price → LM shifts right
+lm_c2 <- -0.010;  P2 <- 6.5   # higher price → LM shifts left
+
+# Solve equilibria (plain numerics via islm_eq helper)
+eq0 <- islm_eq(is_int, is_slope, lm_c0, lm_d)
+eq1 <- islm_eq(is_int, is_slope, lm_c1, lm_d)
+eq2 <- islm_eq(is_int, is_slope, lm_c2, lm_d)
+Y0 <- eq0$Y; r0 <- eq0$r
+Y1 <- eq1$Y; r1 <- eq1$r
+Y2 <- eq2$Y; r2 <- eq2$r
+
+Y_max <- 13; r_max <- 0.44; P_max <- 8.5; lw <- 1.1
+x_pad <- 0.55; r_pad <- 0.045; p_pad <- 0.75
+Y_seq <- seq(1, Y_max-1, by = 0.05)
+
+# Curve data frames
+is_df  <- tibble(Y = Y_seq, r = is_int + (-is_slope) * Y_seq) |> filter(r >= 0)
+lm0_df <- tibble(Y = Y_seq, r = lm_c0  + lm_d * Y_seq)        |> filter(r >= 0, r <= r_max)
+lm1_df <- tibble(Y = Y_seq, r = lm_c1  + lm_d * Y_seq)        |> filter(r >= 0, r <= r_max)
+lm2_df <- tibble(Y = Y_seq, r = lm_c2  + lm_d * Y_seq)        |> filter(r >= 0, r <= r_max)
+ad_df  <- make_ad(c(Y2, Y0, Y1), c(P2, P0, P1))
+
+# ── Upper panel: IS-LM ────────────────────────────────────────────────────────
+p_up <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = 0, xend = Y_max, y = 0, yend = 0), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = 0, xend = 0, y = 0, yend = r_max), color = "black", linewidth = 0.4) +
+  geom_line(data = is_df,  aes(x = Y, y = r), color = "black",     linewidth = lw) +
+  geom_line(data = lm0_df, aes(x = Y, y = r), color = "black",     linewidth = lw) +
+  geom_line(data = lm1_df, aes(x = Y, y = r), color = "steelblue", linewidth = lw) +
+  geom_line(data = lm2_df, aes(x = Y, y = r), color = "firebrick", linewidth = lw) +
+  # Drop lines
+  geom_segment(aes(x = Y0, xend = Y0, y = 0,  yend = r0), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = 0,  xend = Y0, y = r0, yend = r0), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = Y1, xend = Y1, y = 0,  yend = r1), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = 0,  xend = Y1, y = r1, yend = r1), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = Y2, xend = Y2, y = 0,  yend = r2), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  geom_segment(aes(x = 0,  xend = Y2, y = r2, yend = r2), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  # Equilibrium points
+  geom_point(aes(x = Y0, y = r0), color = "black",     size = 2.5) +
+  geom_point(aes(x = Y1, y = r1), color = "steelblue", size = 2.5) +
+  geom_point(aes(x = Y2, y = r2), color = "firebrick", size = 2.5) +
+  # Curve labels
+  annotate("text", x = 11.5, y = is_int - is_slope * 11.5 + 0.02,
+           label = "IS", color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = Y_max, y = lm_c0 + lm_d * 11.2 + 0.018,
+           label = expression(LM(P["0,t"])), color = "black",     size = 4) +
+  annotate("text", x = Y_max, y = lm_c1 + lm_d * 11.2 + 0.018,
+           label = expression(LM(P["1,t"])), color = "steelblue", size = 4) +
+  annotate("text", x = Y_max, y = lm_c2 + lm_d * 11.2 + 0.018,
+           label = expression(LM(P["2,t"])), color = "firebrick", size = 4) +
+  # Axis value labels
+  annotate("text", x = Y0,        y = -0.024, label = expression(Y["0,t"]), color = "black",     size = 4, vjust = 1) +
+  annotate("text", x = Y1 + 0.15, y = -0.024, label = expression(Y["1,t"]), color = "steelblue", size = 4, vjust = 1) +
+  annotate("text", x = Y2 - 0.15, y = -0.024, label = expression(Y["2,t"]), color = "firebrick", size = 4, vjust = 1) +
+  annotate("text", x = -0.34, y = r0,        label = expression(r["0,t"]), color = "black",     size = 4, hjust = 1) +
+  annotate("text", x = -0.34, y = r1 - 0.01, label = expression(r["1,t"]), color = "steelblue", size = 4, hjust = 1) +
+  annotate("text", x = -0.34, y = r2 + 0.01, label = expression(r["2,t"]), color = "firebrick", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(-x_pad, Y_max), ylim = c(-r_pad, r_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(r[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+# ── Lower panel: AD ───────────────────────────────────────────────────────────
+p_down <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = 0, xend = Y_max, y = 0, yend = 0), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = 0, xend = 0, y = 0, yend = P_max), color = "black", linewidth = 0.4) +
+  geom_line(data = ad_df, aes(x = Y, y = P), color = "black", linewidth = lw) +
+  geom_segment(aes(x = Y0, xend = Y0, y = 0,  yend = P_max), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = 0,  xend = Y0, y = P0, yend = P0), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = Y1, xend = Y1, y = 0,  yend = P_max), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = 0,  xend = Y1, y = P1, yend = P1), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = Y2, xend = Y2, y = 0,  yend = P_max), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  geom_segment(aes(x = 0,  xend = Y2, y = P2, yend = P2), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  geom_point(aes(x = Y0, y = P0), color = "black",     size = 2.5) +
+  geom_point(aes(x = Y1, y = P1), color = "steelblue", size = 2.5) +
+  geom_point(aes(x = Y2, y = P2), color = "firebrick", size = 2.5) +
+  annotate("text", x = max(ad_df$Y) - 0.3, y = min(ad_df$P) - 0.2,
+           label = "AD", color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = Y0,        y = -0.52, label = expression(Y["0,t"]), color = "black",     size = 4, vjust = 1) +
+  annotate("text", x = Y1 + 0.15, y = -0.52, label = expression(Y["1,t"]), color = "steelblue", size = 4, vjust = 1) +
+  annotate("text", x = Y2 - 0.15, y = -0.52, label = expression(Y["2,t"]), color = "firebrick", size = 4, vjust = 1) +
+  annotate("text", x = -0.34, y = P0,        label = expression(P["0,t"]), color = "black",     size = 4, hjust = 1) +
+  annotate("text", x = -0.34, y = P1 - 0.15, label = expression(P["1,t"]), color = "steelblue", size = 4, hjust = 1) +
+  annotate("text", x = -0.34, y = P2 + 0.15, label = expression(P["2,t"]), color = "firebrick", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(-x_pad, Y_max), ylim = c(-p_pad, P_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(P[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+# ── Align and arrange ─────────────────────────────────────────────────────────
+g_up   <- ggplotGrob(p_up)
+g_down <- ggplotGrob(p_down)
+g_up$widths <- g_down$widths <- grid::unit.pmax(g_up$widths, g_down$widths)
+gridExtra::grid.arrange(g_up, g_down, nrow = 2, heights = c(3, 2))
+```
+
+---
+
+### Part (b) — Interest-inelastic consumption
+
+When $C_t = C(Y_t - G_t,\, Y_{t+1} - G_{t+1})$, consumption does **not** depend on $r_t$.
+Investment $I^d(r_t, A_{t+1}, K_t)$ still responds to $r_t$, so the IS is still
+downward-sloping — but **steeper**: only the investment channel links interest rates to
+aggregate spending, whereas in part (a) both $C$ and $I$ responded to $r_t$.
+
+A steeper IS has a direct implication for the AD curve: when $P_t$ changes and shifts the
+LM, the new IS-LM intersection moves **less** in the horizontal direction, so the AD curve is
+also **steeper**.
+
+```{r}
+#| label: fig-ex241-part-b
+#| fig-cap: "Comparison of standard IS (black) and interest-inelastic IS (orange, steeper). Upper panel: both IS curves face the same LM family; the steeper IS$_b$ produces smaller output changes for the same LM shift. Lower panel: AD$_b$ (orange) is steeper than AD$_a$ (black); both pass through the same baseline point."
+#| fig-alt: "Two stacked panels. Upper: flat IS_a and steep IS_b with three LM curves; equilibria with IS_b span a narrower range of Y. Lower: AD_a is flatter, AD_b is steeper, both through the same baseline."
+#| fig-height: 7
+#| fig-width: 6
+
+# ── Part (b): steeper IS — only investment responds to r_t ───────────────────
+is_slope_b <- 0.070
+is_int_b   <- r0 + is_slope_b * Y0   # anchored through same baseline (Y0, r0)
+b_col <- "darkgreen"
+
+eq0_b <- islm_eq(is_int_b, is_slope_b, lm_c0, lm_d)
+eq1_b <- islm_eq(is_int_b, is_slope_b, lm_c1, lm_d)
+eq2_b <- islm_eq(is_int_b, is_slope_b, lm_c2, lm_d)
+Y1_b <- eq1_b$Y; Y2_b <- eq2_b$Y   # Y0_b ≈ Y0
+
+is_b_df <- tibble(Y = Y_seq, r = is_int_b - is_slope_b * Y_seq) |> filter(r >= 0)
+ad_b_df <- make_ad(c(Y2_b, Y0, Y1_b), c(P2, P0, P1))
+
+# ── Upper panel ───────────────────────────────────────────────────────────────
+p_up_b <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = 0, xend = Y_max, y = 0, yend = 0), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = 0, xend = 0, y = 0, yend = r_max), color = "black", linewidth = 0.4) +
+  geom_line(data = lm0_df, aes(x = Y, y = r), color = "black",     linewidth = lw, alpha = 0.7) +
+  geom_line(data = lm1_df, aes(x = Y, y = r), color = "steelblue", linewidth = lw, alpha = 0.7) +
+  geom_line(data = lm2_df, aes(x = Y, y = r), color = "firebrick", linewidth = lw, alpha = 0.7) +
+  geom_line(data = is_df,  aes(x = Y, y = r), color = "black",     linewidth = lw) +
+  geom_line(data = is_b_df,aes(x = Y, y = r), color = b_col, linewidth = lw) +
+  # Drop lines: IS_b equilibria
+  geom_segment(aes(x = eq0_b$Y, xend = eq0_b$Y, y = 0,        yend = eq0_b$r), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  geom_segment(aes(x = 0,      xend = eq0_b$Y, y = eq0_b$r,   yend = eq0_b$r), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  geom_segment(aes(x = eq1_b$Y, xend = eq1_b$Y, y = 0,        yend = eq1_b$r), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  geom_segment(aes(x = 0,      xend = eq1_b$Y, y = eq1_b$r,   yend = eq1_b$r), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  geom_segment(aes(x = eq2_b$Y, xend = eq2_b$Y, y = 0,        yend = eq2_b$r), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  geom_segment(aes(x = 0,      xend = eq2_b$Y, y = eq2_b$r,   yend = eq2_b$r), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  # IS_a equilibria
+  geom_point(aes(x = Y0, y = r0), color = "black",     size = 2.2) +
+  geom_point(aes(x = Y1, y = r1), color = "steelblue", size = 2.2) +
+  geom_point(aes(x = Y2, y = r2), color = "firebrick", size = 2.2) +
+  # IS_b equilibria
+  geom_point(aes(x = eq0_b$Y, y = eq0_b$r), color = b_col, size = 2.2) +
+  geom_point(aes(x = eq1_b$Y, y = eq1_b$r), color = b_col, size = 2.2) +
+  geom_point(aes(x = eq2_b$Y, y = eq2_b$r), color = b_col, size = 2.2) +
+  # Labels
+  annotate("text", x = 11.0, y = is_int   - is_slope   * 11.0 + 0.02,
+           label = expression(IS[a]), color = "black",     size = 4) +
+  annotate("text", x = 7,  y = is_int_b - is_slope_b * 7  + 0.05,
+           label = expression(IS[b]), color = b_col, size = 4) +
+  annotate("text", x = 11.2, y = lm_c0 + lm_d * 11.2 + 0.018,
+           label = "LM", color = "black", size = 4) +
+  # Axis labels outside the axes
+  annotate("text", x = eq0_b$Y, y = -0.015, label = expression(Y[0]), color = "black", size = 4, vjust = 1) +
+  annotate("text", x = eq1_b$Y, y = -0.015, label = expression(Y[1]^b), color = b_col, size = 4, vjust = 1) +
+  annotate("text", x = eq2_b$Y, y = -0.015, label = expression(Y[2]^b), color = b_col, size = 4, vjust = 1) +
+  annotate("text", x = -0.34, y = eq0_b$r, label = expression(r[0]^b), color = b_col, size = 4, hjust = 1) +
+  annotate("text", x = -0.34, y = eq1_b$r, label = expression(r[1]^b), color = b_col, size = 4, hjust = 1) +
+  annotate("text", x = -0.34, y = eq2_b$r, label = expression(r[2]^b), color = b_col, size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(-x_pad, Y_max), ylim = c(-r_pad, r_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(r[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+# ── Lower panel: compare AD curves ───────────────────────────────────────────
+p_down_b <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = 0, xend = Y_max, y = 0, yend = 0), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = 0, xend = 0, y = 0, yend = P_max), color = "black", linewidth = 0.4) +
+  geom_line(data = ad_df,   aes(x = Y, y = P), color = "black",     linewidth = lw) +
+  geom_line(data = ad_b_df, aes(x = Y, y = P), color = b_col, linewidth = lw) +
+  geom_segment(aes(x = Y0,   xend = Y0,   y = 0,  yend = P_max), linetype = "dotted", color = "black",      linewidth = 0.5) +
+  geom_segment(aes(x = 0,    xend = Y0,   y = P0, yend = P0), linetype = "dotted", color = "black",      linewidth = 0.5) +
+  geom_point(aes(x = Y0, y = P0), color = "black", size = 2.5) +
+  geom_point(aes(x = Y1_b, y = P1), color = b_col, size = 2.5) +
+  geom_point(aes(x = Y2_b, y = P2), color = b_col, size = 2.5) +
+  geom_segment(aes(x = Y1_b, xend = Y1_b, y = 0,  yend = P_max), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  geom_segment(aes(x = 0,    xend = Y1_b, y = P1, yend = P1), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  geom_segment(aes(x = Y2_b, xend = Y2_b, y = 0,  yend = P_max), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  geom_segment(aes(x = 0,    xend = Y2_b, y = P2, yend = P2), linetype = "dotted", color = b_col, linewidth = 0.5) +
+  annotate("text", x = max(ad_df$Y)   - 0.3, y = min(ad_df$P)   + 1,
+           label = expression(AD[a]), color = "black",     size = 4, fontface = "italic") +
+  annotate("text", x = max(ad_b_df$Y) - 0.3, y = min(ad_b_df$P)-0.5,
+           label = expression(AD[b]), color = b_col, size = 4, fontface = "italic") +
+  annotate("text", x = Y0,   y = -0.52, label = expression(Y[0]),   color = "black", size = 4, vjust = 1) +
+  annotate("text", x = Y1_b, y = -0.52, label = expression(Y[1]^b), color = b_col,   size = 4, vjust = 1) +
+  annotate("text", x = Y2_b, y = -0.52, label = expression(Y[2]^b), color = b_col,   size = 4, vjust = 1) +
+  annotate("text", x = -0.34, y = P0, label = expression(P[0]), color = "black",      size = 4, hjust = 1) +
+  annotate("text", x = -0.34, y = P1, label = expression(P[1]), color = b_col, size = 4, hjust = 1) +
+  annotate("text", x = -0.34, y = P2, label = expression(P[2]), color = b_col, size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(-x_pad, Y_max), ylim = c(-p_pad, P_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(P[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+g_up_b   <- ggplotGrob(p_up_b)
+g_down_b <- ggplotGrob(p_down_b)
+g_up_b$widths <- g_down_b$widths <- grid::unit.pmax(g_up_b$widths, g_down_b$widths)
+gridExtra::grid.arrange(g_up_b, g_down_b, nrow = 2, heights = c(3, 2))
+```
+
+**Summary.** The IS slope equals $dr_t/dY_t = -(1-\text{MPC})/|\partial(C+I)/\partial r_t|$.
+In part (b), only $|\partial I/\partial r_t|$ is in the denominator, so the IS is steeper.
+For any price-level-induced LM shift, the horizontal output change at the new IS-LM
+intersection is smaller, making AD$_b$ steeper than AD$_a$.
+
+---
+
+### Part (c) — Effect of a money supply increase: (a) vs (b)
+
+An increase in $M_t$ shifts the LM curve right by the same amount in both cases (the LM
+does not depend on the IS). But the output increase at the new IS-LM intersection differs:
+
+- **Part (a)** (flatter IS): the rightward LM shift produces a **large** increase in $Y_t$
+  and a **large** rightward shift of AD.
+- **Part (b)** (steeper IS): the same LM shift produces a **small** increase in $Y_t$ and a
+  **small** rightward shift of AD.
+
+**The AD curve shifts by more in part (a).**
+
+```{r}
+#| label: fig-ex241-part-c
+#| fig-cap: "Effect of an increase in $M_t$ on AD in parts (a) and (b). The same rightward LM shift (dashed) moves the flatter IS$_a$ intersection far right and the steeper IS$_b$ intersection only slightly right. AD$_a$ shifts more than AD$_b$."
+#| fig-alt: "Stacked panels. Upper: IS_a and IS_b with original LM (solid) and new LM after money supply rise (dashed); IS_a new equilibrium is further right. Lower: larger AD shift for IS_a than IS_b."
+#| fig-height: 7
+#| fig-width: 6
+
+delta_lm <- -0.055   # money supply rises → LM intercept decreases (shifts right)
+lm_c0_new <- lm_c0 + delta_lm
+
+# New equilibria at each P
+eq0_new_a <- islm_eq(is_int,   is_slope,   lm_c0_new, lm_d)
+eq0_new_b <- islm_eq(is_int_b, is_slope_b, lm_c0_new, lm_d)
+eq1_new_a <- islm_eq(is_int,   is_slope,   lm_c1 + delta_lm, lm_d)
+eq2_new_a <- islm_eq(is_int,   is_slope,   lm_c2 + delta_lm, lm_d)
+eq1_new_b <- islm_eq(is_int_b, is_slope_b, lm_c1 + delta_lm, lm_d)
+eq2_new_b <- islm_eq(is_int_b, is_slope_b, lm_c2 + delta_lm, lm_d)
+
+lm0_new_df  <- tibble(Y = Y_seq, r = lm_c0_new + lm_d * Y_seq) |> filter(r >= 0, r <= r_max)
+ad_new_a_df <- make_ad(c(eq2_new_a$Y, eq0_new_a$Y, eq1_new_a$Y), c(P2, P0, P1))
+ad_new_b_df <- make_ad(c(eq2_new_b$Y, eq0_new_b$Y, eq1_new_b$Y), c(P2, P0, P1))
+c_a_old <- "firebrick"
+c_b_new <- "darkgreen"
+x_axis_c <- 3.8
+r_axis_c <- 0.04
+p_axis_c <- 2.4
+
+lm0_c_df     <- lm0_df     |> filter(Y >= x_axis_c, r >= r_axis_c)
+lm0_new_c_df <- lm0_new_df |> filter(Y >= x_axis_c, r >= r_axis_c)
+is_a_c_df    <- is_df      |> filter(Y >= x_axis_c, r >= r_axis_c)
+is_b_c_df    <- is_b_df    |> filter(Y >= x_axis_c, r >= r_axis_c)
+ad_a_c_df    <- ad_df      |> filter(Y >= x_axis_c, P >= p_axis_c)
+ad_b_c_df    <- ad_b_df    |> filter(Y >= x_axis_c, P >= p_axis_c)
+ad_new_a_c_df <- ad_new_a_df |> filter(Y >= x_axis_c, P >= p_axis_c)
+ad_new_b_c_df <- ad_new_b_df |> filter(Y >= x_axis_c, P >= p_axis_c)
+
+p_up_c <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = x_axis_c, xend = Y_max, y = r_axis_c, yend = r_axis_c), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = x_axis_c, xend = x_axis_c, y = r_axis_c, yend = r_max), color = "black", linewidth = 0.4) +
+  # Original LM (dashed)
+  geom_line(data = lm0_c_df,    aes(x = Y, y = r), color = c_a_old,     linewidth = lw, linetype = "dashed") +
+  # New LM (solid)
+  geom_line(data = lm0_new_c_df,aes(x = Y, y = r), color = "black",     linewidth = lw) +
+  geom_line(data = is_a_c_df,   aes(x = Y, y = r), color = "black",     linewidth = lw) +
+  geom_line(data = is_b_c_df,   aes(x = Y, y = r), color = c_b_new,     linewidth = lw) +
+  # Common starting point guides
+  geom_segment(aes(x = Y0, xend = Y0, y = r_axis_c,  yend = r0), linetype = "dotted", color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_c,  xend = Y0, y = r0, yend = r0), linetype = "dotted", color = "black", linewidth = 0.5) +
+  # New equilibrium guides
+  geom_segment(aes(x = eq0_new_a$Y, xend = eq0_new_a$Y, y = r_axis_c,   yend = eq0_new_a$r), linetype = "dotted", color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_c,    xend = eq0_new_a$Y, y = eq0_new_a$r, yend = eq0_new_a$r), linetype = "dotted", color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = eq0_new_b$Y, xend = eq0_new_b$Y, y = r_axis_c,   yend = eq0_new_b$r), linetype = "dotted", color = c_b_new, linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_c,    xend = eq0_new_b$Y, y = eq0_new_b$r, yend = eq0_new_b$r), linetype = "dotted", color = c_b_new, linewidth = 0.5) +
+  # Old equilibria (hollow)
+  geom_point(aes(x = Y0,        y = r0),          color = c_a_old,     size = 2.2, shape = 1) +
+  geom_point(aes(x = eq0_b$Y,   y = eq0_b$r),     color = c_a_old,     size = 2.2, shape = 1) +
+  # New equilibria (filled)
+  geom_point(aes(x = eq0_new_a$Y, y = eq0_new_a$r), color = "black",     size = 2.5) +
+  geom_point(aes(x = eq0_new_b$Y, y = eq0_new_b$r), color = c_b_new,     size = 2.5) +
+  # Labels
+  annotate("text", x = 11.2, y = lm_c0_new + lm_d * 11.2 + 0.018,
+           label = "LM'", color = "black", size = 4) +
+  annotate("text", x = 11.2, y = lm_c0 + lm_d * 11.2 + 0.018,
+           label = "LM",  color = c_a_old, size = 4) +
+  annotate("text", x = 11.0, y = is_int   - is_slope   * 11.0 + 0.015,
+           label = expression(IS[a]), color = "black",     size = 4) +
+  annotate("text", x = 8.2,  y = is_int_b - is_slope_b * 8.2  + 0.02,
+           label = expression(IS[b]), color = c_b_new,     size = 4) +
+  # Outside-axis labels
+  annotate("text", x = Y0,          y = r_axis_c - 0.018, label = expression(Y[0]),   color = "black", size = 4, vjust = 1) +
+  annotate("text", x = eq0_new_a$Y, y = r_axis_c - 0.018, label = expression(Y[1]^a), color = "black", size = 4, vjust = 1) +
+  annotate("text", x = eq0_new_b$Y, y = r_axis_c - 0.018, label = expression(Y[1]^b), color = c_b_new, size = 4, vjust = 1) +
+  annotate("text", x = x_axis_c - 0.28, y = r0,          label = expression(r[0]),   color = "black", size = 4, hjust = 1) +
+  annotate("text", x = x_axis_c - 0.28, y = eq0_new_a$r+0.01, label = expression(r[1]^a), color = "black", size = 4, hjust = 1) +
+  annotate("text", x = x_axis_c - 0.28, y = eq0_new_b$r-0.01, label = expression(r[1]^b), color = c_b_new, size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(x_axis_c, Y_max), ylim = c(r_axis_c, r_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(r[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(4, 4, 18, 4)
+  )
+
+p_down_c <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = x_axis_c, xend = Y_max, y = p_axis_c, yend = p_axis_c), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = x_axis_c, xend = x_axis_c, y = p_axis_c, yend = P_max), color = "black", linewidth = 0.4) +
+  # Original ADs (dashed)
+  geom_line(data = ad_a_c_df,   aes(x = Y, y = P), color = "black",     linewidth = lw, linetype = "dashed") +
+  geom_line(data = ad_b_c_df,   aes(x = Y, y = P), color = c_b_new,     linewidth = lw, linetype = "dashed") +
+  # New ADs
+  geom_line(data = ad_new_a_c_df, aes(x = Y, y = P), color = "black",     linewidth = lw) +
+  geom_line(data = ad_new_b_c_df, aes(x = Y, y = P), color = c_b_new,     linewidth = lw) +
+  # Guides
+  geom_segment(aes(x = Y0,          xend = Y0,          y = p_axis_c, yend = P_max), linetype = "dotted", color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_c,    xend = eq0_new_a$Y,          y = P0,       yend = P0), linetype = "dotted", color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = eq0_new_a$Y, xend = eq0_new_a$Y, y = p_axis_c, yend = P_max), linetype = "dotted", color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = eq0_new_b$Y, xend = eq0_new_b$Y, y = p_axis_c, yend = P_max), linetype = "dotted", color = c_b_new, linewidth = 0.5) +
+  geom_point(aes(x = Y0,          y = P0), color = "black", size = 2.5) +
+  geom_point(aes(x = eq0_new_a$Y, y = P0), color = "black", size = 2.5) +
+  geom_point(aes(x = eq0_new_b$Y, y = P0), color = c_b_new, size = 2.5) +
+  # Shift arrows at P0
+  annotate("segment", x = Y0 -1.6, xend = eq0_new_a$Y - 1.9, y = P0*1.45, yend = P0*1.45,
+           arrow = arrow(length = unit(0.18,"cm")), color = "black",     linewidth = 0.8) +
+  annotate("segment", x = eq0_b$Y + -1.4, xend = eq0_new_b$Y - 1.5, y = P0*1.6, yend = P0*1.6,
+           arrow = arrow(length = unit(0.18,"cm")), color = c_b_new, linewidth = 0.8) +
+  annotate("text", x = max(ad_new_a_c_df$Y), y = min(ad_new_a_c_df$P) + 0.6,
+           label = expression(AD[a]^"'"), color = "black",     size = 4, fontface = "italic") +
+  annotate("text", x = max(ad_new_b_c_df$Y), y = min(ad_new_b_c_df$P) + 0.7,
+           label = expression(AD[b]^"'"), color = c_b_new,     size = 4, fontface = "italic") +
+  annotate("text", x = Y0,          y = p_axis_c - 0.22, label = expression(Y[0]),   color = "black", size = 4, vjust = 1) +
+  annotate("text", x = eq0_new_a$Y, y = p_axis_c - 0.22, label = expression(Y[1]^a), color = "black", size = 4, vjust = 1) +
+  annotate("text", x = eq0_new_b$Y, y = p_axis_c - 0.22, label = expression(Y[1]^b), color = c_b_new, size = 4, vjust = 1) +
+  annotate("text", x = x_axis_c - 0.28, y = P0,        label = expression(P[0]),   color = "black", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(x_axis_c, Y_max), ylim = c(p_axis_c, P_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(P[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(4, 4, 18, 4)
+  )
+
+g_up_c   <- ggplotGrob(p_up_c)
+g_down_c <- ggplotGrob(p_down_c)
+g_up_c$widths <- g_down_c$widths <- grid::unit.pmax(g_up_c$widths, g_down_c$widths)
+gridExtra::grid.arrange(g_up_c, g_down_c, nrow = 2, heights = c(3, 2))
+```
+
+**Intuition.** A monetary expansion lowers $r_t$ and stimulates $C + I$. With a flatter IS
+(part a), a given $\Delta r_t$ produces a larger spending and output increase. With a steeper
+IS (part b), the same $\Delta r_t$ generates less extra spending, so the AD shifts less.
+
+---
+
+### Part (d) — Income-only money demand: vertical LM
+
+If $M_t = P_t M^d(Y_t)$, money demand depends on income $Y_t$ but **not** on $r_t$. Real
+money market equilibrium is:
+
+$$\frac{M_t}{P_t} = M^d(Y_t)$$
+
+This pins $Y_t$ regardless of $r_t$ — **the LM curve is vertical** in $(r_t, Y_t)$ space.
+
+- Higher $P_t \Rightarrow M_t/P_t \downarrow \Rightarrow Y_t^* \downarrow$: vertical LM shifts **left**.
+- Lower $P_t \Rightarrow M_t/P_t \uparrow \Rightarrow Y_t^* \uparrow$: vertical LM shifts **right**.
+
+The **AD curve** is still downward-sloping in $(P_t, Y_t)$ space (higher $P_t$ reduces
+$Y_t^*$), but its slope depends entirely on the money market. The IS curve plays no role
+in determining $Y_t$; it only determines $r_t$ given $Y_t^*$.
+
+An IS shock does **not** shift the AD: when IS shifts right, the vertical LM keeps $Y_t$
+fixed. Only $r_t$ rises to accommodate the new goods-market equilibrium.
+
+```{r}
+#| label: fig-ex241-part-d
+#| fig-cap: "Vertical LM (part d). Upper panel: IS with three vertical LM curves. An IS rightward shift (dashed) raises $r_t$ but leaves $Y_t$ unchanged. Lower panel: the AD curve is unchanged by the IS shift."
+#| fig-alt: "Two stacked panels. Upper: IS with three vertical LM curves; an IS shift raises r at the same Y. Lower: the AD curve is unchanged despite the IS shift."
+#| fig-height: 7
+#| fig-width: 6
+
+# IS shift for illustration
+is_int_shift <- is_int + 0.07
+is_shift_df  <- tibble(Y = Y_seq, r = is_int_shift - is_slope * Y_seq) |> filter(r >= 0)
+
+# r at each vertical LM (where IS intersects the vertical line)
+r_d0     <- is_int       - is_slope * Y0
+r_d0_new <- is_int_shift - is_slope * Y0   # same Y, higher r after IS shift
+
+x_axis_d <- 0.45
+r_axis_d <- 0.02
+p_axis_d <- 0.45
+
+is_d_df       <- is_df       |> filter(Y >= x_axis_d, r >= r_axis_d)
+is_shift_d_df <- is_shift_df |> filter(Y >= x_axis_d, r >= r_axis_d)
+ad_d_df       <- ad_df       |> filter(Y >= x_axis_d, P >= p_axis_d)
+
+p_up_d <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = x_axis_d, xend = Y_max, y = r_axis_d, yend = r_axis_d), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = x_axis_d, xend = x_axis_d, y = r_axis_d, yend = r_max), color = "black", linewidth = 0.4) +
+  geom_line(data = is_d_df,       aes(x = Y, y = r), color = "black", linewidth = lw) +
+  geom_line(data = is_shift_d_df, aes(x = Y, y = r), color = "black", linewidth = lw, linetype = "dashed") +
+  geom_segment(aes(x = Y0, xend = Y0, y = r_axis_d, yend = r_max*0.9), color = "black",     linewidth = lw) +
+  geom_segment(aes(x = Y1, xend = Y1, y = r_axis_d, yend = r_max*0.9), color = "steelblue", linewidth = lw) +
+  geom_segment(aes(x = Y2, xend = Y2, y = r_axis_d, yend = r_max*0.9), color = "firebrick", linewidth = lw) +
+  # Equilibria
+  geom_point(aes(x = Y0, y = r_d0),     color = "black",     size = 2.5) +
+  geom_point(aes(x = Y0, y = r_d0_new), color = "black",     size = 2.5, shape = 1) +
+  geom_point(aes(x = Y1, y = is_int - is_slope * Y1), color = "steelblue", size = 2.5) +
+  geom_point(aes(x = Y2, y = is_int - is_slope * Y2), color = "firebrick", size = 2.5) +
+  # Guides to axes
+  geom_segment(aes(x = Y0, xend = Y0, y = r_axis_d, yend = r_d0),     linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_d, xend = Y0, y = r_d0,     yend = r_d0),     linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = Y0, xend = Y0, y = r_axis_d, yend = r_d0_new), linetype = "dotted", color = "black",     linewidth = 0.4) +
+  geom_segment(aes(x = x_axis_d, xend = Y0, y = r_d0_new, yend = r_d0_new), linetype = "dotted", color = "black",     linewidth = 0.4) +
+  geom_segment(aes(x = Y1, xend = Y1, y = r_axis_d, yend = is_int - is_slope * Y1), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_d, xend = Y1, y = is_int - is_slope * Y1, yend = is_int - is_slope * Y1), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = Y2, xend = Y2, y = r_axis_d, yend = is_int - is_slope * Y2), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_d, xend = Y2, y = is_int - is_slope * Y2, yend = is_int - is_slope * Y2), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  # Labels
+  annotate("text", x = 11.0, y = is_int       - is_slope * 11.0 + 0.02, label = "IS",  color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = 11.0, y = is_int_shift - is_slope * 11.0 + 0.02, label = "IS'", color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = Y0, y = r_max - 0.02, label = expression(LM(P["0,t"])), color = "black",     size = 4) +
+  annotate("text", x = Y1 + 0.5, y = r_max - 0.02, label = expression(LM(P["1,t"])), color = "steelblue", size = 4) +
+  annotate("text", x = Y2 - 0.5, y = r_max - 0.02, label = expression(LM(P["2,t"])), color = "firebrick", size = 4) +
+  annotate("text", x = Y0,        y = r_axis_d - 0.013, label = expression(Y["0,t"]), color = "black",     size = 4, vjust = 1) +
+  annotate("text", x = Y1 + 0.15, y = r_axis_d - 0.013, label = expression(Y["1,t"]), color = "steelblue", size = 4, vjust = 1) +
+  annotate("text", x = Y2 - 0.15, y = r_axis_d - 0.013, label = expression(Y["2,t"]), color = "firebrick", size = 4, vjust = 1) +
+  annotate("text", x = x_axis_d - 0.18, y = r_d0,     label = expression(r["0,t"]),     color = "black", size = 4, hjust = 1) +
+  annotate("text", x = x_axis_d - 0.18, y = r_d0_new, label = expression(r["0,t"]^"'"), color = "black", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(x_axis_d, Y_max), ylim = c(r_axis_d, r_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(r[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(4, 4, 18, 4)
+  )
+
+p_down_d <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = x_axis_d, xend = Y_max, y = p_axis_d, yend = p_axis_d), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = x_axis_d, xend = x_axis_d, y = p_axis_d, yend = P_max), color = "black", linewidth = 0.4) +
+  geom_line(data = ad_d_df, aes(x = Y, y = P), color = "black", linewidth = lw) +
+  geom_line(data = ad_d_df, aes(x = Y, y = P), color = "black", linewidth = lw + 0.5, linetype = "dashed", alpha = 0.4) +
+  geom_point(aes(x = Y0, y = P0), color = "black",     size = 2.5) +
+  geom_point(aes(x = Y1, y = P1), color = "steelblue", size = 2.5) +
+  geom_point(aes(x = Y2, y = P2), color = "firebrick", size = 2.5) +
+  # Guides to axes
+  geom_segment(aes(x = Y0, xend = Y0, y = p_axis_d, yend = P_max), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_d, xend = Y0, y = P0, yend = P0), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = Y1, xend = Y1, y = p_axis_d, yend = P_max), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_d, xend = Y1, y = P1, yend = P1), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = Y2, xend = Y2, y = p_axis_d, yend = P_max), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_d, xend = Y2, y = P2, yend = P2), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  annotate("text", x = max(ad_d_df$Y) + 1, y = min(ad_d_df$P) + 0.35,
+           label = "AD = AD'", color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = Y0,        y = p_axis_d - 0.18, label = expression(Y["0,t"]), color = "black",     size = 4, vjust = 1) +
+  annotate("text", x = Y1 + 0.15, y = p_axis_d - 0.18, label = expression(Y["1,t"]), color = "steelblue", size = 4, vjust = 1) +
+  annotate("text", x = Y2 - 0.15, y = p_axis_d - 0.18, label = expression(Y["2,t"]), color = "firebrick", size = 4, vjust = 1) +
+  annotate("text", x = x_axis_d - 0.18, y = P0, label = expression(P["0,t"]), color = "black",     size = 4, hjust = 1) +
+  annotate("text", x = x_axis_d - 0.18, y = P1, label = expression(P["1,t"]), color = "steelblue", size = 4, hjust = 1) +
+  annotate("text", x = x_axis_d - 0.18, y = P2, label = expression(P["2,t"]), color = "firebrick", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(x_axis_d, Y_max), ylim = c(p_axis_d, P_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(P[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(4, 4, 18, 4)
+  )
+
+g_up_d   <- ggplotGrob(p_up_d)
+g_down_d <- ggplotGrob(p_down_d)
+g_up_d$widths <- g_down_d$widths <- grid::unit.pmax(g_up_d$widths, g_down_d$widths)
+gridExtra::grid.arrange(g_up_d, g_down_d, nrow = 2, heights = c(3, 2))
+```
+
+---
+
+### Part (e) — Interest-only money demand: horizontal LM
+
+If $M_t = P_t M^d(r_t + \pi^e_{t+1})$, money demand depends on the nominal interest rate
+but **not** on $Y_t$. Equilibrium is:
+
+$$\frac{M_t}{P_t} = M^d(r_t + \pi^e_{t+1})$$
+
+This pins $r_t$ regardless of $Y_t$ — **the LM curve is horizontal** in $(r_t, Y_t)$ space.
+
+- Higher $P_t \Rightarrow M_t/P_t \downarrow \Rightarrow r_t^* \uparrow$: horizontal LM shifts **up**.
+- Lower $P_t \Rightarrow M_t/P_t \uparrow \Rightarrow r_t^* \downarrow$: horizontal LM shifts **down**.
+
+The IS curve fully determines $Y_t$ given $r_t^*$ from LM. The **AD curve** is downward-sloping.
+
+An IS shock **fully shifts the AD**: at a horizontal LM, $r_t$ is fixed. A rightward IS shift
+increases $Y_t$ by the full horizontal amount of the IS shift.
+
+```{r}
+#| label: fig-ex241-part-e
+#| fig-cap: "Horizontal LM (part e). Upper panel: IS with three horizontal LM curves. An IS rightward shift (dashed) increases $Y_t$ by the full horizontal shift while $r_t$ is unchanged. Lower panel: the AD shifts right by the same horizontal amount as the IS shift."
+#| fig-alt: "Two stacked panels. Upper: IS with three horizontal LM curves; an IS shift moves equilibrium right at the same r. Lower: AD shifts right to AD-prime."
+#| fig-height: 7
+#| fig-width: 6
+
+# Horizontal LM: r_t fixed at baseline equilibrium rates
+r_e0 <- r0; r_e1 <- r1; r_e2 <- r2
+
+# IS determines Y: Y = (is_int - r_e) / is_slope
+Y_e0 <- (is_int - r_e0) / is_slope
+Y_e1 <- (is_int - r_e1) / is_slope
+Y_e2 <- (is_int - r_e2) / is_slope
+
+# After IS shift: same r_e0 but larger Y
+Y_e0_new <- (is_int_shift - r_e0) / is_slope
+IS_horiz_shift <- Y_e0_new - Y_e0   # = is_int_shift - is_int) / is_slope
+
+ad_new_e_df <- make_ad(c(Y_e2 + IS_horiz_shift, Y_e0_new, Y_e1 + IS_horiz_shift), c(P2, P0, P1))
+
+x_axis_e <- 0.45
+r_axis_e <- 0.02
+p_axis_e <- 0.45
+
+is_e_df       <- is_df       |> filter(Y >= x_axis_e, r >= r_axis_e)
+is_shift_e_df <- is_shift_df |> filter(Y >= x_axis_e, r >= r_axis_e)
+
+p_up_e <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = x_axis_e, xend = Y_max, y = r_axis_e, yend = r_axis_e), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = x_axis_e, xend = x_axis_e, y = r_axis_e, yend = r_max), color = "black", linewidth = 0.4) +
+  geom_line(data = is_e_df,       aes(x = Y, y = r), color = "black", linewidth = lw) +
+  geom_line(data = is_shift_e_df, aes(x = Y, y = r), color = "black", linewidth = lw, linetype = "dashed") +
+  geom_segment(aes(x = x_axis_e, xend = Y_max, y = r_e0, yend = r_e0), color = "black",     linewidth = lw) +
+  geom_segment(aes(x = x_axis_e, xend = Y_max, y = r_e1, yend = r_e1), color = "steelblue", linewidth = lw) +
+  geom_segment(aes(x = x_axis_e, xend = Y_max, y = r_e2, yend = r_e2), color = "firebrick", linewidth = lw) +
+  # Equilibria
+  geom_point(aes(x = Y_e0,     y = r_e0), color = "black",     size = 2.5) +
+  geom_point(aes(x = Y_e0_new, y = r_e0), color = "black",     size = 2.5, shape = 1) +
+  geom_point(aes(x = Y_e1,     y = r_e1), color = "steelblue", size = 2.5) +
+  geom_point(aes(x = Y_e2,     y = r_e2), color = "firebrick", size = 2.5) +
+  # Guides to axes
+  geom_segment(aes(x = Y_e0,     xend = Y_e0,     y = r_axis_e, yend = r_e0), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = Y_e0_new, xend = Y_e0_new, y = r_axis_e, yend = r_e0), linetype = "dotted", color = "black",     linewidth = 0.4) +
+  geom_segment(aes(x = Y_e1,     xend = Y_e1,     y = r_axis_e, yend = r_e1), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = Y_e2,     xend = Y_e2,     y = r_axis_e, yend = r_e2), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_e, xend = Y_e0,     y = r_e0, yend = r_e0), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_e, xend = Y_e0_new, y = r_e0, yend = r_e0), linetype = "dotted", color = "black",     linewidth = 0.4) +
+  geom_segment(aes(x = x_axis_e, xend = Y_e1,     y = r_e1, yend = r_e1), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_e, xend = Y_e2,     y = r_e2, yend = r_e2), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  # Labels
+  annotate("text", x = 5, y = is_int       - is_slope * 5 + 0.017, label = "IS",  color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = 5, y = is_int_shift - is_slope * 5 + 0.017, label = "IS'", color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = Y_max - 0.2, y = r_e0 + 0.015, label = expression(LM(P["0,t"])), color = "black",     size = 4, hjust = 1) +
+  annotate("text", x = Y_max - 0.2, y = r_e1 - 0.015, label = expression(LM(P["1,t"])), color = "steelblue", size = 4, hjust = 1) +
+  annotate("text", x = Y_max - 0.2, y = r_e2 + 0.015, label = expression(LM(P["2,t"])), color = "firebrick", size = 4, hjust = 1) +
+  annotate("text", x = Y_e0,     y = r_axis_e - 0.013, label = expression(Y["0,t"]),     color = "black",     size = 4, vjust = 1) +
+  annotate("text", x = Y_e0_new, y = r_axis_e - 0.013, label = expression(Y["0,t"]^"'"), color = "black",     size = 4, vjust = 1) +
+  annotate("text", x = Y_e1,     y = r_axis_e - 0.013, label = expression(Y["1,t"]),     color = "steelblue", size = 4, vjust = 1) +
+  annotate("text", x = Y_e2,     y = r_axis_e - 0.013, label = expression(Y["2,t"]),     color = "firebrick", size = 4, vjust = 1) +
+  annotate("text", x = x_axis_e - 0.18, y = r_e0, label = expression(r["0,t"]), color = "black",     size = 4, hjust = 1) +
+  annotate("text", x = x_axis_e - 0.18, y = r_e1, label = expression(r["1,t"]), color = "steelblue", size = 4, hjust = 1) +
+  annotate("text", x = x_axis_e - 0.18, y = r_e2, label = expression(r["2,t"]), color = "firebrick", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(x_axis_e, Y_max), ylim = c(r_axis_e, r_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(r[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(4, 4, 18, 4)
+  )
+
+ad_e_df <- make_ad(c(Y_e2, Y_e0, Y_e1), c(P2, P0, P1))
+ad_e_plot_df     <- ad_e_df     |> filter(Y >= x_axis_e, P >= p_axis_e)
+ad_new_e_plot_df <- ad_new_e_df |> filter(Y >= x_axis_e, P >= p_axis_e)
+
+p_down_e <- ggplot() +
+  # Inner axes
+  geom_segment(aes(x = x_axis_e, xend = Y_max, y = p_axis_e, yend = p_axis_e), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = x_axis_e, xend = x_axis_e, y = p_axis_e, yend = P_max), color = "black", linewidth = 0.4) +
+  geom_line(data = ad_e_plot_df,     aes(x = Y, y = P), color = "black", linewidth = lw) +
+  geom_line(data = ad_new_e_plot_df, aes(x = Y, y = P), color = "black", linewidth = lw, linetype = "dashed") +
+  geom_point(aes(x = Y_e0,     y = P0), color = "black", size = 2.5) +
+  geom_point(aes(x = Y_e0_new, y = P0), color = "black", size = 2.5, shape = 1) +
+  # Guides
+  geom_segment(aes(x = Y_e0,     xend = Y_e0,     y = p_axis_e, yend = P_max), linetype = "dotted", color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = Y_e0_new, xend = Y_e0_new, y = p_axis_e, yend = P_max), linetype = "dotted", color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = x_axis_e, xend = Y_e0,     y = P0, yend = P0), linetype = "dotted", color = "black", linewidth = 0.5) +
+  geom_segment(aes(x = x_axis_e, xend = Y_e0_new, y = P0, yend = P0), linetype = "dotted", color = "black", linewidth = 0.4) +
+  annotate("segment",
+           x = Y_e0 + 0.1, xend = Y_e0_new - 0.1, y = P0, yend = P0,
+           arrow = arrow(length = unit(0.18,"cm")), color = "black", linewidth = 0.8) +
+  annotate("text", x = max(ad_e_plot_df$Y) - 0.3, y = min(ad_e_plot_df$P)-0.2, label = "AD",  color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = max(ad_new_e_plot_df$Y) - 0.3, y = min(ad_new_e_plot_df$P)-0.2, label = "AD'", color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = Y_e0,     y = p_axis_e - 0.18, label = expression(Y["0,t"]),     color = "black", size = 4, vjust = 1) +
+  annotate("text", x = Y_e0_new, y = p_axis_e - 0.18, label = expression(Y["0,t"]^"'"), color = "black", size = 4, vjust = 1) +
+  annotate("text", x = x_axis_e - 0.18, y = P0, label = expression(P["0,t"]), color = "black", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(x_axis_e, Y_max), ylim = c(p_axis_e, P_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(P[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(4, 4, 18, 4)
+  )
+
+g_up_e   <- ggplotGrob(p_up_e)
+g_down_e <- ggplotGrob(p_down_e)
+g_up_e$widths <- g_down_e$widths <- grid::unit.pmax(g_up_e$widths, g_down_e$widths)
+gridExtra::grid.arrange(g_up_e, g_down_e, nrow = 2, heights = c(3, 2))
+```
+
+---
+
+### Part (f) — IS expansion: (d) vs (e)
+
+**An expansion of the IS curve shifts the AD curve by more in part (e).**
+
+- **Part (d) — vertical LM.** The money market alone determines $Y_t$: $Y_t^* = (M^d)^{-1}(M_t/P_t)$.
+  An IS shift changes $r_t$ but not $Y_t^*$. The $(P_t, Y_t)$ combination is unchanged —
+  **the AD does not shift at all**.
+
+- **Part (e) — horizontal LM.** The LM pins $r_t^*$; the IS determines $Y_t$. A rightward IS
+  shift raises $Y_t$ by the full horizontal shift at every $P_t$ — **the AD shifts right
+  one-for-one with the IS shift**. There is no crowding-out through interest rates because
+  the flat LM holds $r_t$ constant.
+
+The contrast between (d) and (e) captures two polar extremes of interest-rate sensitivity
+of money demand. In (d), money demand is entirely income-driven; IS shocks are fully
+absorbed by $r_t$ with no output effect. In (e), money demand is entirely interest-driven;
+IS shocks pass through completely to $Y_t$.
+
+---
+
+# Exercise 24.2 — Algebraic IS, LM, and AD with Linear Functional Forms
+
+**Problem.** Suppose:
+
+$$C_t = c_1(Y_t - G_t) + c_2(Y_{t+1} - G_{t+1}) - c_3 r_t, \qquad I_t = -b_1 r_t + b_2 A_{t+1} - b_3 K_t$$
+
+$$M_t = P_t - m_1(r_t + \pi^e_{t+1}) + m_2 Y_t$$
+
+where $c_1, c_2, c_3, b_1, b_2, b_3, m_1, m_2 > 0$.
+
+---
+
+## Solution
+
+### Part (a) — IS curve
+
+Substitute into $Y_t = C_t + I_t + G_t$:
+
+$$Y_t = c_1(Y_t - G_t) + c_2(Y_{t+1}-G_{t+1}) - c_3 r_t - b_1 r_t + b_2 A_{t+1} - b_3 K_t + G_t$$
+
+Collect $Y_t$ on the left:
+
+$$Y_t(1-c_1) = G_t(1-c_1) + c_2(Y_{t+1}-G_{t+1}) - (c_3+b_1)r_t + b_2 A_{t+1} - b_3 K_t$$
+
+Solving for $r_t$:
+
+$$r_t = \frac{1-c_1}{c_3+b_1}(G_t - Y_t) + \frac{c_2}{c_3+b_1}(Y_{t+1}-G_{t+1}) + \frac{b_2}{c_3+b_1}A_{t+1} - \frac{b_3}{c_3+b_1}K_t$$
+
+The IS is downward-sloping with slope $dr_t/dY_t = -(1-c_1)/(c_3+b_1)<0$. At fixed $r_t$,
+$\partial Y_t / \partial G_t = 1$: an increase in $G_t$ shifts IS right by exactly $\Delta G_t$
+(the direct spending increase is offset by the reduction in disposable income $Y_t-G_t$,
+leaving a net unit shift).
+
+---
+
+### Part (b) — LM curve
+
+Solve $M_t = P_t - m_1(r_t + \pi^e_{t+1}) + m_2 Y_t$ for $r_t$:
+
+$$m_1 r_t = P_t - M_t - m_1\pi^e_{t+1} + m_2 Y_t$$
+
+$$r_t = \frac{m_2}{m_1}\,Y_t + \frac{P_t - M_t}{m_1} - \pi^e_{t+1}$$
+
+The LM is upward-sloping with slope $m_2/m_1 > 0$. It shifts down (right) when $M_t$ or
+$\pi^e_{t+1}$ increase, and up (left) when $P_t$ increases — consistent with Table 24.1.
+
+---
+
+### Part (c) — AD curve
+
+Set IS equal to LM. From the IS rewritten in levels:
+
+$$(1-c_1)Y_t = (1-c_1)G_t + c_2(Y_{t+1}-G_{t+1}) - (c_3+b_1)r_t + b_2 A_{t+1} - b_3 K_t$$
+
+Substitute the LM expression for $r_t$:
+
+$$(1-c_1)Y_t = (\cdots) - (c_3+b_1)\!\left[\frac{m_2}{m_1}Y_t + \frac{P_t-M_t}{m_1} - \pi^e_{t+1}\right]$$
+
+Define $\Lambda \equiv (1-c_1) + \dfrac{(c_3+b_1)m_2}{m_1} > 0$. Collecting $Y_t$:
+
+$$Y_t = \frac{1}{\Lambda}\!\left[(1-c_1)G_t + c_2(Y_{t+1}-G_{t+1}) - \frac{c_3+b_1}{m_1}(P_t - M_t) + (c_3+b_1)\pi^e_{t+1} + b_2 A_{t+1} - b_3 K_t\right]$$
+
+The AD is downward-sloping: the coefficient on $P_t$ is $-(c_3+b_1)/(\Lambda m_1)<0$.
+
+---
+
+### Part (d) — Horizontal AD shift from $\Delta G_t$, holding $P_t$ fixed
+
+$$\frac{\partial Y_t}{\partial G_t}\bigg|_{P_t} = \frac{1-c_1}{\Lambda} = \frac{1-c_1}{(1-c_1)+\dfrac{(c_3+b_1)m_2}{m_1}}$$
+
+**This is positive but less than 1.**
+
+*Positive:* $1-c_1>0$ (MPC$<1$) and $\Lambda>0$, so the ratio is positive.
+
+*Less than 1:* The denominator exceeds the numerator by $(c_3+b_1)m_2/m_1>0$, so the ratio
+is strictly less than 1.
+
+**Intuition.** From the IS alone (at fixed $r_t$), $\partial Y_t/\partial G_t|_{r_t}=1$. But
+the upward-sloping LM means higher $Y_t$ raises money demand, which pushes up $r_t$. The
+higher $r_t$ crowds out $c_3\Delta r_t$ of consumption and $b_1\Delta r_t$ of investment.
+After this crowding-out, the net output increase is less than 1.
+
+---
+
+### Part (e) — No Ricardian Equivalence: $C_t = c_1 Y_t - c_3 r_t$
+
+Consumption now depends on gross income $Y_t$, not disposable income $Y_t - G_t$. A rise in
+$G_t$ does not reduce consumption through the income channel.
+
+**IS curve:**
+
+$$Y_t(1-c_1) = G_t - (c_3+b_1)r_t + b_2 A_{t+1} - b_3 K_t$$
+
+$$r_t = \frac{G_t - (1-c_1)Y_t + b_2 A_{t+1} - b_3 K_t}{c_3+b_1}$$
+
+At fixed $r_t$, $\partial Y_t/\partial G_t|_{r_t} = 1/(1-c_1)>1$: the standard Keynesian
+multiplier. The IS shifts further right per unit of $G_t$ than in part (d).
+
+**LM curve:** unchanged from part (b).
+
+**AD curve:**
+
+$$Y_t = \frac{1}{\Lambda}\!\left[G_t - \frac{c_3+b_1}{m_1}(P_t-M_t) + (c_3+b_1)\pi^e_{t+1} + b_2 A_{t+1} - b_3 K_t\right]$$
+
+**AD shift from $\Delta G_t$:**
+
+$$\frac{\partial Y_t}{\partial G_t}\bigg|_{P_t} = \frac{1}{\Lambda} = \frac{1}{(1-c_1)+\dfrac{(c_3+b_1)m_2}{m_1}}$$
+
+This exceeds the part (d) result $\dfrac{1-c_1}{\Lambda}$ by the factor $\dfrac{1}{1-c_1}>1$.
+
+**Can the AD shift exceed 1?** The shift $1/\Lambda > 1$ when $\Lambda < 1$, i.e., when
+
+$$(1-c_1) + \frac{(c_3+b_1)m_2}{m_1} < 1 \qquad \Longleftrightarrow \qquad \frac{(c_3+b_1)m_2}{m_1} < c_1$$
+
+This is most likely when:
+
+- $c_1$ is **large** (high MPC — strong income multiplier amplifies fiscal stimulus);
+- $m_1$ is **large** relative to $m_2$ (money demand is very interest-sensitive but not
+  income-sensitive — the LM is nearly flat, so little crowding-out occurs);
+- $c_3 + b_1$ is **small** (spending is not very interest-elastic — less crowding-out per
+  unit rise in $r_t$).
+
+At the limit $m_1\to\infty$ (perfectly elastic money demand, the liquidity trap) the LM is
+horizontal, $r_t$ is pinned, and there is no crowding-out. In that case $\Lambda\to 1-c_1<1$
+and the fiscal multiplier $1/\Lambda = 1/(1-c_1)>1$ — the full Keynesian multiplier obtains.

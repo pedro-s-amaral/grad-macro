@@ -1,0 +1,244 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 12"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 12.1 — One-Period Household with Labor–Leisure Choice
+
+**Problem.** A household lives for one period and receives no dividend. It solves:
+$$\max_{C_t,\,N_t} \; U = \ln C_t + \theta_t \ln(1-N_t)$$
+subject to:
+$$C_t = w_t N_t$$
+where $N_t \in [0,1]$ is hours worked, $1-N_t$ is leisure, $w_t$ is the real wage, and $\theta_t > 0$ weights the utility of leisure.
+
+**(a)** Solve for the optimality condition characterizing the household's problem.
+
+**(b)** From this condition, what is the effect of $w_t$ on $N_t$? Explain the economic intuition.
+
+---
+
+## Solution
+
+### Part (a) — Optimality condition
+
+Form the Lagrangian, attaching multiplier $\lambda$ to the budget constraint:
+
+$$\mathcal{L} = \ln C_t + \theta_t \ln(1-N_t) + \lambda\bigl(w_t N_t - C_t\bigr)$$
+
+**FOC for $C_t$:**
+
+$$\frac{\partial \mathcal{L}}{\partial C_t} = \frac{1}{C_t} - \lambda = 0 \implies \lambda = \frac{1}{C_t}$$
+
+**FOC for $N_t$:**
+
+$$\frac{\partial \mathcal{L}}{\partial N_t} = -\frac{\theta_t}{1-N_t} + \lambda w_t = 0 \implies \lambda = \frac{\theta_t}{w_t(1-N_t)}$$
+
+**Combining** — set the two expressions for $\lambda$ equal:
+
+$$\frac{1}{C_t} = \frac{\theta_t}{w_t(1-N_t)}$$
+
+Rearranging gives the **intratemporal optimality condition** (MRS = relative price):
+
+$$\underbrace{\frac{\theta_t/(1-N_t)}{1/C_t}}_{\text{MRS}_{L,C}} = w_t$$
+
+The left side is the marginal rate of substitution of leisure for consumption: the ratio of the marginal utility of leisure to the marginal utility of consumption. At the optimum it equals the real wage $w_t$, the market price of leisure (its opportunity cost in terms of foregone consumption).
+
+**Solving for the optimal choices.** Substituting the budget constraint $C_t = w_t N_t$ into the optimality condition:
+
+$$\frac{1}{w_t N_t} = \frac{\theta_t}{w_t(1-N_t)} \implies \frac{1-N_t}{N_t} = \theta_t \implies 1-N_t = \theta_t N_t$$
+
+$$N_t^* = \frac{1}{1+\theta_t}$$
+
+$$C_t^* = w_t N_t^* = \frac{w_t}{1+\theta_t}$$
+
+### Part (b) — Effect of $w_t$ on $N_t^*$
+
+The optimal labor supply $N_t^* = 1/(1+\theta_t)$ **does not depend on $w_t$**:
+
+$$\frac{\partial N_t^*}{\partial w_t} = 0$$
+
+A higher real wage leaves hours worked unchanged.
+
+**Economic intuition: income and substitution effects cancel.** When $w_t$ rises:
+
+- **Substitution effect** — leisure becomes relatively more expensive (its opportunity cost $w_t$ rises), so the household substitutes away from leisure toward work: $N_t \uparrow$.
+- **Income effect** — the higher wage raises real income, making the household wealthier. With log utility over a normal good (leisure), the household demands more leisure as income rises: $N_t \downarrow$.
+
+With log utility, these two effects are **exactly equal in magnitude and opposite in direction**, so they cancel perfectly, leaving $N_t^*$ unchanged. Only consumption responds: $C_t^* = w_t/(1+\theta_t)$ rises proportionally with $w_t$.
+
+This result — that log utility implies zero wage elasticity of labor supply in a static setting — is a classic benchmark. Adding a two-period horizon (intertemporal substitution) restores a positive response to *temporary* wage changes, which is why the textbook's two-period model yields an upward-sloping labor supply curve.
+
+---
+
+# Exercise 12.2 — Firm Optimization: Labor Demand and Investment
+
+**Problem.** A firm has Cobb-Douglas technology in period $t$ and a no-labor technology in period $t+1$:
+$$Y_t = A_t K_t^\alpha N_t^{1-\alpha}, \qquad Y_{t+1} = A_{t+1}K_{t+1}^\alpha$$
+Capital accumulates as $K_{t+1} = (1-\delta)K_t + I_t$. The firm pays wage $w_t$, discounts future dividends at rate $r_t$, and sells its undepreciated capital at the end of $t+1$.
+
+**(a)** Write down the firm's optimization problem.
+
+**(b)** Derive the first-order conditions for $N_t$ and $K_{t+1}$.
+
+**(c)** Re-arrange the FOCs to derive explicit expressions for $N_t$ and $K_{t+1}$.
+
+**(d)** Use the capital accumulation equation to derive an expression for $I_t$.
+
+**(e)** With $\alpha=\tfrac{1}{3}$, $\delta=0.1$, $A_t=1$, $A_{t+1}=1$, $K_t=2$: plot the labor demand curve over $w_t \in [1,\,1.5]$ (step 0.01).
+
+**(f)** Increase $A_t$ to 1.1. Re-plot $N_t$ vs $w_t$ on the same figure. What does the increase in $A_t$ do to the labor demand curve?
+
+**(g)** Using the same base parameters, plot the investment demand curve over $r_t \in [0.02,\,0.1]$ (step 0.001), with $r_t$ on the vertical axis and $I_t$ on the horizontal axis.
+
+**(h)** Increase $A_{t+1}$ to 1.1. Re-plot on the same figure. What does the increase in $A_{t+1}$ do to the investment demand curve?
+
+---
+
+## Solution
+
+### Part (a) — Firm's optimization problem
+
+The firm borrows $I_t$ from a financial intermediary at rate $r_t$ in period $t$ and repays $(1+r_t)I_t$ in period $t+1$. Dividends are therefore:
+
+$$D_t = Y_t - w_t N_t = A_t K_t^\alpha N_t^{1-\alpha} - w_t N_t$$
+$$D_{t+1} = Y_{t+1} + (1-\delta)K_{t+1} - (1+r_t)I_t = A_{t+1}K_{t+1}^\alpha + (1-\delta)K_{t+1} - (1+r_t)[K_{t+1}-(1-\delta)K_t]$$
+
+Substituting $I_t = K_{t+1}-(1-\delta)K_t$ and simplifying $D_{t+1}$ — noting that $(1-\delta)-(1+r_t) = -(r_t+\delta)$ — the objective becomes:
+
+$$\max_{N_t,\,K_{t+1}} \; V_t = \underbrace{A_t K_t^\alpha N_t^{1-\alpha} - w_t N_t}_{D_t} + \frac{\overbrace{A_{t+1}K_{t+1}^\alpha - (r_t+\delta)K_{t+1} + (1+r_t)(1-\delta)K_t}^{D_{t+1}}}{1+r_t}$$
+
+Since $(1-\delta)K_t$ is predetermined, this simplifies to choosing $N_t$ and $K_{t+1}$ to maximize:
+
+$$V_t = A_t K_t^\alpha N_t^{1-\alpha} - w_t N_t + \frac{A_{t+1}K_{t+1}^\alpha - (r_t+\delta)K_{t+1}}{1+r_t} + \underbrace{(1-\delta)K_t}_{\text{constant}}$$
+
+### Part (b) — First-order conditions
+
+**FOC for $N_t$:**
+
+$$\frac{\partial V_t}{\partial N_t} = (1-\alpha)A_t K_t^\alpha N_t^{-\alpha} - w_t = 0$$
+
+$$\text{MPN}_t \equiv (1-\alpha)A_t K_t^\alpha N_t^{-\alpha} = w_t$$
+
+The firm hires labor until the marginal product of labor equals the real wage.
+
+**FOC for $K_{t+1}$:**
+
+$$\frac{\partial V_t}{\partial K_{t+1}} = \frac{\alpha A_{t+1}K_{t+1}^{\alpha-1} - (r_t+\delta)}{1+r_t} = 0$$
+
+$$\text{MPK}_{t+1} \equiv \alpha A_{t+1}K_{t+1}^{\alpha-1} = r_t + \delta$$
+
+Investing one additional unit of capital raises $D_{t+1}$ by $\text{MPK}_{t+1} + (1-\delta)$ (output gain plus recovered capital) but increases the loan repayment by $(1+r_t)$. The FOC sets these equal: $\text{MPK}_{t+1} + (1-\delta) = 1+r_t$, which rearranges to $\text{MPK}_{t+1} = r_t + \delta$.
+
+### Part (c) — Explicit demands for $N_t$ and $K_{t+1}$
+
+**Labor demand.** Solving the $N_t$ FOC for $N_t$:
+
+$$(1-\alpha)A_t K_t^\alpha N_t^{-\alpha} = w_t \implies N_t^\alpha = \frac{(1-\alpha)A_t K_t^\alpha}{w_t}$$
+
+$$N_t = \left[\frac{(1-\alpha)A_t K_t^\alpha}{w_t}\right]^{1/\alpha}$$
+
+$N_t$ is decreasing in $w_t$ (downward-sloping labor demand) and increasing in $A_t$ and $K_t$.
+
+**Capital demand.** Solving the $K_{t+1}$ FOC:
+
+$$\alpha A_{t+1}K_{t+1}^{\alpha-1} = r_t+\delta \implies K_{t+1}^{1-\alpha} = \frac{\alpha A_{t+1}}{r_t+\delta}$$
+
+$$K_{t+1} = \left[\frac{\alpha A_{t+1}}{r_t+\delta}\right]^{1/(1-\alpha)}$$
+
+$K_{t+1}$ depends on **future** productivity $A_{t+1}$ but not on current $A_t$ — the capital accumulation decision is entirely forward-looking.
+
+### Part (d) — Investment demand
+
+Substituting $K_{t+1}$ into the capital accumulation equation $I_t = K_{t+1} - (1-\delta)K_t$:
+
+$$I_t = \left[\frac{\alpha A_{t+1}}{r_t+\delta}\right]^{1/(1-\alpha)} - (1-\delta)K_t$$
+
+$I_t$ is decreasing in $r_t$ (higher cost of borrowing lowers desired capital) and increasing in $A_{t+1}$ (higher future productivity raises desired capital). Current $A_t$ does not appear — consistent with the forward-looking nature of investment. $I_t$ is decreasing on inital capital $K_t$. The more initial capital the firm has, the less investment it needs to undertake to get to a given $K_{t+1}$ level.
+
+### Parts (e) & (f) — Labor demand curve and shift
+
+```{r ex122_labor, fig.cap="Labor demand curves for the firm ($\\alpha = 1/3$, $\\delta = 0.1$, $K_t = 2$). The curve shifts right when current productivity $A_t$ increases from 1 to 1.1: at every wage, the firm demands more labor.", fig.alt="Downward-sloping labor demand curves in wage-employment space. Higher At (1.1 vs 1) shifts curve rightward at every wage level."}
+alpha <- 1/3;  delta <- 0.1;  Kt <- 2
+
+wt_grid <- seq(1, 1.5, by = 0.01)
+
+Nt_base <- ((1 - alpha) * 1.0 * Kt^alpha / wt_grid)^(1/alpha)
+Nt_hiA  <- ((1 - alpha) * 1.1 * Kt^alpha / wt_grid)^(1/alpha)
+
+tibble(wt = wt_grid,
+       `A[t] == 1.0` = Nt_base,
+       `A[t] == 1.1` = Nt_hiA) |>
+  pivot_longer(-wt, names_to = "scenario", values_to = "Nt") |>
+  ggplot(aes(x = Nt, y = wt, color = scenario)) +
+  geom_line(linewidth = 1.1) +
+  scale_color_manual(values = c("steelblue", "firebrick"),
+                     labels = scales::label_parse()) +
+  labs(x = expression(N[t]),
+       y = expression(w[t]),
+       title = "Labor demand: baseline and productivity shift",
+       subtitle = expression(paste(alpha, " = 1/3,  ", delta, " = 0.1,  ", K[t], " = 2")),
+       color = NULL)
+```
+
+An increase in $A_t$ raises the marginal product of labor at every $(K_t, N_t)$ pair, so the firm demands more workers at any given wage — the labor demand curve shifts **right**.
+
+### Parts (g) & (h) — Investment demand curve and shift
+
+```{r ex122_invest, fig.cap="Investment demand curves ($\\alpha = 1/3$, $\\delta = 0.1$, $K_t = 2$). Higher future productivity $A_{t+1} = 1.1$ shifts the curve right: more investment is demanded at every interest rate.", fig.alt="Downward-sloping investment demand curves in It-rt space. Higher At+1 (1.1 vs 1) shifts the curve rightward at every interest rate."}
+rt_grid <- seq(0.02, 0.1, by = 0.001)
+
+Kt1_base <- (alpha * 1.0 / (rt_grid + delta))^(1/(1 - alpha))
+Kt1_hiA  <- (alpha * 1.1 / (rt_grid + delta))^(1/(1 - alpha))
+
+It_base <- Kt1_base - (1 - delta) * Kt
+It_hiA  <- Kt1_hiA  - (1 - delta) * Kt
+
+tibble(rt = rt_grid,
+       `A[t+1] == 1.0` = It_base,
+       `A[t+1] == 1.1` = It_hiA) |>
+  pivot_longer(-rt, names_to = "scenario", values_to = "It") |>
+  ggplot(aes(x = It, y = rt, color = scenario)) +
+  geom_line(linewidth = 1.1) +
+  scale_color_manual(values = c("steelblue", "firebrick"),
+                     labels = scales::label_parse()) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1)) +
+  labs(x = expression(I[t]),
+       y = expression(r[t]),
+       title = "Investment demand: baseline and future-productivity shift",
+       subtitle = expression(paste(alpha, " = 1/3,  ", delta, " = 0.1,  ", K[t], " = 2")),
+       color = NULL)
+```
+
+An increase in $A_{t+1}$ raises the future marginal product of capital at every $K_{t+1}$, so the firm wants a larger capital stock in $t+1$ — it invests more at every interest rate, shifting the investment demand curve **right**. Note that current productivity $A_t$ does not shift the investment demand curve, because $I_t$ depends on $A_{t+1}$, not $A_t$.

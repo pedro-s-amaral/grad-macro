@@ -1,0 +1,212 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 15"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 15.1 — Optimal Government Spending
+
+**Problem.**
+
+In the text we have assumed the representative agent does not derive utility from government expenditures. Instead, consider the one-period problem where the representative agent derives utility from consumption and government spending:
+
+$$U = u(C) + v(G)$$
+
+Both $u(C)$ and $v(G)$ are increasing and concave. The household is exogenously endowed with $Y$. Since this is a one-period model, the government balances its budget: $C + G = Y$. The government chooses $G$ (and hence $C = Y - G$) to maximize the representative agent's utility:
+
+$$\max_{C,\,G}\; u(C) + v(G) \qquad \text{s.t.} \quad C + G = Y$$
+
+**(a)** Write this as an unconstrained problem where the government chooses $G$.
+
+**(b)** Derive the first-order condition.
+
+**(c)** Suppose $u(C) + v(G) = \ln C + \ln G$. Solve for the optimal levels of $G$ and $C$.
+
+**(d)** If the economy is in a recession (i.e. low $Y$), should a benevolent government increase or decrease expenditures? What is the economic intuition?
+
+---
+
+## Solution
+
+### Part (a)
+
+Substitute $C = Y - G$ into the objective:
+
+$$\max_G\; u(Y - G) + v(G)$$
+
+### Part (b)
+
+Differentiating with respect to $G$ and setting equal to zero:
+
+$$-u'(Y - G) + v'(G) = 0$$
+
+$$v'(G^*) = u'(C^*)$$
+
+The social planner equates the marginal utility of government spending to the marginal utility of consumption. Since both $u$ and $v$ are concave, the second-order condition $-u'' - v'' < 0$ is satisfied (both terms are negative), confirming this is a maximum.
+
+### Part (c)
+
+With $u(C) = \ln C$ and $v(G) = \ln G$:
+
+$$u'(C) = \frac{1}{C}, \qquad v'(G) = \frac{1}{G}$$
+
+The FOC $v'(G^*) = u'(C^*)$ gives $1/G^* = 1/C^*$, so $G^* = C^*$. Combined with the resource constraint $C^* + G^* = Y$:
+
+$$G^* = C^* = \frac{Y}{2}$$
+
+The social planner splits the endowment equally between private consumption and government spending.
+
+### Part (d)
+
+From part (c), $G^* = Y/2$. When $Y$ falls in a recession, optimal government spending falls proportionally. The benevolent government **decreases** expenditures.
+
+To see this holds for general $u$ and $v$, totally differentiate the FOC $v'(G^*) = u'(Y - G^*)$ with respect to $Y$:
+
+$$v''(G^*)\frac{dG^*}{dY} = u''(Y - G^*)\!\left(1 - \frac{dG^*}{dY}\right)$$
+
+Solving:
+
+$$\frac{dG^*}{dY} = \frac{u''(Y - G^*)}{u''(Y - G^*) + v''(G^*)}$$
+
+Since $u'' < 0$ and $v'' < 0$, both numerator and denominator are negative, so $dG^*/dY > 0$: **government spending is procyclical** — it falls in recessions and rises in booms.
+
+**Intuition.** Government spending and private consumption are both normal goods in this welfare problem. When income falls, the social planner reduces both $C$ and $G$ to keep their marginal utilities equated. Raising $G$ in a recession would push $v'(G)$ below $u'(C)$, creating a welfare-reducing imbalance. The procyclical result contrasts with Keynesian prescriptions, but Keynesian logic relies on nominal rigidities and demand externalities that are absent from this model.
+
+---
+
+# Exercise 15.2 — Environmental Externality and Investment
+
+**Problem.** One of the assumptions that goes into the Neoclassical model is that there are no externalities. Here we discard that assumption. Suppose that the process for turning output into productive capital entails damage to the environment of $D_t = \phi(I_t)$, where $\phi(I_t) > 0$ provided $I_t > 0$ and $\phi' > 0$, $\phi'' > 0$.
+
+We assume this cost provides disutility to the consumer so that the present discounted value of utility is
+$$U = u(C_t) - D_t + \beta u(C_{t+1})$$
+where we have assumed labor is not a factor of production. Note that the household only receives disutility in the first period since investment is negative in the second period (we also assume a parameter restriction such that $I_t > 0$ is optimal in period $t$). The production function is $Y_t = A_t F(K_t)$. The capital accumulation equations are
+$$K_{t+1} = I_t + (1-\delta)K_t$$
+$$K_{t+2} = I_{t+1} + (1-\delta)K_{t+1}$$
+The terminal condition continues to be $K_{t+2} = 0$. The market clearing condition is $Y_t = C_t + I_t$.
+
+**(a)** Formulate this as a social planner's problem in which the only choice variable is $K_{t+1}$.
+
+**(b)** Derive the first-order condition on $K_{t+1}$.
+
+**(c)** If firms do not account for the environmental damage, will there be too much or too little investment? Prove this by finding the first-order condition of the firm's profit maximization problem.
+
+**(d)** How might an activist government restore the Pareto optimal allocation? Be as specific as possible.
+
+---
+
+## Solution
+
+### Part (a)
+
+The social planner chooses $K_{t+1}$ to maximize $U = u(C_t) - \phi(I_t) + \beta u(C_{t+1})$. We express every object in terms of $K_{t+1}$ using the model's constraints.
+
+**Period $t$ consumption.** From market clearing and capital accumulation:
+$$I_t = K_{t+1} - (1-\delta)K_t \implies C_t = A_tF(K_t) - K_{t+1} + (1-\delta)K_t$$
+
+**Period $t+1$ consumption.** The terminal condition $K_{t+2} = 0$ implies $I_{t+1} = -(1-\delta)K_{t+1}$, so:
+$$C_{t+1} = A_{t+1}F(K_{t+1}) - I_{t+1} = A_{t+1}F(K_{t+1}) + (1-\delta)K_{t+1}$$
+
+**Environmental damage.** Substituting $I_t = K_{t+1} - (1-\delta)K_t$:
+$$D_t = \phi\!\left(K_{t+1} - (1-\delta)K_t\right)$$
+
+The unconstrained social planner's problem is:
+$$\max_{K_{t+1}}\; u\!\left[A_tF(K_t) - K_{t+1} + (1-\delta)K_t\right] - \phi\!\left[K_{t+1} - (1-\delta)K_t\right] + \beta\, u\!\left[A_{t+1}F(K_{t+1}) + (1-\delta)K_{t+1}\right]$$
+
+### Part (b)
+
+Differentiating with respect to $K_{t+1}$ and setting equal to zero:
+$$-u'(C_t)\cdot 1 - \phi'(I_t)\cdot 1 + \beta\, u'(C_{t+1})\!\left[A_{t+1}F'(K_{t+1}) + (1-\delta)\right] = 0$$
+
+$$u'(C_t) + \phi'(I_t) = \beta\, u'(C_{t+1})\!\left[A_{t+1}F'(K_{t+1}) + (1-\delta)\right]$$
+
+**Interpretation.** The left-hand side is the full marginal social cost of raising $K_{t+1}$ by one unit: $u'(C_t)$ utils of forgone consumption today plus $\phi'(I_t)$ utils of additional environmental disutility. The right-hand side is the discounted marginal benefit: the utility value of extra capital in period $t+1$. Relative to the standard Euler equation, the $\phi'(I_t) > 0$ term raises the required marginal product of capital, inducing the social planner to invest less.
+
+### Part (c)
+
+**Claim.** Firms that ignore environmental damage invest **too much** relative to the social optimum.
+
+**Proof.** A competitive firm borrows $I_t$ from a financial intermediary at rate $r_t$ to finance investment, taking $r_t$ as given and ignoring $\phi(I_t)$. The dividend expressions are:
+$$D_t = A_tF(K_t) \qquad D_{t+1} = A_{t+1}F(K_{t+1}) + (1-\delta)K_{t+1} - (1+r_t)I_t$$
+
+The value function is:
+$$V = A_tF(K_t) + \frac{A_{t+1}F(K_{t+1}) + (1-\delta)K_{t+1} - (1+r_t)I_t}{1+r_t}$$
+
+Note that the loan-repayment term simplifies: $-(1+r_t)I_t\,/\,(1+r_t) = -I_t$, so substituting $I_t = K_{t+1} - (1-\delta)K_t$ and differentiating with respect to $K_{t+1}$:
+$$-1 + \frac{A_{t+1}F'(K_{t+1}) + (1-\delta)}{1+r_t} = 0$$
+
+$$A_{t+1}F'(K_{t+1}) + (1-\delta) = 1 + r_t$$
+
+Combining with the household's Euler equation $u'(C_t) = \beta u'(C_{t+1})(1+r_t)$, the competitive equilibrium satisfies:
+$$u'(C_t) = \beta\, u'(C_{t+1})\!\left[A_{t+1}F'(K_{t+1}) + (1-\delta)\right]$$
+
+Compare this with the social planner's FOC from part (b):
+$$u'(C_t) + \phi'(I_t) = \beta\, u'(C_{t+1})\!\left[A_{t+1}F'(K_{t+1}) + (1-\delta)\right]$$
+
+Evaluate the social planner's FOC at the decentralized competitive equilibrium's solution, $K_{t+1}^{CE}$. The right-hand side equals $u'(C_t)$ (from the competitive equilibrium condition), while the left-hand side equals $u'(C_t) + \phi'(I_t) > u'(C_t)$. So at $K_{t+1}^{CE}$:
+$$\underbrace{u'(C_t) + \phi'(I_t)}_{\text{SP LHS}} > \underbrace{\beta\, u'(C_{t+1})[A_{t+1}F'(K_{t+1}) + (1-\delta)]}_{\text{SP RHS}}$$
+
+Now consider reducing $K_{t+1}$ below $K_{t+1}^{CE}$: $C_t$ rises (so $u'(C_t)$ falls by concavity) and $I_t$ falls (so $\phi'(I_t)$ falls by convexity), causing the SP LHS to decrease; meanwhile $C_{t+1}$ falls (so $u'(C_{t+1})$ rises) and $F'(K_{t+1})$ rises (by diminishing marginal product), causing the SP RHS to increase. By continuity, the SP FOC is satisfied at some $K_{t+1}^{SP} < K_{t+1}^{CE}$ proving that in the decentralized competitive equilibrium the form is over-investing relative to the social optimal. $\blacksquare$
+
+**Intuition.** Investment imposes an environmental cost that the firm does not pay. Because the external cost is zero in the firm's calculation, firms expand investment beyond the point where social marginal cost equals social marginal benefit.
+
+### Part (d)
+
+**Pigouvian tax on investment.** The government imposes a per-unit tax $\tau_t$ on investment in period $t$ and returns the revenue lump-sum to households (so the transfer does not distort the consumption–savings margin). The firm continues to borrow $I_t$ from the financial intermediary; the tax is an additional charge collected at the time of investment and paid from period-$t$ revenue. The dividend expressions become:
+
+$$D_t = A_tF(K_t) - \tau_t I_t \qquad D_{t+1} = A_{t+1}F(K_{t+1}) + (1-\delta)K_{t+1} - (1+r_t)I_t$$
+
+The value function is:
+$$V = A_tF(K_t) - \tau_t I_t + \frac{A_{t+1}F(K_{t+1}) + (1-\delta)K_{t+1} - (1+r_t)I_t}{1+r_t}$$
+
+As before, $-(1+r_t)I_t/(1+r_t) = -I_t$, so:
+$$V = A_tF(K_t) - (1+\tau_t)I_t + \frac{A_{t+1}F(K_{t+1}) + (1-\delta)K_{t+1}}{1+r_t}$$
+
+The FOC with respect to $K_{t+1}$ (using $dI_t/dK_{t+1}=1$) is:
+
+$$-(1+\tau_t) + \frac{A_{t+1}F'(K_{t+1}) + (1-\delta)}{1+r_t} = 0$$
+
+$$A_{t+1}F'(K_{t+1}) + (1-\delta) = (1+r_t)(1+\tau_t)$$
+
+Combining with the household's Euler equation $u'(C_t) = \beta u'(C_{t+1})(1+r_t)$:
+
+$$u'(C_t)(1+\tau_t) = \beta\, u'(C_{t+1})\!\left[A_{t+1}F'(K_{t+1}) + (1-\delta)\right]$$
+
+Matching this to the social planner's FOC requires $u'(C_t)(1+\tau_t^*) = u'(C_t) + \phi'(I_t^*)$, which gives:
+
+$$\tau_t^* = \frac{\phi'(I_t^*)}{u'(C_t^*)}$$
+
+The optimal tax equals the marginal environmental damage $\phi'(I_t^*)$ expressed in consumption units — converted from utils to goods by dividing by the marginal utility of consumption $u'(C_t^*)$. Since $\phi'' > 0$, the marginal damage is increasing in investment, so the tax rises with the scale of investment, providing a progressively stronger disincentive to over-invest.
+
+**Intuition.** The tax raises the total private cost of a unit of investment from $1$ (the loan repayment, in present-value terms) to $1 + \tau_t^*$ (loan repayment plus the tax paid from period-$t$ revenue). This forces the firm to internalize the full social cost of its investment decision, and the market equilibrium replicates the social planner's allocation.

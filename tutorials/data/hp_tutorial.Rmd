@@ -1,0 +1,95 @@
+---
+title: "Using the Hodrick-Prescott filter in R"
+output:
+  html_document: default
+css: ../style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+## Pedro Amaral
+
+## 2026-03-21
+
+# The Hodrick-Prescott (HP) filter in R
+
+This is a simple example of how to use the Hodrick-Prescott (HP) filter in R.
+
+The HP filter is used to extract a trend component and a cyclical component from of a time series of raw data. 
+
+The filter extracts a trend that minimizes the contemporaneous squared difference between data and trend plus the weighted squared differences in trend changes in consecutive periods. The weight $\lambda$ is specified by the user and reflects how averse the user is to short-run movements in the trend. [See more details here](https://en.wikipedia.org/wiki/Hodrick%E2%80%93Prescott_filter).
+
+In R, the HP filter is part of a larger package of time-series filters: [the `mFilter` package](https://cran.r-project.org/web/packages/mFilter/index.html).
+
+You can learn more about implementing the `hpfilter` function [in this explanation at CRAN](https://search.r-project.org/CRAN/refmans/mFilter/html/hpfilter.html).
+
+
+```{r}
+#install.packages("mFilter")
+# Load library
+library(mFilter)
+```
+
+
+Start by downloading real GDP from FRED so we can use it in this example.
+
+```{r}
+library(fredr)
+library(tidyverse)
+# Set your FRED key
+#fredr_set_key("################################")
+fredr_set_key(Sys.getenv("FRED_API_KEY"))
+
+gdp_raw<-fredr(
+  series_id = "GDPC1",
+  observation_start = as.Date("1947-01-01"),
+  observation_end = as.Date("2025-10-01"),
+  frequency = "q", # quarterly
+  units = "lin" # levels
+)
+
+# save the gdp values and the quarters 
+gdp=gdp_raw$value
+quarters=gdp_raw$date
+```
+
+Run the HP filter with the default value for a quarterly series of 1600 for lambda.
+
+```{r}
+hp <- hpfilter(gdp,freq=1600,type = "lambda")
+```
+
+This results in a data frame with the actual va;ue, the trend and a cyclcal component.
+
+Save the trend and define the cycle as the percentage difference between the original series and the trend.
+
+```{r}
+trend<-hp$trend
+cycle<-((gdp-trend)/trend)*100
+
+# save everything in a data frame
+df<-tibble(quarters,gdp,trend,cycle)
+```
+
+Plot everything.
+
+```{r, fig.alt="The first figure shows quaterly GDP and H-P filtered trend from 1947 to 2025. The second figure shows the cyclical component of GDP."}
+
+# Trend vs original series
+ggplot(df, aes(x=quarters)) + 
+  geom_line(aes(y = gdp)) + 
+  geom_line(aes(y = trend), color="red", linetype="twodash")+
+  labs(x="Quarters",y="Billions of Chained 2017 Dollars")
+
+
+# Cyclical component
+ggplot(df, aes(x=quarters)) + 
+  geom_line(aes(y = cycle))+
+  labs(x="Quarters",y="GDP (% deviation from trend)")
+
+```
+
+
+
+

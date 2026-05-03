@@ -1,0 +1,163 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 10"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 10.1 — Three-Period Consumption-Savings
+
+**Problem.** A household lives for three periods with lifetime utility:
+$$U = \ln C_t + \beta \ln C_{t+1} + \beta^2 \ln C_{t+2}$$
+and flow budget constraints (holding with equality):
+$$C_t + S_t = Y_t$$
+$$C_{t+1} + S_{t+1} = Y_{t+1} + (1+r_t)S_t$$
+$$C_{t+2} + S_{t+2} = Y_{t+2} + (1+r_{t+1})S_{t+1}$$
+where $r_t$ (rate between $t$ and $t+1$) need not equal $r_{t+1}$ (rate between $t+1$ and $t+2$).
+
+**(a)** What is the terminal condition on savings $S_{t+2}$? Why?
+
+**(b)** Collapse the three flow constraints into one intertemporal budget constraint.
+
+**(c)** Eliminate $C_{t+2}$ using the IBC and derive two Euler equations.
+
+**(d)** Solve for $C_t$ as a function of $Y_t, Y_{t+1}, Y_{t+2}, r$ (assuming $r_t = r_{t+1} = r$).
+
+**(e)** Derive the MPC $\partial C_t/\partial Y_t$. Is it larger or smaller than in the two-period case?
+
+**(f)** Derive $\partial C_t/\partial r$. Under what condition is it negative?
+
+---
+
+## Solution
+
+### Part (a) — Terminal condition
+
+Since there is no period beyond $t+2$, carrying unspent wealth into a hypothetical $t+3$
+yields no utility. The consumer therefore exhausts all remaining resources in the final
+period:
+$$S_{t+2} = 0$$
+
+### Part (b) — Intertemporal budget constraint
+
+Impose $S_{t+2}=0$ in the period $t+2$ constraint:
+$$C_{t+2} = Y_{t+2} + (1+r_{t+1})S_{t+1}$$
+
+From the period $t+1$ constraint: $S_{t+1} = Y_{t+1} + (1+r_t)S_t - C_{t+1}$.
+From the period $t$ constraint: $S_t = Y_t - C_t$. Substituting in sequence:
+
+$$C_{t+2} = Y_{t+2} + (1+r_{t+1})\bigl[Y_{t+1} + (1+r_t)(Y_t - C_t) - C_{t+1}\bigr]$$
+
+Expanding and collecting consumption terms on the left:
+
+$$(1+r_t)(1+r_{t+1})\,C_t + (1+r_{t+1})\,C_{t+1} + C_{t+2}$$
+$$= (1+r_t)(1+r_{t+1})\,Y_t + (1+r_{t+1})\,Y_{t+1} + Y_{t+2}$$
+
+Dividing through by $(1+r_t)(1+r_{t+1})$:
+
+$$C_t + \frac{C_{t+1}}{1+r_t} + \frac{C_{t+2}}{(1+r_t)(1+r_{t+1})} = Y_t + \frac{Y_{t+1}}{1+r_t} + \frac{Y_{t+2}}{(1+r_t)(1+r_{t+1})}$$
+
+**Interpretation.** The present value of lifetime consumption equals the present value of
+lifetime income — the same permanent-income intuition as in the two-period model, now
+discounting over three periods using the two (potentially different) interest rates.
+
+### Part (c) — Euler equations
+
+Let $Q \equiv (1+r_t)(1+r_{t+1})Y_t + (1+r_{t+1})Y_{t+1} + Y_{t+2}$ denote the
+future value of lifetime wealth. From the IBC:
+$$C_{t+2} = Q - (1+r_t)(1+r_{t+1})\,C_t - (1+r_{t+1})\,C_{t+1}$$
+
+Substituting into $U$ transforms the problem into an unconstrained maximization over $C_t$
+and $C_{t+1}$. First-order conditions:
+
+$$[C_t]:\quad \frac{1}{C_t} = \frac{\beta^2(1+r_t)(1+r_{t+1})}{C_{t+2}}$$
+
+$$[C_{t+1}]:\quad \frac{\beta}{C_{t+1}} = \frac{\beta^2(1+r_{t+1})}{C_{t+2}} \implies \frac{1}{C_{t+1}} = \frac{\beta(1+r_{t+1})}{C_{t+2}}$$
+
+The $[C_{t+1}]$ FOC gives the **second Euler equation** directly:
+$$C_{t+2} = \beta(1+r_{t+1})\,C_{t+1}$$
+
+Dividing the $[C_t]$ FOC by the $[C_{t+1}]$ FOC:
+$$\frac{C_{t+1}}{C_t} = \frac{\beta^2(1+r_t)(1+r_{t+1})}{\beta(1+r_{t+1})} = \beta(1+r_t)$$
+
+giving the **first Euler equation**:
+$$C_{t+1} = \beta(1+r_t)\,C_t$$
+
+These are simply the standard two-period Euler equation applied to each adjacent pair of
+periods: at every date, the marginal utility cost of current consumption equals the
+discounted marginal utility gain from saving.
+
+### Part (d) — Solving for $C_t$ with constant interest rate $r$
+
+Assume $r_t = r_{t+1} = r$. The Euler equations give:
+$$C_{t+1} = \beta(1+r)C_t \qquad C_{t+2} = \beta(1+r)C_{t+1} = \beta^2(1+r)^2 C_t$$
+
+Substituting into the IBC:
+$$C_t + \frac{\beta(1+r)C_t}{1+r} + \frac{\beta^2(1+r)^2 C_t}{(1+r)^2} = W$$
+$$C_t\bigl(1 + \beta + \beta^2\bigr) = W, \qquad W \equiv Y_t + \frac{Y_{t+1}}{1+r} + \frac{Y_{t+2}}{(1+r)^2}$$
+
+$$C_t = \frac{1}{1+\beta+\beta^2}\left(Y_t + \frac{Y_{t+1}}{1+r} + \frac{Y_{t+2}}{(1+r)^2}\right)$$
+
+### Part (e) — Marginal propensity to consume
+
+$$\frac{\partial C_t}{\partial Y_t} = \frac{1}{1+\beta+\beta^2}$$
+
+In the two-period model the MPC is $\dfrac{1}{1+\beta}$. Since $\beta > 0$:
+$$1+\beta+\beta^2 > 1+\beta \implies \frac{1}{1+\beta+\beta^2} < \frac{1}{1+\beta}$$
+
+The three-period MPC is **smaller**. **Intuition:** consumption smoothing spreads any
+current windfall over all remaining periods. With three periods the household divides each
+extra dollar of $Y_t$ across three periods of consumption rather than two, so a smaller
+fraction is consumed today. More generally, in a $T$-period model the MPC equals
+$1/(1+\beta+\cdots+\beta^{T-1})$, which is decreasing in $T$.
+
+### Part (f) — Effect of the interest rate on $C_t$
+
+Differentiating $C_t = W/(1+\beta+\beta^2)$ with respect to $r$:
+
+$$\frac{\partial C_t}{\partial r} = \frac{1}{1+\beta+\beta^2}\frac{\partial W}{\partial r} = \frac{1}{1+\beta+\beta^2}\left(-\frac{Y_{t+1}}{(1+r)^2} - \frac{2Y_{t+2}}{(1+r)^3}\right)$$
+
+$$\frac{\partial C_t}{\partial r} = -\frac{Y_{t+1}(1+r) + 2Y_{t+2}}{(1+\beta+\beta^2)(1+r)^3}$$
+
+This is **negative whenever $Y_{t+1} > 0$ or $Y_{t+2} > 0$** — i.e., whenever the
+consumer has positive future income. To interpret this correctly, it is useful to apply
+the Slutsky decomposition for intertemporal choice:
+
+$$\frac{dC_t}{dr} = \underbrace{\left.\frac{\partial C_t}{\partial r}\right|_{\text{subst.}}}_{<\,0} \;+\; \underbrace{S_t \cdot \frac{\partial C_t}{\partial W}}_{\text{sign}\,=\,\text{sign}(S_t)}$$
+
+- **Substitution effect** (always negative): a higher $r$ raises the relative price of current consumption, inducing the consumer to shift consumption toward the future.
+- **Wealth effect** (sign depends on net asset position): a higher $r$ benefits lenders ($S_t > 0$, i.e., $C_t < Y_t$) and hurts borrowers ($S_t < 0$, i.e., $C_t > Y_t$). For a lender the wealth effect on $C_t$ is *positive*, partially offsetting the substitution effect; for a borrower it is *negative*, reinforcing it.
+
+With log utility (IES $= 1$), the substitution effect and the income-from-savings effect exactly cancel for lenders, so the sign of the total derivative is determined by a third channel: the **endowment income effect** — a higher $r$ reduces the present value of future endowments ($\partial W/\partial r < 0$), leaving the consumer with less lifetime wealth and hence lower $C_t$.  This channel is unambiguously negative whenever $Y_{t+1} > 0$ or $Y_{t+2} > 0$, regardless of borrower/lender status, which is why the formula above has a definite sign.
+
+The condition $\partial C_t/\partial r < 0$ fails only in the degenerate case $Y_{t+1} = Y_{t+2} = 0$, where all income arrives in period $t$ and a change in $r$ has no effect on the present value of the endowment stream.

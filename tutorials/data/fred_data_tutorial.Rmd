@@ -1,0 +1,105 @@
+---
+title: "Using FRED data in R"
+output:
+  html_document: default
+css: ../style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+## Pedro Amaral
+
+## 2026-03-21
+
+# Using FRED data in R
+
+This is a simple example of how to use an API to import data in R. In this case we are using FRED's API and a package designed to import from it called `fredr`. You can get [practical details about this package here](http://sboysel.github.io/fredr/articles/fredr.html), as well as a [more complete description of the FRED API here](https://fred.stlouisfed.org/docs/api/fred/).  
+
+After installing `fredr` start by calling it along with `tidyverse`.
+
+```{r}
+library(fredr)
+library(tidyverse)
+```
+
+Note that you need to register with FRED (which is free) to get an API key to be able to do this.
+
+Once you have an API key, you set it for the current session. You can also set it once and for all by modifying an environment file -- see the link above. 
+
+Now you're ready to start importing from FRED. In this case we are downloading inflation and unemployment to plot a Phillips curve.
+
+Importing CPI inflation
+
+```{r}
+
+# Set your FRED key
+#fredr_set_key("################################")
+fredr_set_key(Sys.getenv("FRED_API_KEY"))
+
+cpi_df_raw<-fredr(
+  series_id = "CPIAUCSL",
+  observation_start = as.Date("1948-01-01"),
+  observation_end = as.Date("2025-02-01"),
+  frequency = "m", # monthly
+  units = "pc1" # percentage change from a year ago
+)
+```
+
+Importing the unemployment rate
+
+```{r}
+ur_df_raw<-fredr(
+  series_id = "UNRATE",
+  observation_start = as.Date("1948-01-01"),
+  observation_end = as.Date("2026-02-01"),
+  frequency = "m", # monthly
+  units = "lin" # levels (percent)
+)
+```
+
+This imports a tibble (a type of data frame). Here's what the data looks like:
+```{r}
+head(cpi_df_raw)
+```
+```{r}
+head(ur_df_raw)
+```
+
+
+There are 5 variables but we are only interested in 2 of them: `date` and `value`, so let's save a subset of this data frame
+
+```{r}
+cpi_df<-subset(cpi_df_raw, select = -c(series_id,realtime_start,realtime_end) )
+ur_df<-subset(ur_df_raw, select = -c(series_id,realtime_start,realtime_end) )
+```
+
+Let's rename inflation and unemployment because they are both called `value`
+
+```{r}
+names(cpi_df)[names(cpi_df)=="value"] <- "cpi"
+names(ur_df)[names(ur_df)=="value"] <- "ur"
+```
+
+Now let's merge the two date frames into one to tidy things up. Note that we are merging by `date`.
+
+```{r}
+phillips_df <- merge(cpi_df,ur_df,by="date")
+```
+
+Here's what the new data frame looks like:
+
+```{r}
+head(phillips_df)
+```
+
+Finally, let's plot the Phillips curve. Note how the variables in a data frame are named
+
+```{r, fig.alt="Scatterplot with the unemployment rate on the x-axis and the CPI inflation rate on the x-axis for the US, monthly, from 1948 to 2026."}
+ggplot(phillips_df, aes(x=ur, y=cpi)) + 
+  geom_point()+
+  labs(title="Phillips curve", x="Unemployment rate (%)", y="CPI inflation (%)")
+```
+
+
+

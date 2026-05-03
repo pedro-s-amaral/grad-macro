@@ -1,35 +1,35 @@
 ---
 title: "Using PWT data in R"
-author: "Pedro Amaral"
-date: "2025-01-17"
 output:
   html_document: default
-  pdf_document: default
-css: style.css
+css: ../style.css
 ---
 
 ```{r setup, include=FALSE,}
 knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
 ```
+## Pedro Amaral
+
+## 2026-01-24
 
 This is a short tutorial on downloading and preparing Penn World Tables data using R.
 
-The PWT is a database with information on relative levels of income, output, input, and productivity, covering 183 countries between 1950 and 2019. You can see more details \href{https://www.rug.nl/ggdc/productivity/pwt/}{here}.
+The PWT is a database with information on relative levels of income, output, input, and productivity, covering 183 countries between 1950 and 2019. You can see more details [at the Groningen's center website](https://www.rug.nl/ggdc/productivity/pwt/).
 
-Let's start by installing and loading the package \verb"pwt10". This package contains all the data in the PWT. You only need to install the package once (that is why have it commented out), but you need to load it at the start of every session.
+Let's start by installing and loading the package `pwt10`. This package contains all the data in the PWT. You only need to install the package once (that is why have it commented out), but you need to load it at the start of every session.
 
 ```{r}
 #install.packages("pwt10")
 library(pwt10)
 ```
 
-By running the command \texttt{data("pwt10.0")} you have access to an R data frame (also called \verb"pwt10.0") with all the information in the data base. Take your time to examine the database py clicking on it in the \emph{Environment} box on the top-right side. 
+By running the command `data("pwt10.0")` you have access to an R data frame (also called `pwt10.0`) with all the information in the data base. Take your time to examine the database py clicking on it in the \emph{Environment} box on the top-right side. 
 
 ```{r}
 data("pwt10.0")
 ```
 
-Part of what you need to do in the assignment is to filter out countries that do not have available data for some series. Let's say you needed to compute the capital-output ratio for countries that strictly positive levels of capital and output in 1970. You can use piping \verb"%>%" to do this, but you need to install the package \verb"dplyr"
+Part of what you need to do in the assignment is to filter out countries that do not have available data for some series. Let's say you needed to compute the capital-output ratio for countries that strictly positive levels of capital and output in 1970. You can use piping `%>%` to do this, but you need to install the package `dplyr`
 
 ```{r}
 # filter the database by those countries that have data available for capital and output in 1970 
@@ -53,9 +53,9 @@ df <- pwt10.0 %>%
   summarise_at(vars(ky), list(mean)) 
 ```
 
-To create a histogram of the average capital to output ratio you need to install and load the graphics package \verb"ggplot2" 
+To create a histogram of the average capital to output ratio you need to install and load the graphics package `ggplot2`. 
 
-```{r}
+```{r, fig.alt="Chart containg a histogram of the average capital output-ratio for different countries between 1970 and 2019."}
 #install.packages("ggplot2")
 library(ggplot2)
 
@@ -70,7 +70,7 @@ Now suppose that you are interested in whether there is a relationship between h
 
 Let's start by computing GDP per worker in 1970 and plot its histogram.
 
-```{r}
+```{r, fig.alt="Chart containg a histogram of the GDP per worker for different countries in 1970."}
 # compute the GDP per worker and save it
 pwt10.0$gdp_pw <- pwt10.0$rgdpe/pwt10.0$emp 
 
@@ -81,7 +81,7 @@ df$gdp_pw<-df_dummy$gdp_pw
 # histogram
 ggplot(df, aes(x=gdp_pw)) + 
   geom_histogram(color="black", fill="blue",binwidth=10000)+
-  labs(x="Capital-output ratio")
+  labs(x="GDP per worker")
 
 ```
 
@@ -93,7 +93,7 @@ df <- subset(df, df$ky <8 & df$gdp_pw < 100000 )
 
 ```
 
-Now we can regress the capital output ratio on GDP per worker using the function \verb"lm()". Don't worry if for some countries GDP per worker is not available, they will be automatically excluded from the regression.
+Now we can regress the capital output ratio on GDP per worker using the function `lm()`. Don't worry if for some countries GDP per worker is not available, they will be automatically excluded from the regression.
 
 ```{r}
 reg_ky <- lm(ky ~ gdp_pw, data=df)
@@ -102,7 +102,7 @@ summary(reg_ky)
 
 Now plot one variable against the other together with the regressions line.
 
-```{r}
+```{r, fig.alt="Chart containg a scatterplot of the average capital output-ratio for different countries between 1970 and 2019 and their GDP per worker in 1970."}
 # chart
 ggplot(df, aes(x=gdp_pw, y=ky)) + 
   geom_point()+
@@ -112,4 +112,5 @@ ggplot(df, aes(x=gdp_pw, y=ky)) +
 ```
 
 Seems like low GDP per worker is statistically associated with subsequent low capital-output ratios. 
+
 

@@ -1,0 +1,388 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 9"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 9.1 — Consumption-Savings
+
+**Problem.** Consider a consumer with lifetime utility $U = u(C_t) + \beta u(C_{t+1})$
+satisfying all standard assumptions. Period budget constraints are:
+$$C_t + S_t = Y_t \qquad C_{t+1} + S_{t+1} = Y_{t+1} + (1+r)S_t$$
+
+**(a)** What is the optimal value of $S_{t+1}$? Impose this and derive the lifetime budget constraint.
+
+**(b)** Derive the Euler equation. Explain the economic intuition.
+
+**(c)** Graphically depict the optimality condition. Carefully label the intercepts of the budget constraint. What is the slope of the indifference curve at the optimal basket $(C_t^*,\, C_{t+1}^*)$?
+
+**(d)** Graphically depict the effects of an increase in $Y_{t+1}$. Carefully label the intercepts. Is the slope of the IC at the new optimum different from part (c)?
+
+**(e)** Now suppose $C_t$ is taxed at rate $\tau$ (consumers pay $1+\tau$ per unit of $C_t$). Redo parts (a)–(c).
+
+---
+
+## Solution
+
+### Part (a) — Lifetime budget constraint
+
+Since there is no period beyond $t+1$, carrying unspent wealth into a hypothetical $t+2$
+yields no utility. It is therefore optimal to set:
+$$S_{t+1} = 0$$
+
+Imposing $S_{t+1}=0$ in the period $t+1$ constraint gives $C_{t+1} = Y_{t+1} + (1+r)S_t$.
+Substituting $S_t = Y_t - C_t$ from the period $t$ constraint and rearranging:
+$$C_{t+1} = Y_{t+1} + (1+r)(Y_t - C_t) \implies C_{t+1} + (1+r)C_t = (1+r)Y_t + Y_{t+1}$$
+
+Dividing by $(1+r)$:
+$$C_t + \frac{C_{t+1}}{1+r} = Y_t + \frac{Y_{t+1}}{1+r}$$
+
+The present value of lifetime consumption equals the present value of lifetime income.
+
+### Part (b) — Euler equation
+
+Maximize $u(C_t)+\beta u(C_{t+1})$ subject to the lifetime budget constraint. The Lagrangian is:
+$$\mathcal{L} = u(C_t) + \beta u(C_{t+1}) + \lambda\!\left[Y_t + \frac{Y_{t+1}}{1+r} - C_t - \frac{C_{t+1}}{1+r}\right]$$
+
+First-order conditions:
+$$[C_t]:\quad u'(C_t) = \lambda \qquad\qquad [C_{t+1}]:\quad \beta\, u'(C_{t+1}) = \frac{\lambda}{1+r}$$
+
+Dividing to eliminate $\lambda$:
+$$u'(C_t) = \beta(1+r)\,u'(C_{t+1})$$
+
+**Intuition.** At the optimum, the marginal utility cost of consuming one fewer unit today
+(left side) must equal the discounted marginal utility gain from saving that unit (right
+side): the unit earns gross return $(1+r)$ next period, and future utility is discounted
+by $\beta$. If the left side exceeded the right, the consumer could gain utility by
+shifting consumption from tomorrow to today; at the optimum, no such re-timing is
+profitable.
+
+### Parts (c) and (d) — Graphical analysis
+
+**Budget constraint geometry.** In $(C_t,\, C_{t+1})$ space the constraint is:
+$$C_{t+1} = \underbrace{(1+r)Y_t + Y_{t+1}}_{\text{vertical intercept}} - (1+r)\,C_t$$
+
+The horizontal intercept is $Y_t + Y_{t+1}/(1+r)$, the slope is $-(1+r)$, and the
+endowment point $(Y_t,\,Y_{t+1})$ always lies on the line (corresponds to $S_t=0$).
+
+**Slope of the IC at the optimum.** Rearranging the Euler equation:
+$$\frac{u'(C_t^*)}{\beta\, u'(C_{t+1}^*)} = 1+r$$
+The left side is the marginal rate of substitution (MRS), so the slope of the indifference
+curve at the optimum is $-\text{MRS} = -(1+r)$, exactly equal to the slope of the budget
+line — the standard tangency condition.
+
+**Effect of an increase in $Y_{t+1}$ (part d).** Both intercepts increase (vertical by
+$\Delta Y_{t+1}$, horizontal by $\Delta Y_{t+1}/(1+r)$) while the slope $-(1+r)$ is
+unchanged. The budget line shifts out **parallel**: both $C_t^*$ and $C_{t+1}^*$ rise
+(pure income effect). The slope of the IC at the new optimum is still $-(1+r)$ — **the
+same as in part (c)**.
+
+```{r ex91_cd, fig.cap="Parts (c)–(d): budget lines and indifference curves before (blue) and after (orange) an increase in $Y_{t+1}$. Log utility, $\\beta = 0.95$, $r = 0.05$.", fig.alt="Two parallel budget lines; orange line lies above blue. Dashed IC curves are tangent to each line at the respective optima."}
+beta <- 0.95; r <- 0.05
+Yt <- 100; Yt1_lo <- 110; Yt1_hi <- 130
+W_lo <- Yt + Yt1_lo / (1 + r)
+W_hi <- Yt + Yt1_hi / (1 + r)
+
+# Optimal with log utility: C_t = W/(1+beta), C_{t+1} = beta*(1+r)*W/(1+beta)
+opt <- function(W) c(Ct = W / (1 + beta), Ct1 = beta * (1 + r) * W / (1 + beta))
+o_lo <- opt(W_lo); o_hi <- opt(W_hi)
+
+# Indifference curve through point (Ct_opt, Ct1_opt)
+ic_df <- function(Ct_opt, Ct1_opt, label) {
+  k    <- log(Ct_opt) + beta * log(Ct1_opt)
+  Ct_s <- seq(Ct_opt * 0.35, Ct_opt * 1.6, length.out = 300)
+  tibble(Ct = Ct_s, Ct1 = exp((k - log(Ct_s)) / beta), scenario = label)
+}
+
+bc_lo <- tibble(Ct = c(0, W_lo), Ct1 = c((1+r)*W_lo, 0), scenario = "Before")
+bc_hi <- tibble(Ct = c(0, W_hi), Ct1 = c((1+r)*W_hi, 0), scenario = "After")
+ic_lo <- ic_df(o_lo["Ct"], o_lo["Ct1"], "Before")
+ic_hi <- ic_df(o_hi["Ct"], o_hi["Ct1"], "After")
+
+pts <- tibble(
+  Ct  = c(o_lo["Ct"],  o_hi["Ct"]),
+  Ct1 = c(o_lo["Ct1"], o_hi["Ct1"]),
+  scenario = c("Before", "After")
+)
+
+bc_all <- bind_rows(bc_lo, bc_hi)
+ic_all <- bind_rows(ic_lo, ic_hi)
+
+ggplot() +
+  geom_line(data = bc_all, aes(x = Ct, y = Ct1, color = scenario), linewidth = 1) +
+  geom_line(data = ic_all, aes(x = Ct, y = Ct1, color = scenario),
+            linewidth = 1, linetype = "dashed") +
+  geom_point(data = pts, aes(x = Ct, y = Ct1, color = scenario), size = 3) +
+  annotate("text", x = o_lo["Ct"] - 5, y = o_lo["Ct1"] - 22,
+           label = "C* (before)", size = 4, hjust = 1, color = "darkorange") +
+  annotate("text", x = o_hi["Ct"] + 2, y = o_hi["Ct1"] + 4,
+           label = "C* (after)", size = 4, hjust = 0, color = "steelblue") +
+  scale_color_manual(
+    values = c("steelblue", "darkorange"),
+    labels = expression("After: higher" ~ Y[t+1], "Before")
+  ) +
+  labs(x = expression(C[t]), y = expression(C[t+1]),
+       title = bquote("Optimal consumption: baseline vs. after increase in" ~ Y[t+1]),
+       subtitle = bquote("Intercepts: vertical = (1+r)" * Y[t] + Y[t+1] *
+                         ",  horizontal = " * Y[t] + Y[t+1] * "/(1+r)"),
+       color = NULL) +
+  coord_cartesian(xlim = c(0, W_hi * 1.08), ylim = c(0, (1+r) * W_hi * 1.08))
+```
+
+### Part (e) — Consumption tax at rate $\tau$
+
+**(e)(a) Optimal $S_{t+1}$ and lifetime budget constraint.**
+With the tax, the period $t$ constraint becomes $(1+\tau)C_t + S_t = Y_t$.
+Setting $S_{t+1}=0$ (same logic as before), substituting $S_t = Y_t-(1+\tau)C_t$, and rearranging:
+$$(1+\tau)C_t + \frac{C_{t+1}}{1+r} = Y_t + \frac{Y_{t+1}}{1+r} \equiv W$$
+
+**(e)(b) Euler equation.**
+$$\mathcal{L} = u(C_t) + \beta u(C_{t+1}) + \lambda\!\left[W - (1+\tau)C_t - \frac{C_{t+1}}{1+r}\right]$$
+
+FOCs: $u'(C_t) = \lambda(1+\tau)$ and $\beta u'(C_{t+1}) = \lambda/(1+r)$. Dividing:
+$$u'(C_t) = \beta(1+\tau)(1+r)\,u'(C_{t+1})$$
+
+The tax raises the effective intertemporal price of $C_t$ relative to $C_{t+1}$ from
+$(1+r)$ to $(1+\tau)(1+r)$, tilting the optimum toward greater future consumption.
+
+**(e)(c) Graphical analysis.**
+Rewrite the taxed lifetime budget constraint as:
+$$C_{t+1} = (1+r)Y_t + Y_{t+1} - (1+\tau)(1+r)\,C_t$$
+
+| | No tax | Tax at rate $\tau$ |
+|---|---|---|
+| Vertical intercept ($C_t=0$) | $(1+r)Y_t + Y_{t+1}$ | **Unchanged** |
+| Horizontal intercept ($C_{t+1}=0$) | $W$ | $W/(1+\tau) < W$ |
+| Slope | $-(1+r)$ | $-(1+\tau)(1+r)$, steeper |
+
+The budget line **rotates inward (clockwise) around the vertical intercept**: the vertical
+intercept is unchanged because setting $C_t=0$ means the tax generates no revenue, so the
+consumer's full income finances $C_{t+1}$ exactly as before. The slope of the IC at the
+optimum equals $-(1+\tau)(1+r)$.
+
+**Note (log utility).** With $u(C)=\ln C$, the Euler equation gives
+$C_{t+1} = \beta(1+\tau)(1+r)C_t$. Substituting into the lifetime budget constraint:
+$$(1+\tau)C_t\bigl[1+\beta\bigr] = W \implies C_t^* = \frac{W}{(1+\tau)(1+\beta)}$$
+$$C_{t+1}^* = \frac{\beta(1+r)}{1+\beta}\,W$$
+Remarkably, $C_{t+1}^*$ is **identical** to the no-tax solution — the tax is borne
+entirely by current consumption.
+
+```{r ex91_e, fig.cap="Part (e): consumption tax τ = 0.20 rotates the budget line inward around the vertical intercept (steeper slope). $C_t^*$ falls; $C_{t+1}^*$ is unchanged under log utility.", fig.alt="Two lines share the same vertical intercept. Taxed line is steeper. Optimal Ct falls while Ct+1 stays the same."}
+tau <- 0.20
+# W and beta/r already defined in ex91_cd chunk
+Ct_nt  <- W_lo / (1 + beta)
+Ct1_nt <- beta * (1 + r) * W_lo / (1 + beta)
+Ct_tx  <- W_lo / ((1 + tau) * (1 + beta))
+Ct1_tx <- beta * (1 + r) * W_lo / (1 + beta)   # same as no-tax (log utility)
+
+bc_nt_e <- tibble(Ct = c(0, W_lo),           Ct1 = c((1+r)*W_lo, 0),  scenario = "No tax")
+bc_tx_e <- tibble(Ct = c(0, W_lo/(1+tau)),   Ct1 = c((1+r)*W_lo, 0),  scenario = "Tax τ = 0.20")
+ic_nt_e <- ic_df(Ct_nt, Ct1_nt, "No tax")
+ic_tx_e <- ic_df(Ct_tx, Ct1_tx, "Tax τ = 0.20")
+
+pts_e <- tibble(
+  Ct  = c(Ct_nt,  Ct_tx),
+  Ct1 = c(Ct1_nt, Ct1_tx),
+  scenario = c("No tax", "Tax τ = 0.20")
+)
+
+ggplot() +
+  geom_line(data = bind_rows(bc_nt_e, bc_tx_e),
+            aes(x = Ct, y = Ct1, color = scenario), linewidth = 1) +
+  geom_line(data = bind_rows(ic_nt_e, ic_tx_e),
+            aes(x = Ct, y = Ct1, color = scenario),
+            linewidth = 1, linetype = "dashed") +
+  geom_point(data = pts_e, aes(x = Ct, y = Ct1, color = scenario), size = 3) +
+  annotate("text", x = Ct_nt + 2, y = Ct1_nt + 5,
+           label = "C* (no tax)",  size = 4, hjust = 0, color = "steelblue") +
+  annotate("text", x = Ct_tx - 2, y = Ct1_tx - 8,
+           label = "C* (tax)",     size = 4, hjust = 1, color = "firebrick") +
+  scale_color_manual(values = c("steelblue", "firebrick")) +
+  labs(x = expression(C[t]), y = expression(C[t+1]),
+       title = "Consumption tax: inward rotation of budget line",
+       subtitle = "Vertical intercept unchanged; slope steepens from -(1+r) to -(1+τ)(1+r)",
+       color = NULL) +
+  coord_cartesian(xlim = c(0, W_lo * 1.08), ylim = c(0, (1+r) * W_lo * 1.1))
+```
+
+---
+
+# Exercise 9.2 — Consumption with Borrowing Constraints
+
+**Problem.** A consumer maximizes:
+$$\max_{C_t,C_{t+1},S_t} \ln C_t + \beta \ln C_{t+1}$$
+subject to the lifetime budget constraint
+$$C_t + \frac{C_{t+1}}{1+r_t} = Y_t + \frac{Y_{t+1}}{1+r_t}$$
+and the **borrowing constraint** $C_t \leq Y_t$ (equivalently, $S_t \geq 0$).
+
+**(a)** Draw the budget constraint.
+
+**(b)** Assuming the constraint does not bind, what is the Euler equation?
+
+**(c)** Using the Euler equation, lifetime budget constraint, and borrowing constraint, solve
+for the period $t$ consumption function. Clearly state under what circumstances the
+borrowing constraint binds.
+
+**(d)** Suppose $Y_t = 3$, $Y_{t+1} = 10$, $\beta = 0.95$, $r = 0.10$. Show the
+borrowing constraint binds.
+
+**(e)** Suppose a one-time tax rebate increases $Y_t$ to 4 (leave $Y_{t+1}=10$,
+$\beta=0.95$, $r=0.10$). What is the marginal propensity to consume out of this rebate?
+
+---
+
+## Solution
+
+### Part (a) — Budget constraint diagram
+
+The lifetime budget constraint is a line in $(C_t,\, C_{t+1})$ space with:
+
+- Vertical intercept ($C_t = 0$): $(1+r_t)Y_t + Y_{t+1}$
+- Horizontal intercept ($C_{t+1} = 0$): $Y_t + Y_{t+1}/(1+r_t) \equiv W$
+- Slope: $-(1+r_t)$
+- Endowment point $(Y_t,\, Y_{t+1})$ lies on the line (zero saving)
+
+The borrowing constraint $C_t \leq Y_t$ rules out the segment of the budget line to the
+right of the endowment point (which would require $S_t < 0$). The feasible set is the
+budget line **up to and including** the endowment point.
+
+```{r ex92_bc, fig.cap="Exercise 9.2(a): budget constraint with borrowing constraint. The solid segment ($C_t \\leq Y_t$) is feasible; the dashed segment requires borrowing and is ruled out.", fig.alt="Budget line from vertical intercept to endowment point is solid (feasible). Segment beyond endowment point is dashed (infeasible)."}
+Yt_a <- 3; Yt1_a <- 10; r_a <- 0.10; beta_a <- 0.95
+W_a <- Yt_a + Yt1_a / (1 + r_a)
+
+ggplot() +
+  # Feasible segment: C_t in [0, Y_t]
+  geom_segment(aes(x = 0, y = (1+r_a)*W_a, xend = Yt_a, yend = Yt1_a),
+               color = "steelblue", linewidth = 1.2) +
+  # Infeasible segment: C_t in (Y_t, W_a]
+  geom_segment(aes(x = Yt_a, y = Yt1_a, xend = W_a, yend = 0),
+               color = "steelblue", linewidth = 1.2, linetype = "dashed") +
+  # Vertical boundary at C_t = Y_t
+  geom_segment(aes(x = Yt_a, y = 0, xend = Yt_a, yend = Yt1_a),
+               color = "steelblue", linewidth = 1.2) +
+  # Endowment point
+  geom_point(aes(x = Yt_a, y = Yt1_a), size = 3, color = "steelblue") +
+  annotate("text", x = Yt_a + 0.05, y = Yt1_a + 0.4,
+           label = expression(paste("(", Y[t], ", ", Y[t+1], ")")),
+           hjust = 0, size = 4, color = "steelblue") +
+  annotate("text", x = 0.5, y = (1+r_a)*W_a - 0.3,
+           label = expression((1+r)*Y[t] + Y[t+1]),
+           hjust = 0, size = 4, color = "gray40") +
+  annotate("text", x = W_a - 0.5, y = 0.3,
+           label = expression(Y[t] + Y[t+1]/(1+r)),
+           hjust = 1, size = 4, color = "gray40") +
+  annotate("text", x = 1.5, y = 5, label = "Feasible\n(borrowing constraint\nbinds here →)",
+           size = 4, color = "steelblue") +
+  labs(x = expression(C[t]), y = expression(C[t+1]),
+       title = "Lifetime budget constraint with borrowing constraint",
+       subtitle = bquote("Solid: feasible (" * S[t] >= 0 * "). Dashed: requires borrowing (ruled out)."))
+```
+
+### Part (b) — Euler equation (constraint not binding)
+
+When the constraint does not bind, the problem is identical to Exercise 9.1 with log
+utility. The FOCs give:
+$$u'(C_t) = \beta(1+r_t)\,u'(C_{t+1}) \implies \frac{1}{C_t} = \frac{\beta(1+r_t)}{C_{t+1}} \implies C_{t+1} = \beta(1+r_t)\,C_t$$
+
+### Part (c) — Consumption function
+
+**Case 1: Constraint does not bind ($C_t^* < Y_t$).**
+Substitute $C_{t+1} = \beta(1+r_t)C_t$ into the lifetime budget constraint:
+$$C_t + \frac{\beta(1+r_t)C_t}{1+r_t} = W \implies C_t(1+\beta) = W \implies C_t^* = \frac{W}{1+\beta}$$
+where $W = Y_t + Y_{t+1}/(1+r_t)$.
+
+**Case 2: Constraint binds ($C_t^* = Y_t$).**
+If the unconstrained optimum $W/(1+\beta)$ would exceed $Y_t$, the consumer is forced to
+$C_t = Y_t$ and spends all remaining resources next period: $C_{t+1} = Y_{t+1}$.
+
+**Consumption function:**
+$$C_t = \min\!\left(\frac{W}{1+\beta},\; Y_t\right)$$
+
+**The borrowing constraint binds when** $W/(1+\beta) > Y_t$, i.e., when:
+$$\frac{Y_t + Y_{t+1}/(1+r_t)}{1+\beta} > Y_t \implies Y_t + \frac{Y_{t+1}}{1+r_t} > (1+\beta)Y_t \implies \frac{Y_{t+1}}{1+r_t} > \beta Y_t$$
+
+$$Y_{t+1} > \beta(1+r_t)\,Y_t$$
+
+The constraint binds when future income is sufficiently large relative to current income — i.e., when the consumer's unconstrained optimum would require borrowing against future earnings.
+
+### Part (d) — Numerical check
+
+```{r ex92_d}
+Yt_d <- 3; Yt1_d <- 10; beta_d <- 0.95; r_d <- 0.10
+W_d  <- Yt_d + Yt1_d / (1 + r_d)
+Ct_unconstrained <- W_d / (1 + beta_d)
+cat(sprintf("W = %.4f\n", W_d))
+cat(sprintf("Unconstrained C_t* = W/(1+β) = %.4f\n", Ct_unconstrained))
+cat(sprintf("Y_t = %.1f\n", Yt_d))
+cat(sprintf("Constraint binds: %s (C_t* = %.4f > Y_t = %.1f)\n",
+            Ct_unconstrained > Yt_d, Ct_unconstrained, Yt_d))
+```
+
+Since $C_t^* = `r round(W_d/(1+beta_d), 3)` > Y_t = 3$, the unconstrained optimum
+requires borrowing. The borrowing constraint **binds**: the consumer is forced to set
+$C_t = Y_t = 3$ and $C_{t+1} = Y_{t+1} = 10$.
+
+### Part (e) — Marginal propensity to consume out of the tax rebate
+
+```{r ex92_e}
+# Before rebate: constraint binds, C_t = Y_t = 3
+Ct_before <- 3
+
+# After rebate: Y_t rises to 4
+Yt_after <- 4
+W_after   <- Yt_after + Yt1_d / (1 + r_d)
+Ct_unconstrained_after <- W_after / (1 + beta_d)
+
+cat(sprintf("After rebate: unconstrained C_t* = %.4f, Y_t = %.1f\n",
+            Ct_unconstrained_after, Yt_after))
+cat(sprintf("Constraint still binds: %s\n", Ct_unconstrained_after > Yt_after))
+Ct_after <- min(Ct_unconstrained_after, Yt_after)
+MPC <- (Ct_after - Ct_before) / (Yt_after - 3)
+cat(sprintf("C_t after rebate = %.4f,  ΔC_t = %.4f,  ΔY_t = 1\n",
+            Ct_after, Ct_after - Ct_before))
+cat(sprintf("MPC = ΔC_t / ΔY_t = %.2f\n", MPC))
+```
+
+After the rebate $Y_t = 4$, the unconstrained optimum is
+$W'/(1+\beta) = `r round(W_after/(1+beta_d), 3)`$, which **still exceeds** $Y_t = 4$,
+so the borrowing constraint remains binding. The consumer sets $C_t = Y_t = 4$ and
+$C_{t+1} = Y_{t+1} = 10$.
+
+$$\text{MPC} = \frac{\Delta C_t}{\Delta Y_t} = \frac{4 - 3}{4 - 3} = 1$$
+
+When the borrowing constraint binds, the consumer cannot save the extra income (she is
+already at the constraint), so **every additional dollar of current income is consumed
+immediately**. The MPC equals 1 — the same as a hand-to-mouth consumer — regardless of
+preferences. This contrasts with the unconstrained case, where
+$\text{MPC} = 1/(1+\beta) \approx `r round(1/(1+beta_d), 3)` < 1$.

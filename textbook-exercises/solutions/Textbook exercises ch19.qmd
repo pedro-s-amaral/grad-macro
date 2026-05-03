@@ -1,0 +1,1848 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 19"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 19.1 — Increase in $A_t$: Elastic vs. Inelastic Labor Supply
+
+**Problem.** Consider the basic neoclassical model. Suppose that there is an increase in
+$A_t$. Draw out two versions of the model: one in which labor supply is relatively
+**elastic** (sensitive to the real wage) and one in which labor supply is relatively
+**inelastic** (insensitive to the real wage). Comment on how the magnitudes of the
+changes in $Y_t$, $r_t$, $w_t$, and $N_t$ depend on how sensitive labor supply is to
+the real wage.
+
+---
+
+## Solution
+
+### Setup and shock mechanism
+
+An increase in $A_t$ raises the **marginal product of labor** at every employment level:
+
+$$\text{MPN}_t = A_t \cdot F_N(K_t, N_t) \uparrow$$
+
+This shifts the **labor demand curve** to the right in the $(N_t, w_t)$ plane. The production function $Y_t = A_t F(K_t, N_t)$ shifts up for two reasons: (i) $A_t$ itself is higher, and (ii) equilibrium employment $N_t^*$ rises. Together these raise $Y_t^*$, which shifts the **$Y^s$ curve** to the right in the IS–$Y^s$ diagram. The IS curve is unaffected (it depends on $A_{t+1}$, not $A_t$). With a vertical $Y^s$, output rises and the real interest rate falls to clear the goods market.
+
+The **slope of labor supply** determines how the shock is split between quantity ($\Delta N_t^*$) and price ($\Delta w_t^*$) in the labor market, and therefore how large the output expansion is.
+
+---
+
+### Part (a) — Elastic labor supply
+
+With **elastic** labor supply ($N^s$ is flat — highly responsive to $w_t$), a small rise in the real wage induces a large increase in hours worked. The rightward shift of labor demand therefore generates:
+
+- A **large** increase in $N_t^*$
+- A **small** increase in $w_t^*$
+- A **large** increase in $Y_t^*$ (both the direct $A_t$ effect and the large $\Delta N_t^*$ contribute)
+- A **large** rightward shift of $Y^s$, implying a **large** fall in $r_t^*$
+
+```{r}
+#| label: fig-ex191-elastic
+#| fig-cap: "Effect of an increase in $A_t$ with **elastic** labor supply. Labor demand shifts right; the flat $N^s$ curve yields a large increase in $N_t^*$ and a small rise in $w_t^*$. Output expands substantially and the $Y^s$ curve shifts far right, causing a large fall in $r_t^*$."
+#| fig-alt: "Four-panel neoclassical model. NW: labor market — labor demand shifts right along a nearly flat supply curve; N rises a lot, w rises a little. SW: concave production function — output rises substantially. SE: 45-degree line mirrors output to NE panel. NE: IS-Ys diagram — vertical Ys shifts far right along downward-sloping IS; r falls a lot, Y rises a lot."
+#| fig-height: 8
+#| fig-width: 8
+
+library(tidyverse)
+
+# ── Helper: draw a neoclassical 4-panel for an At shock ───────────────────────
+# Arguments control the slope of Ns (ls_slope) and the size of the At shock
+draw_four_panel <- function(ls_slope,       # slope of Ns curve (dw/dN): small = elastic
+                            title_str) {
+
+  # ── Labor market parameters ──────────────────────────────────────────────────
+  # Labor demand (baseline): w = ld_int - ld_slope * N
+  ld_slope  <- 1.0
+  ld_int    <- 10
+
+  # Labor supply: w = ls_int + ls_slope * N  (ls_int chosen so both curves
+  # intersect at the same baseline equilibrium N0, w0)
+  N0 <- 5
+  w0 <- ld_int - ld_slope * N0        # = 5
+  ls_int <- w0 - ls_slope * N0
+
+  # After shock: labor demand shifts right — intercept rises by delta_ld
+  delta_ld <- 2.0
+  ld_int1  <- ld_int + delta_ld
+
+  # New equilibrium: ld_int1 - ld_slope * N = ls_int + ls_slope * N
+  N1 <- (ld_int1 - ls_int) / (ld_slope + ls_slope)
+  w1 <- ls_int + ls_slope * N1
+
+  # ── Production function: Y = A * N^alpha ─────────────────────────────────────
+  alpha  <- 0.7
+  A0     <- 1.0
+  A1     <- 1.4          # shocked value
+
+  Y0 <- A0 * N0^alpha
+  Y1 <- A1 * N1^alpha
+
+  # ── IS-Ys parameters ─────────────────────────────────────────────────────────
+  # IS curve: r = IS_int - IS_slope * Y  (simple linear IS)
+  IS_slope <- 0.06
+  IS_int   <- 0.45
+
+  r0 <- IS_int - IS_slope * Y0
+  r1 <- IS_int - IS_slope * Y1
+
+  # ── Color scheme (matches fig_18_5 style) ────────────────────────────────────
+  col_base  <- "black"
+  col_shock <- "firebrick"
+  col_is    <- "black"
+  lw        <- 1.1
+
+ # ── Shared theme ─────────────────────────────────────────────────────────────
+  th <- theme_minimal(base_size = 11, base_family = "serif") +
+    theme(plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+          panel.background = element_rect(fill = "#fdfcf8", color = NA),
+          panel.grid       = element_blank(),
+          axis.line        = element_line(color = "black", linewidth = 0.4),
+          axis.ticks       = element_blank(),
+          axis.text        = element_blank(),
+          axis.title.x = element_text(hjust = 1, vjust = 0, size = 12),
+          axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12))  
+  
+  
+  # ────────────────────────────────────────────────────────────────────────────
+  # NW: Labor market
+  # ────────────────────────────────────────────────────────────────────────────
+  N_seq <- seq(0, 10, by = 0.05)
+
+  ld0_df  <- tibble(N = N_seq, w = ld_int  - ld_slope * N_seq) |> filter(w >= 0)
+  ld1_df  <- tibble(N = N_seq, w = ld_int1 - ld_slope * N_seq) |> filter(w >= 0)
+  ls_df   <- tibble(N = N_seq, w = ls_int  + ls_slope * N_seq) |> filter(w >= 0, w <= 12)
+
+  p_nw <- ggplot() +
+    geom_line(data = ld0_df, aes(x = N, y = w), color = col_base,  linewidth = lw) +
+    geom_line(data = ld1_df, aes(x = N, y = w), color = col_shock, linewidth = lw) +
+    geom_line(data = ls_df,  aes(x = N, y = w), color = col_base,  linewidth = lw) +
+    # Baseline equilibrium drop lines
+    geom_segment(aes(x = N0, xend = N0, y = 0,  yend = w0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = N0, y = w0, yend = w0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    # New equilibrium drop lines
+    geom_segment(aes(x = N1, xend = N1, y = 0,  yend = w1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = N1, y = w1, yend = w1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    # Equilibrium points
+    geom_point(aes(x = N0, y = w0), color = col_base,  size = 2.5) +
+    geom_point(aes(x = N1, y = w1), color = col_shock, size = 2.5) +
+    # Labels
+    annotate("text", x = 9, y = ld_int  - ld_slope * 9 + 0.5,
+             label = expression(N^d * "(A"[0] * ")"),
+             color = col_base,  size = 4, hjust = 0) +
+    annotate("text", x = 9, y = ld_int1 - ld_slope * 9 + 0.5,
+             label = expression(N^d * "(A"[1] * ")"),
+             color = col_shock, size = 4, hjust = 0) +
+    annotate("text", x = 8.5, y = ls_int + ls_slope * 8.5 + 0.5,
+             label = expression(N^s),
+             color = col_base, size = 4, hjust = 0) +
+    annotate("text", x = N0  -0.5, y = 0,
+             label = expression(N["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = N1 + 0.5, y = 0,
+             label = expression(N["1,t"]), color = col_shock, size = 4) +
+    annotate("text", x = 0, y = w0-0.3,
+             label = expression(w["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = 0, y = w1+0.3,
+             label = expression(w["1,t"]), color = col_shock, size = 4) +
+    coord_cartesian(xlim = c(0, 10), ylim = c(0, 12)) +
+    labs(x = expression(N[t]), y = expression(w[t])) + th
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # SW: Production function
+  # ────────────────────────────────────────────────────────────────────────────
+  N_pf <- seq(0.01, 10, by = 0.05)
+  pf0  <- tibble(N = N_pf, Y = A0 * N_pf^alpha)
+  pf1  <- tibble(N = N_pf, Y = A1 * N_pf^alpha)
+
+  p_sw <- ggplot() +
+    geom_line(data = pf0, aes(x = N, y = Y), color = col_base,  linewidth = lw) +
+    geom_line(data = pf1, aes(x = N, y = Y), color = col_shock, linewidth = lw) +
+    # Drop lines
+    geom_segment(aes(x = N0, xend = N0, y = 0,  yend = 10),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = 10, y = Y0, yend = Y0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = N1, xend = N1, y = 0,  yend = 10),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = 10, y = Y1, yend = Y1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_point(aes(x = N0, y = Y0), color = col_base,  size = 2.5) +
+    geom_point(aes(x = N1, y = Y1), color = col_shock, size = 2.5) +
+    annotate("text", x = 9, y = A0 * 9^alpha - 0.75,
+             label = expression(A[0] * F(K[t], N[t])),
+             color = col_base,  size = 4) +
+    annotate("text", x = 9, y = A1 * 9^alpha + 0.8,
+             label = expression(A[1] * F(K[t], N[t])),
+             color = col_shock, size = 4) +
+    annotate("text", x = 0.2, y = Y0-0.3,
+             label = expression(Y["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = 0.2, y = Y1+0.3,
+             label = expression(Y["1,t"]), color = col_shock, size = 4) +
+    annotate("text", x = N0  -0.5, y = 0,
+             label = expression(N["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = N1 + 0.5, y = 0,
+             label = expression(N["1,t"]), color = col_shock, size = 4) +
+    coord_cartesian(xlim = c(0, 10), ylim = c(0, 10)) +
+    labs(x = expression(N[t]), y = expression(Y[t])) + th
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # SE: 45-degree mirror
+  # ────────────────────────────────────────────────────────────────────────────
+  Y_seq <- seq(0, 10, by = 0.05)
+
+  p_se <- ggplot() +
+    geom_abline(slope = 1, intercept = 0, color = col_base, linewidth = lw) +
+    geom_segment(aes(x = Y0, xend = Y0, y = 0,  yend = 10),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = Y0, y = Y0, yend = Y0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = Y1, xend = Y1, y = 0,  yend = 10),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = Y1, y = Y1, yend = Y1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_point(aes(x = Y0, y = Y0), color = col_base,  size = 2.5) +
+    geom_point(aes(x = Y1, y = Y1), color = col_shock, size = 2.5) +
+    annotate("text", x = Y0 -0.5, y = 0,
+             label = expression(Y["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = Y1 + 0.4, y = 0,
+             label = expression(Y["1,t"]), color = col_shock, size = 4) +
+    annotate("text", x = 0.2, y = Y0 - 0.3,
+             label = expression(Y["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = 0.2, y = Y1 + 0.3,
+             label = expression(Y["1,t"]), color = col_shock, size = 4) +
+    coord_cartesian(xlim = c(0, 10), ylim = c(0, 10)) +
+    labs(x = expression(Y[t]), y = expression(Y[t])) + th
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # NE: IS-Ys diagram
+  # ────────────────────────────────────────────────────────────────────────────
+  Y_is  <- seq(1, 9, by = 0.05)
+  is_df <- tibble(Y = Y_is, r = IS_int - IS_slope * Y_is)
+
+  p_ne <- ggplot() +
+    geom_line(data = is_df, aes(x = Y, y = r), color = col_is, linewidth = lw) +
+    # Baseline Ys (vertical)
+    geom_vline(xintercept = Y0, color = col_base,  linewidth = lw) +
+    # New Ys (vertical, shifted right)
+    geom_vline(xintercept = Y1, color = col_shock, linewidth = lw) +
+    # Drop lines
+    geom_segment(aes(x = 0,  xend = Y0, y = r0, yend = r0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = Y1, y = r1, yend = r1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_point(aes(x = Y0, y = r0), color = col_base,  size = 2.5) +
+    geom_point(aes(x = Y1, y = r1), color = col_shock, size = 2.5) +
+    # IS label
+    annotate("text", x = 9.2, y = IS_int - IS_slope * 9.2 - 0.015,
+             label = "IS", color = col_is, size = 3.5, fontface = "italic") +
+    # Ys labels
+    annotate("text", x = Y0 - 0.4, y = IS_int - IS_slope * 2 + 0.07,
+             label = expression(Y^s), color = col_base,  size = 4) +
+    annotate("text", x = Y1 + 0.4, y = IS_int - IS_slope * 2 + 0.07,
+             label = expression(Y^{"s'"}), color = col_shock, size = 4,) +
+    annotate("text", x = 0, y = r0 + 0.01,
+             label = expression(r["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = 0, y = r1 -0.01,
+             label = expression(r["1,t"]), color = col_shock, size = 4) +
+    annotate("text", x = Y0 - 0.5, y = 0,
+             label = expression(Y["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = Y1 + 0.4, y = 0,
+             label = expression(Y["1,t"]), color = col_shock, size = 4) +
+    coord_cartesian(xlim = c(0, 10), ylim = c(0, 0.45)) +
+    scale_y_continuous (labels = NULL) +
+    labs(x = expression(Y[t]), y = expression(r[t])) + th
+
+  # ── Align and arrange ─────────────────────────────────────────────────────────
+  g_nw <- ggplotGrob(p_nw)
+  g_sw <- ggplotGrob(p_sw)
+  g_se <- ggplotGrob(p_se)
+  g_ne <- ggplotGrob(p_ne)
+
+  # Equalise column widths across rows and row heights across columns
+  g_nw$widths  <- g_ne$widths  <- grid::unit.pmax(g_nw$widths,  g_ne$widths)
+  g_sw$widths  <- g_se$widths  <- grid::unit.pmax(g_sw$widths,  g_se$widths)
+  g_nw$heights <- g_sw$heights <- grid::unit.pmax(g_nw$heights, g_sw$heights)
+  g_ne$heights <- g_se$heights <- grid::unit.pmax(g_ne$heights, g_se$heights)
+
+  gridExtra::grid.arrange(g_nw, g_ne, g_sw, g_se,
+                          ncol = 2,
+                          top = grid::textGrob(title_str,
+                                               gp = grid::gpar(fontsize = 13,
+                                                               fontface = "bold",
+                                                               fontfamily = "serif")))
+}
+
+# ── Draw elastic case (ls_slope = 0.2 → nearly flat Ns) ──────────────────────
+draw_four_panel(ls_slope = 0.2,
+                title_str = "Elastic labor supply")
+```
+
+**Elastic labor supply — results.** When $N^s$ is nearly flat, workers are very willing to substitute leisure for labor in response to higher wages. The rightward shift in labor demand meets little resistance: employment rises a lot ($N_t^* \uparrow\uparrow$), the real wage rises only a little ($w_t^* \uparrow$), and output expands substantially ($Y_t^* \uparrow\uparrow$). The $Y^s$ curve shifts far to the right, so the equilibrium real interest rate falls a lot ($r_t^* \downarrow\downarrow$).
+
+---
+
+### Part (b) — Inelastic labor supply
+
+With **inelastic** labor supply ($N^s$ is steep — unresponsive to $w_t$), workers do not adjust hours much even when wages rise. The same rightward shift of labor demand now generates:
+
+- A **small** increase in $N_t^*$
+- A **large** increase in $w_t^*$
+- A **smaller** increase in $Y_t^*$ (the direct $A_t$ effect remains, but $\Delta N_t^*$ is small)
+- A **smaller** rightward shift of $Y^s$, implying a **smaller** fall in $r_t^*$
+
+```{r}
+#| label: fig-ex191-inelastic
+#| fig-cap: "Effect of an increase in $A_t$ with **inelastic** labor supply. The steep $N^s$ curve yields a small increase in $N_t^*$ and a large rise in $w_t^*$. The output expansion is more modest than in the elastic case and the $Y^s$ curve shifts less, so $r_t^*$ falls by less."
+#| fig-alt: "Four-panel neoclassical model with steep labor supply. NW: labor demand shifts right along a steep supply curve; N rises a little, w rises a lot. SW: production function — output rises modestly. SE: 45-degree line mirrors output. NE: IS-Ys diagram — Ys shifts right by less than in the elastic case; r falls by less."
+#| fig-height: 8
+#| fig-width: 8
+
+draw_four_panel(ls_slope = 5.0,
+                title_str = "Inelastic labor supply")
+```
+
+**Inelastic labor supply — results.** When $N^s$ is steep, the supply of labor is essentially fixed in the short run. The rightward shift in labor demand bids up the real wage sharply but draws out only a small additional quantity of labor. Output rises — partly because $A_t$ itself is higher, but the employment margin contributes little. The $Y^s$ curve shifts right by less, and the equilibrium interest rate falls by less.
+
+---
+
+### Summary: how labor supply elasticity shapes the positive $A_t$ shock
+
+| Variable | Elastic $N^s$ (flat) | Inelastic $N^s$ (steep) |
+|----------|---------------------|------------------------|
+| $\Delta N_t^*$ | Larger increase | Smaller increase |
+| $\Delta w_t^*$ | Smaller increase | Larger increase |
+| $\Delta Y_t^*$ | Larger increase | Smaller increase |
+| $\Delta r_t^*$ | Larger fall | Smaller fall |
+
+The key intuition is that the **slope of labor supply governs the multiplier between a productivity improvement and the output response**. When labor is elastically supplied, firms can hire many more workers at nearly the same wage, so a given rise in $A_t$ translates into a large expansion of hours and output. When labor supply is inelastic, the productivity gain is absorbed mainly as a higher real wage with little extra employment, and the output expansion is more muted.
+
+---
+
+# Exercise 19.2 — Increase in $\theta_t$: Elastic Labor Demand vs. Inelastic Labor Supply
+
+**Problem.** Consider the basic neoclassical model. Suppose that there is an increase in $\theta_t$. (a) Graphically analyze this change and describe how each endogenous variable changes. (b) Now, draw out two versions of the model, one in which labor demand is relatively elastic (i.e. sensitive to the real wage), and one in which labor supply is relatively inelastic (i.e. relatively insensitive to the real wage). Comment on how the magnitudes of the changes in $Y_t$, $r_t$, $w_t$, and $N_t$ depend on how sensitive labor supply is to the real wage.
+
+---
+
+## Solution
+
+### Shock mechanism
+
+In the GLS neoclassical model $\theta_t$ is a preference parameter capturing the household's taste for leisure. An increase in $\theta_t$ means households value leisure more at the margin, so they supply **less labor at every real wage**. In the $(N_t, w_t)$ plane this shifts the **labor supply curve to the left** (equivalently, upward: at each employment level workers now demand a higher real wage to work).
+
+Three features distinguish the $\theta_t$ shock from the $A_t$ shock in Exercise 19.1:
+
+1. **Only labor supply shifts.** Labor demand $N^d_t = N^d(w_t, K_t, A_t)$ does not depend on $\theta_t$, so the demand curve is unchanged.
+2. **The production function does not shift.** Output is $Y_t = A_t F(K_t, N_t)$; since $A_t$ is fixed, the production function curve itself is unchanged. Output falls only because equilibrium employment $N_t^*$ falls — we move *along* the existing curve to a lower $N$.
+3. **The IS curve is unaffected.** In the basic neoclassical model $\theta_t$ does not enter the investment or saving equations. The IS curve shifts only in response to changes in $A_{t+1}$ or $G_t$.
+
+Qualitative effects:
+
+1. Labor market: $N^*_t \downarrow$ and  $w^*_t \uparrow$ because of labor supply retraction.
+2. Output: $Y_t^* \downarrow$ because of less labor hired.
+3. Interest rate: $r_t^* \uparrow$ because $Y^s$ shifts left and IS is unchanged.
+
+---
+
+### Part (a) — Graphical analysis
+
+```{r}
+#| label: fig-ex192-standard
+#| fig-cap: "Effect of an increase in $\\theta_t$ in the standard neoclassical model. Labor supply shifts left; employment and output fall while the real wage and real interest rate rise."
+#| fig-alt: "Four-panel neoclassical model. NW: labor market — supply shifts left; N falls, w rises. SW: production function — single curve, point moves left and down. SE: 45-degree mirror. NE: IS-Ys — vertical Ys shifts left along IS; r rises, Y falls."
+#| fig-height: 8
+#| fig-width: 8
+
+library(tidyverse)
+
+# ── Helper: 4-panel for a theta_t shock ──────────────────────────────────────
+# ld_slope: slope of N^d (dw/dN in absolute value); small = elastic demand
+# ls_slope: slope of N^s (dw/dN); large = inelastic supply
+# Baseline equilibrium pinned at N0=5, w0=5 for all calls.
+draw_four_panel_theta <- function(ld_slope, ls_slope, title_str) {
+
+  # ── Baseline equilibrium ─────────────────────────────────────────────────────
+  N0 <- 5;  w0 <- 5
+  ld_int  <- w0 + ld_slope * N0    # w = ld_int - ld_slope * N
+  ls_int  <- w0 - ls_slope * N0    # w = ls_int + ls_slope * N
+
+  # ── theta shock: N^s shifts upward by delta_ls (vertical shift) ──────────────
+  delta_ls <- 2.0
+  ls_int1  <- ls_int + delta_ls
+
+  # New equilibrium
+  N1 <- (ld_int - ls_int1) / (ld_slope + ls_slope)
+  w1 <- ld_int - ld_slope * N1
+
+  # ── Production function ──────────────────────────────────────────────────────
+  alpha <- 0.7;  A <- 1.0
+  Y0 <- A * N0^alpha
+  Y1 <- A * N1^alpha
+
+  # ── IS curve ─────────────────────────────────────────────────────────────────
+  IS_slope <- 0.06;  IS_int <- 0.45
+  r0 <- IS_int - IS_slope * Y0
+  r1 <- IS_int - IS_slope * Y1     # r1 > r0 (Y^s shifts left)
+
+  # ── Style ────────────────────────────────────────────────────────────────────
+  col_base  <- "black";  col_shock <- "firebrick";  lw <- 1.1
+
+  # Fixed axis limits (constant across all calls)
+  N_lim <- c(0, 10);  w_lim <- c(0, 12)
+  Y_lim <- c(0, 10);  r_lim <- c(0, 0.45)
+
+  # ── Shared theme ─────────────────────────────────────────────────────────────
+  th <- theme_minimal(base_size = 11, base_family = "serif") +
+    theme(plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+          panel.background = element_rect(fill = "#fdfcf8", color = NA),
+          panel.grid       = element_blank(),
+          axis.line        = element_line(color = "black", linewidth = 0.4),
+          axis.ticks       = element_blank(),
+          axis.text        = element_blank(),
+          axis.title.x = element_text(hjust = 1, vjust = 0, size = 12),
+          axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12))
+
+  # ── NW: Labor market ─────────────────────────────────────────────────────────
+  N_seq <- seq(1, 9, by = 0.05)
+  ld_df  <- tibble(N = N_seq, w = ld_int  - ld_slope * N_seq) |> filter(w >= 0, w <= 12)
+  ls0_df <- tibble(N = N_seq, w = ls_int  + ls_slope * N_seq) |> filter(w >= 0, w <= 12)
+  ls1_df <- tibble(N = N_seq, w = ls_int1 + ls_slope * N_seq) |> filter(w >= 0, w <= 12)
+
+  # Label positions (dynamic, clamped to visible range)
+  x_nd  <- 9
+  y_nd  <- ld_int - ld_slope * x_nd + 0.5
+
+  x_ns0 <- 7
+  y_ns0 <- min(ls_int  + ls_slope * x_ns0 - 0.5, 11.5)
+
+  x_ns1 <- 1
+  y_ns1 <- max(ls_int1 + ls_slope * x_ns1 + 1.5, 0.5)
+
+  p_nw <- ggplot() +
+    geom_line(data = ld_df,  aes(x = N, y = w), color = col_base,  linewidth = lw) +
+    geom_line(data = ls0_df, aes(x = N, y = w), color = col_base,  linewidth = lw) +
+    geom_line(data = ls1_df, aes(x = N, y = w), color = col_shock, linewidth = lw) +
+    geom_segment(aes(x = N0, xend = N0, y = 0,  yend = w0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = N0, y = w0, yend = w0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = N1, xend = N1, y = 0,  yend = w1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = N1, y = w1, yend = w1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_point(aes(x = N0, y = w0), color = col_base,  size = 2.5) +
+    geom_point(aes(x = N1, y = w1), color = col_shock, size = 2.5) +
+    annotate("text", x = x_nd,  y = y_nd+0.2,
+             label = expression(N^d), color = col_base, size = 4) +
+    annotate("text", x = x_ns0, y = y_ns0,
+             label = expression(N^s * "(" * theta[0] * ")"),
+             color = col_base, size = 4, hjust = 0) +
+    annotate("text", x = x_ns1, y = y_ns1,
+             label = expression(N^s * "(" * theta[1] * ")"),
+             color = col_shock, size = 4, hjust = 0) +
+    annotate("text", x = N0 + 0.1, y = -0.3,
+             label = expression(N["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = N1 - 0.3, y = -0.3,
+             label = expression(N["1,t"]), color = col_shock, size = 4) +
+    annotate("text", x = -0.4, y = w0,
+             label = expression(w["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = -0.4, y = w1,
+             label = expression(w["1,t"]), color = col_shock, size = 4) +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    coord_cartesian(xlim = N_lim, ylim = w_lim, clip = "off") +
+    labs(x = expression(N[t]), y = expression(w[t])) + th
+
+  # ── SW: Production function (single curve; A_t unchanged) ────────────────────
+  N_pf <- seq(0.01, 10, by = 0.05)
+  pf_df <- tibble(N = N_pf, Y = A * N_pf^alpha)
+
+  p_sw <- ggplot() +
+    geom_line(data = pf_df, aes(x = N, y = Y), color = col_base, linewidth = lw) +
+    geom_segment(aes(x = N0, xend = N0, y = 0,  yend = Y_lim),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = N_lim, y = Y0, yend = Y0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = N1, xend = N1, y = 0,  yend = Y_lim),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = N_lim, y = Y1, yend = Y1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_point(aes(x = N0, y = Y0), color = col_base,  size = 2.5) +
+    geom_point(aes(x = N1, y = Y1), color = col_shock, size = 2.5) +
+    annotate("text", x = 8.5, y = A * 8.5^alpha + 0.6,
+             label = expression(A[t]*F(K[t], N[t])), color = col_base, size = 4) +
+    annotate("text", x = N0 +0.1, y = -0.3,
+             label = expression(N["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = N1 - 0.3, y = -0.3,
+             label = expression(N["1,t"]), color = col_shock, size = 4) +
+    annotate("text", x = -0.4, y = Y0+0.3,
+             label = expression(Y["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = -0.4, y = Y1,
+             label = expression(Y["1,t"]), color = col_shock, size = 4) +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    coord_cartesian(xlim = N_lim, ylim = Y_lim, clip = "off") +
+    labs(x = expression(N[t]), y = expression(Y[t])) + th
+
+  # ── SE: 45-degree mirror ─────────────────────────────────────────────────────
+  p_se <- ggplot() +
+    geom_abline(slope = 1, intercept = 0, color = col_base, linewidth = lw) +
+    geom_segment(aes(x = Y0, xend = Y0, y = 0,  yend = Y_lim),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = Y0, y = Y0, yend = Y0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = Y1, xend = Y1, y = 0,  yend = Y_lim),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = Y1, y = Y1, yend = Y1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_point(aes(x = Y0, y = Y0), color = col_base,  size = 2.5) +
+    geom_point(aes(x = Y1, y = Y1), color = col_shock, size = 2.5) +
+    annotate("text", x = Y0 + 0.3 , y = -0.3,
+             label = expression(Y["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = Y1 -0.3 , y = -0.3,
+             label = expression(Y["1,t"]), color = col_shock, size = 4) +
+    annotate("text", x = -0.4, y = Y0 + 0.3,
+             label = expression(Y["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = -0.4, y = Y1,
+             label = expression(Y["1,t"]), color = col_shock, size = 4) +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    coord_cartesian(xlim = Y_lim, ylim = Y_lim, clip = "off") +
+    labs(x = expression(Y[t]), y = expression(Y[t])) + th
+
+  # ── NE: IS-Ys (Y^s shifts LEFT) ─────────────────────────────────────────────
+  Y_is  <- seq(1, 7, by = 0.05)
+  is_df <- tibble(Y = Y_is, r = IS_int - IS_slope * Y_is)
+
+  p_ne <- ggplot() +
+    geom_line(data = is_df, aes(x = Y, y = r), color = col_base, linewidth = lw) +
+    geom_vline(xintercept = Y0, color = col_base,  linewidth = lw) +
+    geom_vline(xintercept = Y1, color = col_shock, linewidth = lw) +
+    geom_segment(aes(x = 0, xend = Y0, y = r0, yend = r0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = 0, xend = Y1, y = r1, yend = r1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_point(aes(x = Y0, y = r0), color = col_base,  size = 2.5) +
+    geom_point(aes(x = Y1, y = r1), color = col_shock, size = 2.5) +
+    annotate("text", x = 9.2, y = IS_int - IS_slope * 9.2 - 0.015,
+             label = "IS", color = col_base, size = 3.5, fontface = "italic") +
+    # Y^s baseline is to the RIGHT of Y^s' (Y1 < Y0)
+    annotate("text", x = Y0 + 0.15, y = IS_int - IS_slope * 2 + 0.05,
+             label = expression(Y^s), color = col_base,  size = 4, hjust = 0) +
+    annotate("text", x = Y1 - 0.15, y = IS_int - IS_slope * 2 + 0.05,
+             label = expression(Y^{"s'"}), color = col_shock, size = 4, hjust = 1) +
+    annotate("text", x = -0.4, y = r0,
+             label = expression(r["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = -0.4, y = r1 + 0.01,
+             label = expression(r["1,t"]), color = col_shock, size = 4) +
+    annotate("text", x = Y0 + 0.3, y = -0.015,
+             label = expression(Y["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = Y1 - 0.3, y = -0.015,
+             label = expression(Y["1,t"]), color = col_shock, size = 4) +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0), labels = NULL) +
+    coord_cartesian(xlim = Y_lim, ylim = r_lim, clip = "off") +
+    labs(x = expression(Y[t]), y = expression(r[t])) +
+    th + theme(axis.text.y = element_text(size = 7))
+
+  # ── Align and arrange ────────────────────────────────────────────────────────
+  g_nw <- ggplotGrob(p_nw)
+  g_sw <- ggplotGrob(p_sw)
+  g_se <- ggplotGrob(p_se)
+  g_ne <- ggplotGrob(p_ne)
+
+  g_nw$widths  <- g_ne$widths  <- grid::unit.pmax(g_nw$widths,  g_ne$widths)
+  g_sw$widths  <- g_se$widths  <- grid::unit.pmax(g_sw$widths,  g_se$widths)
+  g_nw$heights <- g_sw$heights <- grid::unit.pmax(g_nw$heights, g_sw$heights)
+  g_ne$heights <- g_se$heights <- grid::unit.pmax(g_ne$heights, g_se$heights)
+
+  gridExtra::grid.arrange(
+    g_nw, g_ne, g_sw, g_se, ncol = 2,
+    top = grid::textGrob(title_str,
+                         gp = grid::gpar(fontsize = 13, fontface = "bold",
+                                         fontfamily = "serif")))
+}
+
+draw_four_panel_theta(ld_slope = 1.0, ls_slope = 1.0,
+                      title_str = expression(bold("Standard model — increase in ") * theta[t]))
+```
+
+**Endogenous variable responses.** An increase in $\theta_t$ sets off the following chain:
+
+- **Labor market:** The leftward shift of $N^s$ reduces equilibrium employment ($N_t^* \downarrow$) and raises the real wage ($w_t^* \uparrow$). Firms move up their labor demand curve.
+- **Production:** With less labor and the same TFP, output falls ($Y_t^* \downarrow$). The economy moves leftward along the unchanged production function.
+- **Goods market:** Lower $Y_t^*$ shifts $Y^s$ to the left. The IS curve is unaffected. Equilibrium in the IS–$Y^s$ diagram requires the real interest rate to rise ($r_t^* \uparrow$) to reconcile goods demand (which falls with $Y$) with the now-lower supply.
+
+---
+
+### Part (b) — Elastic labor demand vs. inelastic labor supply
+
+The two cases differ in **which curve's slope** determines how the leftward $N^s$ shift is absorbed:
+
+**Case 1 — Elastic labor demand** (flat $N^d$, $|\partial N^d/\partial w|$ large): Firms are very responsive to wages. When $N^s$ shifts left and the wage rises, firms quickly cut employment. The labor market clears with a **large fall in $N_t^*$** and only a **small rise in $w_t^*$** — the flat demand curve limits the wage increase but not the employment drop. Output falls substantially; $Y^s$ shifts far left; $r_t^*$ rises a lot.
+
+```{r}
+#| label: fig-ex192-elastic-demand
+#| fig-cap: "Increase in $\\theta_t$ with **elastic labor demand** (flat $N^d$, $\\partial N^d/\\partial w$ large). The flat demand curve absorbs the leftward $N^s$ shift mainly through a large fall in $N_t^*$ and a small rise in $w_t^*$. Output and $Y^s$ fall substantially; $r_t^*$ rises a lot."
+#| fig-alt: "Four-panel neoclassical model with flat labor demand. NW: supply shifts left along flat demand; N falls a lot, w rises little. SW: single production function, point moves left. SE: 45-degree mirror. NE: Ys shifts far left; r rises a lot."
+#| fig-height: 8
+#| fig-width: 8
+
+draw_four_panel_theta(ld_slope = 0.3, ls_slope = 1.0,
+                      title_str = "Elastic labor demand")
+```
+
+**Elastic demand — results.** Because firms are sensitive to wages, even a modest upward shift of $N^s$ triggers a large reduction in hiring. Employment falls substantially ($N_t^* \downarrow\downarrow$), the wage rises only a little ($w_t^* \uparrow$), and output contracts by a lot ($Y_t^* \downarrow\downarrow$). The $Y^s$ curve shifts far left, so the real interest rate rises sharply ($r_t^* \uparrow\uparrow$).
+
+---
+
+**Case 2 — Inelastic labor supply** (steep $N^s$, $|\partial N^s/\partial w|$ small): Workers are unresponsive to wages. The same upward shift of $N^s$ represents a **small horizontal displacement** of the supply curve (a given vertical shift corresponds to little change in the quantity supplied). The labor market therefore clears with a **small fall in $N_t^*$** and a **larger rise in $w_t^*$**. Output contracts less; $Y^s$ shifts left by a smaller amount; $r_t^*$ rises by less.
+
+```{r}
+#| label: fig-ex192-inelastic-supply
+#| fig-cap: "Increase in $\\theta_t$ with **inelastic labor supply** (steep $N^s$, $\\partial N^s/\\partial w$ small). The steep supply curve limits the horizontal displacement: $N_t^*$ falls only a little while $w_t^*$ rises more. Output and $r_t^*$ change by less than in the elastic-demand case."
+#| fig-alt: "Four-panel neoclassical model with steep labor supply. NW: supply shifts left; N falls a little, w rises more. SW: single production function, small leftward movement. SE: 45-degree mirror. NE: Ys shifts left by less; r rises by less."
+#| fig-height: 8
+#| fig-width: 8
+
+draw_four_panel_theta(ld_slope = 1.0, ls_slope = 3.0,
+                      title_str = "Inelastic labor supply")
+```
+
+**Inelastic supply — results.** With a steep $N^s$ curve, a given upward shift corresponds to a small reduction in labor supplied. Employment falls modestly ($N_t^* \downarrow$), the wage rises proportionally more to clear the market ($w_t^* \uparrow\uparrow$), and output contracts only a little ($Y_t^* \downarrow$). The $Y^s$ curve shifts less to the left, and the real interest rate rises by less ($r_t^* \uparrow$).
+
+---
+
+### Summary: how curve slopes shape the $\theta_t$ shock
+
+| Variable | Elastic $N^d$ (flat demand) | Inelastic $N^s$ (steep supply) |
+|----------|-----------------------------|--------------------------------|
+| $\Delta N_t^*$ | Larger decrease | Smaller decrease |
+| $\Delta w_t^*$ | Smaller increase | Larger increase |
+| $\Delta Y_t^*$ | Larger decrease | Smaller decrease |
+| $\Delta r_t^*$ | Larger increase | Smaller increase |
+
+The key insight is that **the slope of the curve that does *not* shift determines how the shock is split between price and quantity adjustment**. When labor demand is elastic, firms eliminate many jobs in response to a small wage increase, so the employment and output effects are large. When labor supply is inelastic, the supply curve barely moves horizontally even though workers demand higher wages, limiting the employment and output loss but amplifying the wage and interest-rate response.
+
+---
+
+# Exercise 19.4 — Reduction in $A_t$ and the Price Level
+
+**Problem.** Consider the basic neoclassical model. Suppose that there is a reduction in $A_t$. In which direction will $P_t$ move? Will it change more or less if money demand is less sensitive to $Y_t$?
+
+---
+
+## Solution
+
+### Real block: effect of $A_t \downarrow$
+
+By the **classical dichotomy**, the six real equilibrium conditions are solved first, with no reference to money demand or the price level. A fall in $A_t$ lowers the marginal product of labor at every employment level:
+
+$$\text{MPN}_t = A_t \cdot F_N(K_t, N_t) \;\downarrow$$
+
+This **shifts labor demand left**. Firms demand fewer workers at every real wage, so equilibrium employment and the real wage both fall:
+
+$$N_t^* \downarrow, \qquad w_t^* \downarrow.$$
+
+Output contracts for two reasons simultaneously — directly through lower $A_t$ and indirectly through lower $N_t^*$ — so the $Y^s$ curve shifts **left**:
+
+$$Y_t^* = A_t F(K_t, N_t^*) \;\downarrow\downarrow.$$
+
+The IS curve is unaffected (it depends on $A_{t+1}$, not $A_t$). With a vertical $Y^s$ shifted left and an unchanged IS curve, the new equilibrium has a **higher real interest rate**: $r_t^* \uparrow$.
+
+---
+
+### Nominal block: $P_t$ rises
+
+Once the real equilibrium is determined, the **money market** pins down $P_t$. The equilibrium condition is:
+
+$$M_t = P_t \, M^d(i_t,\, Y_t) \qquad \Longrightarrow \qquad P_t = \frac{M_t}{M^d(i_t,\, Y_t)},$$
+
+where $i_t = r_t + \pi^e_{t+1}$ (Fisher equation). A fall in $A_t$ reduces real money demand through **two independent channels**, both working in the same direction:
+
+| Channel | Mechanism | Effect on $M^d$ | Effect on $P_t$ |
+|---------|-----------|-----------------|-----------------|
+| Output channel | $Y_t^* \downarrow$ — fewer transactions, less need for money | $M^d \downarrow$ | $\uparrow$ |
+| Interest-rate channel | $r_t^* \uparrow \Rightarrow i_t \uparrow$ — holding money is costlier | $M^d \downarrow$ | $\uparrow$ |
+
+Since $M_t$ is fixed by the government and $M^d$ falls on both counts, **$P_t$ rises**.
+
+Graphically, the money demand schedule — an upward-sloping ray from the origin in $(M_t, P_t)$ space — rotates **inward** toward the $P_t$-axis: at every price level, fewer nominal balances are demanded. With the vertical money supply unchanged, the equilibrium price moves up.
+
+---
+
+### Part (b) — Less Y-sensitive money demand
+
+Now suppose $|\partial M^d / \partial Y_t|$ is smaller — money demand responds less strongly to income. The **real block is unaffected**: the classical dichotomy insulates $Y_t^*$, $r_t^*$, and $i_t^*$ from the parameters of the money demand function. The same fall in $Y_t$ and rise in $r_t$ occur regardless.
+
+What changes is the **size** of the fall in $M^d$. Decompose the total change:
+
+$$\Delta M^d \;\approx\; \underbrace{\frac{\partial M^d}{\partial Y_t} \Delta Y_t}_{\text{output channel (weaker)}} \;+\; \underbrace{\frac{\partial M^d}{\partial i_t} \Delta i_t}_{\text{interest-rate channel (unchanged)}}.$$
+
+With a smaller $|\partial M^d/\partial Y_t|$, the first term is smaller in magnitude even though $\Delta Y_t$ is the same. The total fall in $M^d$ is therefore **less pronounced**, the denominator in $P_t = M_t / M^d$ drops by less, and $P_t$ rises by **less**:
+
+$$|\Delta P_t|_{\text{less }Y\text{-sensitive}} \;<\; |\Delta P_t|_{\text{baseline}}.$$
+
+In the figure below, the dashed red curve represents money demand after the same $A_t$ shock but under less-Y-sensitive preferences. It rotates inward by a smaller amount than the solid red curve, so the new equilibrium price $P_2^*$ lies below the baseline $P_1^*$.
+
+```{r}
+#| label: fig-ex194
+#| fig-cap: "Money market after a reduction in $A_t$. Both the fall in $Y_t$ (output channel) and the rise in $r_t$ (interest-rate channel) reduce real money demand, rotating the demand ray inward toward the $P_t$-axis. With a fixed money supply $\\bar{M}_t$, the price level rises from $P_{0,t}$ to $P_{1,t}$ (standard $Y_t$-sensitivity, solid red) or $P_{2,t}$ (less $Y_t$-sensitive demand, dashed red). Because the demand shift is smaller when $|\\partial M^d/\\partial Y_t|$ is smaller, the price increase is smaller: $P_{0,t} < P_{2,t} < P_{1,t}$."
+#| fig-alt: "Money market diagram: P on vertical axis, M on horizontal axis. Three upward-sloping rays from origin — black initial demand, solid red shocked standard, dashed red shocked less-Y-sensitive. Vertical supply line at M-bar. Horizontal dotted lines show P rising from P0 to P1 (larger) or P2 (smaller). P2 lies between P0 and P1."
+#| fig-height: 5.5
+#| fig-width: 6.0
+
+library(tidyverse)
+
+# ── Parameters ────────────────────────────────────────────────────────────────
+# Nominal money demand: M^d_nominal = P * m_real
+# In (M, P) space: M = P * m_real  →  P = M / m_real  (ray from origin)
+M_s <- 1.0    # exogenous money supply
+m0  <- 1.00   # initial real money demand    → P0 = 1.00
+m1  <- 0.70   # shocked, standard sensitivity → P1 ≈ 1.43
+m2  <- 0.85   # shocked, less Y-sensitive     → P2 ≈ 1.18
+
+P0 <- M_s / m0
+P1 <- M_s / m1
+P2 <- M_s / m2
+
+P_max <- 1.65
+M_max <- 1.80
+
+col_base  <- "black"
+col_shock <- "firebrick"
+lw        <- 1.1
+
+# ── Money demand rays ─────────────────────────────────────────────────────────
+P_seq  <- seq(0, P_max, length.out = 300)
+df_md0 <- data.frame(M = P_seq * m0, P = P_seq)
+df_md1 <- data.frame(M = P_seq * m1, P = P_seq)
+df_md2 <- data.frame(M = P_seq * m2, P = P_seq)
+
+# ── Theme (matching 19.2 style) ───────────────────────────────────────────────
+th <- theme_minimal(base_size = 11, base_family = "serif") +
+  theme(
+    plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid       = element_blank(),
+    axis.line        = element_line(color = "black", linewidth = 0.4),
+    axis.ticks       = element_blank(),
+    axis.text        = element_blank(),
+    axis.title.x     = element_text(hjust = 1, vjust = 0,  size = 12),
+    axis.title.y     = element_text(hjust = 1, angle = 0,  vjust = 1, size = 12)
+  )
+
+# ── Plot ──────────────────────────────────────────────────────────────────────
+ggplot() +
+  # Money demand rays
+  geom_line(data = df_md0, aes(M, P), color = col_base,  linewidth = lw) +
+  geom_line(data = df_md1, aes(M, P), color = col_shock, linewidth = lw) +
+  geom_line(data = df_md2, aes(M, P), color = col_shock, linewidth = lw,
+            linetype = "dashed") +
+  # Money supply: vertical segment
+  annotate("segment",
+           x = M_s, xend = M_s, y = 0, yend = P_max * 1.02,
+           color = col_base, linewidth = lw) +
+  # Horizontal drop lines (dotted)
+  annotate("segment", x = 0, xend = M_s, y = P0, yend = P0,
+           linetype = "dotted", color = col_base,  linewidth = 0.6) +
+  annotate("segment", x = 0, xend = M_s, y = P2, yend = P2,
+           linetype = "dotted", color = col_shock, linewidth = 0.6, alpha = 0.7) +
+  annotate("segment", x = 0, xend = M_s, y = P1, yend = P1,
+           linetype = "dotted", color = col_shock, linewidth = 0.6) +
+  # Equilibrium dots
+  geom_point(aes(x = M_s, y = P0), color = col_base,  size = 2.5) +
+  geom_point(aes(x = M_s, y = P1), color = col_shock, size = 2.5) +
+  geom_point(aes(x = M_s, y = P2), color = col_shock, size = 2.5,
+             shape = 21, fill = "white", stroke = 1.5) +
+  # P-axis labels — outside left of y-axis (negative x, clip = "off")
+  annotate("text", x = -0.01, y = P0,
+           label = expression(P["0,t"]), hjust = 1, size = 4, color = col_base) +
+  annotate("text", x = -0.01, y = P2,
+           label = expression(P["2,t"]), hjust = 1, size = 4, color = col_shock) +
+  annotate("text", x = -0.01, y = P1,
+           label = expression(P["1,t"]), hjust = 1, size = 4, color = col_shock) +
+  # M_s label above supply line
+  annotate("text", x = M_s - 0.1, y = P_max*0.98,
+           label = expression(M[t]^s), hjust = 0, size = 4, color = col_base) +
+  # M_bar tick label — outside below x-axis (negative y, clip = "off")
+  annotate("text", x = M_s, y = -0.05,
+           label = expression(bar(M)[t]), hjust = 0.5, size = 4, color = col_base) +
+  # Curve labels — staggered along the curves
+  # Initial: rightmost ray, label near P = 1.52
+  annotate("text", x = 1.52 * m0 + 0.04, y = 1.5,
+           label = expression(P["t"]*M^d*(i["0,t"]*","~Y["0,t"])),
+           hjust = 0, size = 3.5, color = col_base) +
+  # Standard shocked: label near P = 1.48, just right of supply line
+  annotate("text", x = m1*.95, y = 1.35,
+           label = expression(P["t"]*M^d*(i["1,t"]*","~Y["1,t"])),
+           hjust = 0, size = 3.5, color = col_shock) +
+  # Less-Y-sensitive: label near P = 1.56, between the other two
+  annotate("text", x = 1.5 * m2, y = 1.61,
+           label = expression(P["t"]*M^d*(i["2,t"]*","~Y["2,t"])),
+           hjust = 0, size = 3.5, color = col_shock) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0, M_max), ylim = c(0, P_max), clip = "off") +
+  labs(x = expression(M[t]), y = expression(P[t])) +
+  th
+```
+
+---
+
+
+**Key insight.** In the neoclassical model the price level is pinned by money market equilibrium: $P_t = M_t / M^d(i_t, Y_t)$. A negative productivity shock reduces output and — through a higher real interest rate — also raises the opportunity cost of holding money. Both effects depress real money demand, so with a fixed money supply the price level must rise to restore equilibrium. The magnitude of the price increase depends on how sensitive money demand is to income: a less income-elastic money demand function weakens the output channel, resulting in a smaller inward rotation of the demand curve and a smaller rise in $P_t$.
+
+---
+
+# Exercise 19.5 — Effects of Shocks in the Neoclassical Model
+
+**Problem.** Consider the basic Neoclassical model. Graphically analyze the effects of:
+(a) An increase in $G_{t+1}$.
+(b) An increase in $A_{t+1}$.
+(c) A permanent increase in productivity (i.e. $A_t$ and $A_{t+1}$ both increase).
+In each case, clearly describe how each endogenous variable changes.
+
+---
+
+## Solution
+
+### Shock classification
+
+Before working through the diagrams, it is useful to recall which equations each
+exogenous variable enters:
+
+| Shock | Where it enters | Type |
+|-------|-----------------|------|
+| $G_{t+1} \uparrow$ | $C^d$ via future disposable income $Y_{t+1}-G_{t+1}$ | Demand — IS shifts **left** |
+| $A_{t+1} \uparrow$ | $I^d$ directly; $C^d$ via expected $Y_{t+1}$ | Demand — IS shifts **right** |
+| $A_t \uparrow$ | Labor demand $N^d$; production function $Y_t = A_t F(K_t,N_t)$ | Supply — $Y^s$ shifts **right** |
+| $A_t$ and $A_{t+1} \uparrow$ | Both channels simultaneously | Supply **and** Demand |
+
+For parts (a) and (b) the shocks are **pure demand shocks**: neither labor demand,
+labor supply, nor the production function is affected. Employment $N_t^*$, the real
+wage $w_t^*$, and output $Y_t^*$ are determined on the supply side and are therefore
+unchanged. Only $r_t^*$ adjusts to clear the goods market. This is the essence of
+the neoclassical model's supply-driven theory: demand shocks move $r_t^*$ but not
+$Y_t^*$.
+
+---
+
+### Part (a) — Increase in $G_{t+1}$
+
+Under Ricardian equivalence the household treats $G_{t+1} = T_{t+1}$, so higher
+future government spending reduces **future household disposable income**
+$Y_{t+1} - G_{t+1}$ (since $Y_{t+1}$ is supply-determined in the future period and
+does not respond to $G_{t+1}$). Lower future disposable income reduces current
+consumption through the permanent-income effect, shifting the IS curve **left**. No
+supply-side variable is affected.
+
+**Real-block effects.** With $Y^s$ unchanged and IS shifting left, the real interest
+rate must **fall** to clear the goods market. Output, employment, and the real wage
+are unchanged.
+
+```{r}
+#| label: fig-ex195-part-a
+#| fig-cap: "Effect of an increase in $G_{t+1}$ in the neoclassical model. The IS curve shifts left; $Y^s$ is unchanged. Output, employment, and the real wage are unaffected. The real interest rate falls from $r_{0,t}$ to $r_{1,t}$."
+#| fig-alt: "Four-panel neoclassical model. Labor market: unchanged, single equilibrium. Production function: unchanged, single point. 45-degree mirror: unchanged. IS-Ys: IS shifts left; same Ys; r falls, Y unchanged."
+#| fig-height: 8
+#| fig-width: 8
+
+library(tidyverse)
+
+# ── Helper: 4-panel for a pure IS shift ──────────────────────────────────────
+# is_dir: +1 = IS shifts right, -1 = IS shifts left
+draw_four_panel_IS <- function(is_dir, IS_delta, title_str) {
+
+  ld_slope <- 1.0;  ls_slope <- 1.0
+  N0 <- 5;  w0 <- 5
+  ld_int <- w0 + ld_slope * N0   # = 10
+  ls_int <- w0 - ls_slope * N0   # = 0
+  alpha  <- 0.7;  A <- 1.0
+  Y0     <- A * N0^alpha
+
+  IS_slope <- 0.06;  IS_int0 <- 0.45
+  IS_int1  <- IS_int0 + is_dir * IS_delta
+  r0       <- IS_int0 - IS_slope * Y0
+  r1       <- IS_int1 - IS_slope * Y0
+
+  col_base  <- "black";  col_shock <- "firebrick";  lw <- 1.1
+  N_lim <- c(0, 10);  w_lim <- c(0, 12)
+  Y_lim <- c(0, 10);  r_lim <- c(0, 0.45)
+
+  th <- theme_minimal(base_size = 11, base_family = "serif") +
+    theme(plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+          panel.background = element_rect(fill = "#fdfcf8", color = NA),
+          panel.grid       = element_blank(),
+          axis.line        = element_line(color = "black", linewidth = 0.4),
+          axis.ticks       = element_blank(),
+          axis.text        = element_blank(),
+          axis.title.x     = element_text(hjust = 1, vjust = 0, size = 12),
+          axis.title.y     = element_text(hjust = 1, angle = 0, vjust = 1, size = 12))
+
+  # NW: Labor market (no change)
+  N_seq <- seq(1, 9, by = 0.05)
+  ld_df <- tibble(N = N_seq, w = ld_int - ld_slope * N_seq) |> filter(w >= 0, w <= 12)
+  ls_df <- tibble(N = N_seq, w = ls_int + ls_slope * N_seq) |> filter(w >= 0, w <= 12)
+
+  p_nw <- ggplot() +
+    geom_line(data = ld_df, aes(N, w), color = col_base, linewidth = lw) +
+    geom_line(data = ls_df, aes(N, w), color = col_base, linewidth = lw) +
+    geom_segment(aes(x = N0, xend = N0, y = 0,  yend = w0),
+                 linetype = "dotted", color = col_base, linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = N0, y = w0, yend = w0),
+                 linetype = "dotted", color = col_base, linewidth = 0.6) +
+    geom_point(aes(x = N0, y = w0), color = col_base, size = 2.5) +
+    annotate("text", x = 9,   y = ld_int - ld_slope * 9 + 0.7,
+             label = expression(N^d), color = col_base, size = 4) +
+    annotate("text", x = 8.2, y = ls_int + ls_slope * 8.2 + 0.7,
+             label = expression(N^s), color = col_base, size = 4, hjust = 0) +
+    annotate("text", x = N0,   y = -0.5,
+             label = expression(N["0,t"]), color = col_base, size = 4) +
+    annotate("text", x = -0.4, y = w0,
+             label = expression(w["0,t"]), color = col_base, size = 4) +
+    scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+    coord_cartesian(xlim = N_lim, ylim = w_lim, clip = "off") +
+    labs(x = expression(N[t]), y = expression(w[t])) + th
+
+  # SW: Production function (no change)
+  N_pf  <- seq(0.01, 10, by = 0.05)
+  pf_df <- tibble(N = N_pf, Y = A * N_pf^alpha)
+
+  p_sw <- ggplot() +
+    geom_line(data = pf_df, aes(N, Y), color = col_base, linewidth = lw) +
+    geom_segment(aes(x = N0, xend = N0, y = 0,  yend = 10),
+                 linetype = "dotted", color = col_base, linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = 10, y = Y0, yend = Y0),
+                 linetype = "dotted", color = col_base, linewidth = 0.6) +
+    geom_point(aes(x = N0, y = Y0), color = col_base, size = 2.5) +
+    annotate("text", x = 8.5, y = A * 8.5^alpha + 0.7,
+             label = expression(A[t]*F(K[t], N[t])), color = col_base, size = 4) +
+    annotate("text", x = N0,   y = -0.4,
+             label = expression(N["0,t"]), color = col_base, size = 4) +
+    annotate("text", x = -0.4, y = Y0,
+             label = expression(Y["0,t"]), color = col_base, size = 4) +
+    scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+    coord_cartesian(xlim = N_lim, ylim = Y_lim, clip = "off") +
+    labs(x = expression(N[t]), y = expression(Y[t])) + th
+
+  # SE: 45-degree mirror (no change)
+  p_se <- ggplot() +
+    geom_abline(slope = 1, intercept = 0, color = col_base, linewidth = lw) +
+    geom_segment(aes(x = Y0, xend = Y0, y = 0,  yend = 10),
+                 linetype = "dotted", color = col_base, linewidth = 0.6) +
+    geom_segment(aes(x = 0,  xend = Y0, y = Y0, yend = Y0),
+                 linetype = "dotted", color = col_base, linewidth = 0.6) +
+    geom_point(aes(x = Y0, y = Y0), color = col_base, size = 2.5) +
+    annotate("text", x = Y0,   y = -0.4,
+             label = expression(Y["0,t"]), color = col_base, size = 4) +
+    annotate("text", x = -0.5, y = Y0,
+             label = expression(Y["0,t"]), color = col_base, size = 4) +
+    scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+    coord_cartesian(xlim = Y_lim, ylim = Y_lim, clip = "off") +
+    labs(x = expression(Y[t]), y = expression(Y[t])) + th
+
+  # NE: IS-Ys (IS shifts, Y^s fixed)
+  Y_is   <- seq(1, 6, by = 0.05)
+  is0_df <- tibble(Y = Y_is, r = IS_int0 - IS_slope * Y_is)
+  is1_df <- tibble(Y = Y_is, r = IS_int1 - IS_slope * Y_is)
+
+  x_lbl <- 8.2
+  r0_lbl <- IS_int0 - IS_slope * x_lbl
+  r1_lbl <- IS_int1 - IS_slope * x_lbl
+
+  p_ne <- ggplot() +
+    geom_line(data = is0_df, aes(Y, r), color = col_base,  linewidth = lw) +
+    geom_line(data = is1_df, aes(Y, r), color = col_shock, linewidth = lw) +
+    geom_vline(xintercept = Y0, color = col_base, linewidth = lw) +
+    geom_segment(aes(x = 0, xend = Y0, y = r0, yend = r0),
+                 linetype = "dotted", color = col_base,  linewidth = 0.6) +
+    geom_segment(aes(x = 0, xend = Y0, y = r1, yend = r1),
+                 linetype = "dotted", color = col_shock, linewidth = 0.6) +
+    geom_point(aes(x = Y0, y = r0), color = col_base,  size = 2.5) +
+    geom_point(aes(x = Y0, y = r1), color = col_shock, size = 2.5) +
+    annotate("text", x = 5.5, y = IS_int0 - IS_slope*5.5 + 0.04,
+             label = "IS",  color = col_base,  size = 4) +
+    annotate("text", x = 5.5, y = IS_int1 - IS_slope*5.5 - 0.03,
+             label = "IS'", color = col_shock, size = 4) +
+    annotate("text", x = Y0 + 0.2, y = IS_int0 - IS_slope * 1.5 + 0.04,
+             label = expression(Y^s), color = col_base, size = 4, hjust = 0) +
+    annotate("text", x = -0.5, y = r0,
+             label = expression(r["0,t"]), color = col_base,  size = 4) +
+    annotate("text", x = -0.5, y = r1,
+             label = expression(r["1,t"]), color = col_shock, size = 4) +
+    annotate("text", x = Y0, y = -0.02,
+             label = expression(Y["0,t"]), color = col_base, size = 4) +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0), labels = NULL) +
+    coord_cartesian(xlim = Y_lim, ylim = r_lim, clip = "off") +
+    labs(x = expression(Y[t]), y = expression(r[t])) +
+    th + theme(axis.text.y = element_text(size = 7))
+
+  g_nw <- ggplotGrob(p_nw);  g_sw <- ggplotGrob(p_sw)
+  g_se <- ggplotGrob(p_se);  g_ne <- ggplotGrob(p_ne)
+  g_nw$widths  <- g_ne$widths  <- grid::unit.pmax(g_nw$widths,  g_ne$widths)
+  g_sw$widths  <- g_se$widths  <- grid::unit.pmax(g_sw$widths,  g_se$widths)
+  g_nw$heights <- g_sw$heights <- grid::unit.pmax(g_nw$heights, g_sw$heights)
+  g_ne$heights <- g_se$heights <- grid::unit.pmax(g_ne$heights, g_se$heights)
+  gridExtra::grid.arrange(g_nw, g_ne, g_sw, g_se, ncol = 2,
+    top = grid::textGrob(title_str,
+      gp = grid::gpar(fontsize = 13, fontface = "bold", fontfamily = "serif")))
+}
+
+draw_four_panel_IS(is_dir = -1, IS_delta = 0.06,
+                   title_str = expression(bold("Increase in ") * G[t+1]))
+```
+
+**Endogenous variable responses.**
+
+- **Labor market:** Neither $N^d$ nor $N^s$ depends on $G_{t+1}$. The equilibrium is unchanged: $N_t^* = N_{0,t}$, $w_t^* = w_{0,t}$.
+- **Output:** Supply-determined and unchanged: $Y_t^* = Y_{0,t}$.
+- **Real interest rate:** **Falls** — $r_t^* \downarrow$. With IS shifting left and $Y^s$ fixed, a lower $r$ is needed to restore goods-market clearing.
+- **Composition of output:** The fall in $r_t$ stimulates private expenditure ($C_t$ and $I_t$ both rise), offsetting the reduction in autonomous expenditure caused by lower future disposable income; total output is unchanged.
+
+**Nominal block.** The fall in $r_t$ lowers the nominal interest rate $i_t = r_t + \pi^e_{t+1}$ (with $\pi^e_{t+1}$ fixed). Lower $i_t$ raises real money demand $M^d(i_t, Y_t)$. Since $\bar{M}_t$ is fixed and $Y_t$ is unchanged, the price level must **fall** to restore money-market equilibrium: $P_t \downarrow$.
+
+```{r}
+#| label: fig-ex195-part-a-nominal
+#| fig-cap: "Money market after an increase in $G_{t+1}$. The fall in $r_t$ lowers the nominal interest rate $i_t$, rotating the nominal money demand ray outward. With a fixed money supply $\\bar{M}_t$, the price level falls from $P_{0,t}$ to $P_{1,t}$."
+#| fig-alt: "Money market: vertical supply line at M-bar. Money demand ray rotates outward (steeper, red). New equilibrium dot is lower on supply line. Dotted horizontal lines show P falling from P0 to P1."
+#| fig-height: 5.5
+#| fig-width: 6.0
+
+library(tidyverse)
+
+# Shared money-market theme
+th_mm <- theme_minimal(base_size = 11, base_family = "serif") +
+  theme(plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+        panel.background = element_rect(fill = "#fdfcf8", color = NA),
+        panel.grid       = element_blank(),
+        axis.line        = element_line(color = "black", linewidth = 0.4),
+        axis.ticks       = element_blank(),
+        axis.text        = element_blank(),
+        axis.title.x     = element_text(hjust = 1, vjust = 0,  size = 12),
+        axis.title.y     = element_text(hjust = 1, angle = 0,  vjust = 1, size = 12))
+
+# Part (a): r falls → i falls → M^d rises (outward rotation) → P falls
+M_s  <- 1.0
+m0a  <- 1.00   # initial slope: P = M / m0  →  P0 = 1.00
+m1a  <- 1.30   # shocked slope (M^d larger) →  P1 ≈ 0.77
+
+P0a  <- M_s / m0a;  P1a <- M_s / m1a
+Pmax_a <- 1.30;  Mmax_a <- 1.80
+P_seq_a <- seq(0, Pmax_a, length.out = 300)
+
+ggplot() +
+  geom_line(data = data.frame(M = P_seq_a * m0a, P = P_seq_a),
+            aes(M, P), color = "black",    linewidth = 1.1) +
+  geom_line(data = data.frame(M = P_seq_a * m1a, P = P_seq_a),
+            aes(M, P), color = "firebrick", linewidth = 1.1) +
+  annotate("segment", x = M_s, xend = M_s, y = 0, yend = Pmax_a * 1.02,
+           color = "black", linewidth = 1.1) +
+  annotate("segment", x = 0, xend = M_s, y = P0a, yend = P0a,
+           linetype = "dotted", color = "black",    linewidth = 0.6) +
+  annotate("segment", x = 0, xend = M_s, y = P1a, yend = P1a,
+           linetype = "dotted", color = "firebrick", linewidth = 0.6) +
+  geom_point(aes(x = M_s, y = P0a), color = "black",    size = 2.5) +
+  geom_point(aes(x = M_s, y = P1a), color = "firebrick", size = 2.5) +
+  annotate("text", x = -0.05, y = P0a,
+           label = expression(P["0,t"]), size = 4, color = "black") +
+  annotate("text", x = -0.05, y = P1a,
+           label = expression(P["1,t"]), size = 4, color = "firebrick") +
+  annotate("text", x = M_s + 0.04, y = Pmax_a * 0.96,
+           label = expression(M[t]^s), size = 4, color = "black") +
+  annotate("text", x = M_s, y = 0,
+           label = expression(bar(M)[t]), size = 4, color = "black") +
+  annotate("text", x = Pmax_a * m0a * 0.4, y = Pmax_a * 0.65,
+           label = expression(P[t]*M^d*(i["0,t"]*","~Y["0,t"])),
+           hjust = 0, size = 4, color = "black") +
+  annotate("text", x = Pmax_a * m1a * 0.85, y = Pmax_a * 0.82,
+           label = expression(P[t]*M^d*(i["1,t"]*","~Y["0,t"])),
+           hjust = 0, size = 4, color = "firebrick") +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0, Mmax_a), ylim = c(0, Pmax_a), clip = "off") +
+  labs(x = expression(M[t]), y = expression(P[t])) + th_mm
+```
+
+---
+
+### Part (b) — Increase in $A_{t+1}$
+
+An increase in expected future productivity raises the **marginal product of capital** in the next period, stimulating current **investment demand** ($I^d \uparrow$ since firms find more projects profitable at the prevailing interest rate). It also raises expected future output $Y_{t+1}$, boosting current **consumption** via the permanent-income effect ($C^d \uparrow$). Both channels increase autonomous expenditure, shifting IS **right**. The supply side is unaffected because $A_t$ is unchanged.
+
+**Real-block effects.** With $Y^s$ unchanged and IS shifting right, output is unchanged and $r_t^* \uparrow$.
+
+```{r}
+#| label: fig-ex195-part-b
+#| fig-cap: "Effect of an increase in $A_{t+1}$ in the neoclassical model. The IS curve shifts right; $Y^s$ is unchanged. Output, employment, and the real wage are unaffected. The real interest rate rises from $r_{0,t}$ to $r_{1,t}$."
+#| fig-alt: "Four-panel neoclassical model. Labor market: unchanged, single equilibrium. Production function: unchanged, single point. 45-degree mirror: unchanged. IS-Ys: IS shifts right along fixed Ys; r rises, Y unchanged."
+#| fig-height: 8
+#| fig-width: 8
+
+draw_four_panel_IS(is_dir = +1, IS_delta = 0.06,
+                   title_str = expression(bold("Increase in ") * A[t+1]))
+```
+
+**Endogenous variable responses.**
+
+- **Labor market:** Unchanged — $N_t^* = N_{0,t}$, $w_t^* = w_{0,t}$.
+- **Output:** Unchanged — $Y_t^* = Y_{0,t}$.
+- **Real interest rate:** **Rises** — $r_t^* \uparrow$. Higher desired expenditure crowds out private spending just enough to keep total output at its supply-determined level.
+- **Investment and consumption:** Their individual changes are ambiguous — the direct positive effect of higher $A_{t+1}$ (and higher expected income) competes with the dampening effect of higher $r_t$. Total private expenditure $C_t + I_t$ is unchanged.
+
+**Nominal block.** The rise in $r_t$ increases the nominal interest rate $i_t \uparrow$. This reduces real money demand $M^d \downarrow$. With $\bar{M}_t$ and $Y_t$ fixed, the price level must **rise**: $P_t \uparrow$.
+
+```{r}
+#| label: fig-ex195-part-b-nominal
+#| fig-cap: "Money market after an increase in $A_{t+1}$. The rise in $r_t$ increases $i_t$, rotating the nominal money demand ray inward. With a fixed money supply $\\bar{M}_t$, the price level rises from $P_{0,t}$ to $P_{1,t}$."
+#| fig-alt: "Money market: vertical supply line. Money demand ray rotates inward (flatter, red). New equilibrium dot is higher on supply line. P rises from P0 to P1."
+#| fig-height: 5.5
+#| fig-width: 6.0
+
+# Part (b): r rises → i rises → M^d falls (inward rotation) → P rises
+m0b  <- 1.00
+m1b  <- 0.76   # M^d smaller → P1 = 1/0.76 ≈ 1.32
+
+P0b  <- M_s / m0b;  P1b <- M_s / m1b
+Pmax_b <- 1.60;  Mmax_b <- 1.80
+P_seq_b <- seq(0, Pmax_b, length.out = 300)
+
+ggplot() +
+  geom_line(data = data.frame(M = P_seq_b * m0b, P = P_seq_b),
+            aes(M, P), color = "black",    linewidth = 1.1) +
+  geom_line(data = data.frame(M = P_seq_b * m1b, P = P_seq_b),
+            aes(M, P), color = "firebrick", linewidth = 1.1) +
+  annotate("segment", x = M_s, xend = M_s, y = 0, yend = Pmax_b * 1.02,
+           color = "black", linewidth = 1.1) +
+  annotate("segment", x = 0, xend = M_s, y = P0b, yend = P0b,
+           linetype = "dotted", color = "black",    linewidth = 0.6) +
+  annotate("segment", x = 0, xend = M_s, y = P1b, yend = P1b,
+           linetype = "dotted", color = "firebrick", linewidth = 0.6) +
+  geom_point(aes(x = M_s, y = P0b), color = "black",    size = 2.5) +
+  geom_point(aes(x = M_s, y = P1b), color = "firebrick", size = 2.5) +
+  annotate("text", x = -0.04, y = P0b,
+           label = expression(P["0,t"]), size = 4, color = "black") +
+  annotate("text", x = -0.04, y = P1b,
+           label = expression(P["1,t"]), size = 4, color = "firebrick") +
+  annotate("text", x = M_s + 0.03, y = Pmax_b * 0.96,
+           label = expression(M[t]^s), hjust = 0, size = 4, color = "black") +
+  annotate("text", x = M_s, y = -Pmax_b * 0.025,
+           label = expression(bar(M)[t]), size = 4, color = "black") +
+  annotate("text", x = Pmax_b * m0b * 0.68, y = Pmax_b * 0.65,
+           label = expression(P[t]*M^d*(i["0,t"]*","~Y["0,t"])),
+           hjust = 0, size = 4, color = "black") +
+  annotate("text", x = Pmax_b * m1b * 0.4, y = Pmax_b * 0.7,
+           label = expression(P[t]*M^d*(i["1,t"]*","~Y["0,t"])),
+           hjust = 0, size = 4, color = "firebrick") +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0, Mmax_b), ylim = c(0, Pmax_b), clip = "off") +
+  labs(x = expression(M[t]), y = expression(P[t])) + th_mm
+```
+
+---
+
+### Part (c) — Permanent increase in productivity ($A_t$ and $A_{t+1}$ both increase)
+
+A permanent productivity increase combines a **supply shock** (higher $A_t$) with a
+**demand shock** (higher $A_{t+1}$):
+
+1. **Supply channel ($A_t \uparrow$).** Higher current TFP raises the marginal product of labor at every employment level, shifting labor demand **right**. Both $N_t^*$ and $w_t^*$ rise. The production function shifts **up**, and output expands through two channels: higher TFP directly and higher equilibrium employment indirectly. The $Y^s$ curve shifts **right**.
+
+2. **Demand channel ($A_{t+1} \uparrow$).** Higher expected future TFP raises investment demand and expected future income, shifting IS **right** (identical mechanism to part (b)).
+
+Both shifts occur simultaneously. In the IS–$Y^s$ diagram, $Y^s$ shifts right and IS shifts right. Output unambiguously **rises**. The direction of $r_t^*$ is **ambiguous**: the supply-side expansion (rightward $Y^s$) pushes $r_t$ down, while the demand-side expansion (rightward IS) pushes it up. In the diagram below the IS shift is calibrated to exactly offset the downward $r$ pressure from the supply side (the two effects cancel), so $r_t^*$ is approximately unchanged; in general the sign depends on which shift is larger.
+
+```{r}
+#| label: fig-ex195-part-c
+#| fig-cap: "Effect of a permanent productivity increase ($A_t$ and $A_{t+1}$ both rise). Labor demand shifts right: $N_t^*$ and $w_t^*$ rise. The production function shifts up and $Y^s$ shifts right; IS also shifts right. Output rises; the real interest rate is approximately unchanged in this illustration (the two opposing forces cancel)."
+#| fig-alt: "Four-panel neoclassical model. NW: labor demand shifts right; N and w both rise. SW: production function shifts up; output rises. SE: 45-degree mirror shows higher output. NE: both IS and Ys shift right; Y rises; r is approximately unchanged."
+#| fig-height: 8
+#| fig-width: 8
+
+library(tidyverse)
+
+ld_slope <- 1.0;  ls_slope <- 1.0
+N0 <- 5;  w0 <- 5
+ld_int0 <- w0 + ld_slope * N0   # = 10
+ls_int  <- w0 - ls_slope * N0   # = 0
+alpha <- 0.7;  A0 <- 1.0;  A1 <- 1.4
+
+# A_t shock: labor demand shifts right
+delta_ld <- 2.0
+ld_int1  <- ld_int0 + delta_ld
+N1 <- (ld_int1 - ls_int) / (ld_slope + ls_slope)   # = 6
+w1 <- ls_int + ls_slope * N1                         # = 6
+
+Y0 <- A0 * N0^alpha
+Y1 <- A1 * N1^alpha
+
+IS_slope <- 0.06;  IS_int0 <- 0.45
+# IS_delta calibrated for exact r cancellation: IS_int1 - IS_slope*Y1 = IS_int0 - IS_slope*Y0
+IS_int1  <- IS_int0 + IS_slope * (Y1 - Y0)
+r0 <- IS_int0 - IS_slope * Y0
+r1 <- IS_int1 - IS_slope * Y1   # = r0 by construction
+
+col_base  <- "black";  col_shock <- "firebrick";  lw <- 1.1
+N_lim <- c(0, 10);  w_lim <- c(0, 12)
+Y_lim <- c(0, 10);  r_lim <- c(0, 0.45)
+
+th_4p <- theme_minimal(base_size = 11, base_family = "serif") +
+  theme(plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+        panel.background = element_rect(fill = "#fdfcf8", color = NA),
+        panel.grid       = element_blank(),
+        axis.line        = element_line(color = "black", linewidth = 0.4),
+        axis.ticks       = element_blank(),
+        axis.text        = element_blank(),
+        axis.title.x     = element_text(hjust = 1, vjust = 0, size = 12),
+        axis.title.y     = element_text(hjust = 1, angle = 0, vjust = 1, size = 12))
+
+# NW: Labor market
+N_seq  <- seq(1, 9, by = 0.05)
+ld0_df <- tibble(N = N_seq, w = ld_int0 - ld_slope * N_seq) |> filter(w >= 0, w <= 12)
+ld1_df <- tibble(N = N_seq, w = ld_int1 - ld_slope * N_seq) |> filter(w >= 0, w <= 12)
+ls_df  <- tibble(N = N_seq, w = ls_int  + ls_slope * N_seq) |> filter(w >= 0, w <= 12)
+
+p_nw <- ggplot() +
+  geom_line(data = ld0_df, aes(N, w), color = col_base,  linewidth = lw) +
+  geom_line(data = ld1_df, aes(N, w), color = col_shock, linewidth = lw) +
+  geom_line(data = ls_df,  aes(N, w), color = col_base,  linewidth = lw) +
+  geom_segment(aes(x = N0, xend = N0, y = 0,  yend = w0),
+               linetype = "dotted", color = col_base,  linewidth = 0.6) +
+  geom_segment(aes(x = 0,  xend = N0, y = w0, yend = w0),
+               linetype = "dotted", color = col_base,  linewidth = 0.6) +
+  geom_segment(aes(x = N1, xend = N1, y = 0,  yend = w1),
+               linetype = "dotted", color = col_shock, linewidth = 0.6) +
+  geom_segment(aes(x = 0,  xend = N1, y = w1, yend = w1),
+               linetype = "dotted", color = col_shock, linewidth = 0.6) +
+  geom_point(aes(x = N0, y = w0), color = col_base,  size = 2.5) +
+  geom_point(aes(x = N1, y = w1), color = col_shock, size = 2.5) +
+  annotate("text", x = 8.5, y = ld_int0 - ld_slope * 8.5 + 1,
+           label = expression(N^d * "(A"[0] * ")"), color = col_base,  size = 4) +
+  annotate("text", x = 8.0, y = ld_int1 - ld_slope * 8.0 + 1,
+           label = expression(N^d * "(A"[1] * ")"), color = col_shock, size = 4) +
+  annotate("text", x = 7.8, y = ls_int + ls_slope * 7.8 + 0.7,
+           label = expression(N^s), color = col_base, size = 4, hjust = 0) +
+  annotate("text", x = N0 - 0.5, y = -0.5,
+           label = expression(N["0,t"]), color = col_base,  size = 4) +
+  annotate("text", x = N1 + 0.3, y = -0.5,
+           label = expression(N["1,t"]), color = col_shock, size = 4) +
+  annotate("text", x = -0.45, y = w0,
+           label = expression(w["0,t"]), color = col_base,  size = 4) +
+  annotate("text", x = -0.45, y = w1,
+           label = expression(w["1,t"]), color = col_shock, size = 4) +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = N_lim, ylim = w_lim, clip = "off") +
+  labs(x = expression(N[t]), y = expression(w[t])) + th_4p
+
+# SW: Production function (shifts up)
+N_pf   <- seq(0.01, 10, by = 0.05)
+pf0_df <- tibble(N = N_pf, Y = A0 * N_pf^alpha)
+pf1_df <- tibble(N = N_pf, Y = A1 * N_pf^alpha)
+
+p_sw <- ggplot() +
+  geom_line(data = pf0_df, aes(N, Y), color = col_base,  linewidth = lw) +
+  geom_line(data = pf1_df, aes(N, Y), color = col_shock, linewidth = lw) +
+  geom_segment(aes(x = N0, xend = N0, y = 0,  yend = 10),
+               linetype = "dotted", color = col_base,  linewidth = 0.6) +
+  geom_segment(aes(x = 0,  xend = 10, y = Y0, yend = Y0),
+               linetype = "dotted", color = col_base,  linewidth = 0.6) +
+  geom_segment(aes(x = N1, xend = N1, y = 0,  yend = 10),
+               linetype = "dotted", color = col_shock, linewidth = 0.6) +
+  geom_segment(aes(x = 0,  xend = 10, y = Y1, yend = Y1),
+               linetype = "dotted", color = col_shock, linewidth = 0.6) +
+  geom_point(aes(x = N0, y = Y0), color = col_base,  size = 2.5) +
+  geom_point(aes(x = N1, y = Y1), color = col_shock, size = 2.5) +
+  annotate("text", x = 9, y = A0 * 9^alpha - 0.7,
+           label = expression(A[0] * F(K[t], N[t])), color = col_base,  size = 4) +
+  annotate("text", x = 9, y = A1 * 9^alpha + 0.7,
+           label = expression(A[1] * F(K[t], N[t])), color = col_shock, size = 4) +
+  annotate("text", x = N0 - 0.4, y = -0.4,
+           label = expression(N["0,t"]), color = col_base,  size = 4) +
+  annotate("text", x = N1 + 0.3, y = -0.4,
+           label = expression(N["1,t"]), color = col_shock, size = 4) +
+  annotate("text", x = -0.45, y = Y0,
+           label = expression(Y["0,t"]), color = col_base,  size = 4) +
+  annotate("text", x = -0.45, y = Y1,
+           label = expression(Y["1,t"]), color = col_shock, size = 4) +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = N_lim, ylim = Y_lim, clip = "off") +
+  labs(x = expression(N[t]), y = expression(Y[t])) + th_4p
+
+# SE: 45-degree mirror
+p_se <- ggplot() +
+  geom_abline(slope = 1, intercept = 0, color = col_base, linewidth = lw) +
+  geom_segment(aes(x = Y0, xend = Y0, y = 0,  yend = 10),
+               linetype = "dotted", color = col_base,  linewidth = 0.6) +
+  geom_segment(aes(x = 0,  xend = Y0, y = Y0, yend = Y0),
+               linetype = "dotted", color = col_base,  linewidth = 0.6) +
+  geom_segment(aes(x = Y1, xend = Y1, y = 0,  yend = 10),
+               linetype = "dotted", color = col_shock, linewidth = 0.6) +
+  geom_segment(aes(x = 0,  xend = Y1, y = Y1, yend = Y1),
+               linetype = "dotted", color = col_shock, linewidth = 0.6) +
+  geom_point(aes(x = Y0, y = Y0), color = col_base,  size = 2.5) +
+  geom_point(aes(x = Y1, y = Y1), color = col_shock, size = 2.5) +
+  annotate("text", x = Y0 , y = -0.4,
+           label = expression(Y["0,t"]), color = col_base,  size = 4) +
+  annotate("text", x = Y1 , y = -0.4,
+           label = expression(Y["1,t"]), color = col_shock, size = 4) +
+  annotate("text", x = -0.5, y = Y0,
+           label = expression(Y["0,t"]), color = col_base,  size = 4) +
+  annotate("text", x = -0.5, y = Y1,
+           label = expression(Y["1,t"]), color = col_shock, size = 4) +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = Y_lim, ylim = Y_lim, clip = "off") +
+  labs(x = expression(Y[t]), y = expression(Y[t])) + th_4p
+
+# NE: IS-Ys (both IS and Y^s shift right)
+Y_is   <- seq(2, 7, by = 0.05)
+is0_df <- tibble(Y = Y_is, r = IS_int0 - IS_slope * Y_is)
+is1_df <- tibble(Y = Y_is, r = IS_int1 - IS_slope * Y_is)
+
+x_lbl  <- 8.0
+r0_lbl <- IS_int0 - IS_slope * x_lbl
+r1_lbl <- IS_int1 - IS_slope * x_lbl
+
+p_ne <- ggplot() +
+  geom_line(data = is0_df, aes(Y, r), color = col_base,  linewidth = lw) +
+  geom_line(data = is1_df, aes(Y, r), color = col_shock, linewidth = lw) +
+  geom_vline(xintercept = Y0, color = col_base,  linewidth = lw) +
+  geom_vline(xintercept = Y1, color = col_shock, linewidth = lw) +
+  geom_segment(aes(x = 0, xend = Y0, y = r0, yend = r0),
+               linetype = "dotted", color = col_base,  linewidth = 0.6) +
+  geom_segment(aes(x = 0, xend = Y1, y = r1, yend = r1),
+               linetype = "dotted", color = col_shock, linewidth = 0.6) +
+  geom_point(aes(x = Y0, y = r0), color = col_base,  size = 2.5) +
+  geom_point(aes(x = Y1, y = r1), color = col_shock, size = 2.5) +
+  annotate("text", x = x_lbl + 0.3, y = r0_lbl - 0.015,
+           label = "IS",  color = col_base,  size = 4, fontface = "italic") +
+  annotate("text", x = x_lbl + 0.3, y = r1_lbl - 0.015,
+           label = "IS'", color = col_shock, size = 4, fontface = "italic") +
+  annotate("text", x = Y0 + 0.3, y = IS_int0 - IS_slope * 1.5 + 0.05,
+           label = expression(Y^s),     color = col_base,  size = 4) +
+  annotate("text", x = Y1 + 0.3, y = IS_int0 - IS_slope * 1.5 + 0.05,
+           label = expression(Y^{"s'"}), color = col_shock, size = 4) +
+  annotate("text", x = -0.5, y = r0+0.015,
+           label = expression(r["0,t"]), color = col_base,  size = 4) +
+  annotate("text", x = -0.5, y = r0,
+           label = expression("="), color = col_base,  size = 4) +
+  annotate("text", x = -0.5, y = r1-0.015,
+           label = expression(r["1,t"]), color = col_shock, size = 4) +
+  annotate("text", x = Y0 , y = -0.02,
+           label = expression(Y["0,t"]), color = col_base,  size = 4) +
+  annotate("text", x = Y1 , y = -0.02,
+           label = expression(Y["1,t"]), color = col_shock, size = 4) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), labels = NULL) +
+  coord_cartesian(xlim = Y_lim, ylim = r_lim, clip = "off") +
+  labs(x = expression(Y[t]), y = expression(r[t])) +
+  th_4p + theme(axis.text.y = element_text(size = 7))
+
+g_nw <- ggplotGrob(p_nw);  g_sw <- ggplotGrob(p_sw)
+g_se <- ggplotGrob(p_se);  g_ne <- ggplotGrob(p_ne)
+g_nw$widths  <- g_ne$widths  <- grid::unit.pmax(g_nw$widths,  g_ne$widths)
+g_sw$widths  <- g_se$widths  <- grid::unit.pmax(g_sw$widths,  g_se$widths)
+g_nw$heights <- g_sw$heights <- grid::unit.pmax(g_nw$heights, g_sw$heights)
+g_ne$heights <- g_se$heights <- grid::unit.pmax(g_ne$heights, g_se$heights)
+gridExtra::grid.arrange(g_nw, g_ne, g_sw, g_se, ncol = 2,
+  top = grid::textGrob(
+    expression(bold("Permanent productivity increase: ") * A[t] * " and " * A[t+1] * " both rise"),
+    gp = grid::gpar(fontsize = 13, fontface = "bold", fontfamily = "serif")))
+```
+
+**Endogenous variable responses.**
+
+- **Labor market:** Higher $A_t$ shifts $N^d$ right. Both employment and the real wage rise: $N_t^* \uparrow$, $w_t^* \uparrow$.
+- **Output:** Rises for two reasons — $A_t$ is higher and $N_t^*$ is higher: $Y_t^* \uparrow$.
+- **Real interest rate:** **Ambiguous.** The rightward $Y^s$ shift (from $A_t$) pushes $r_t$ down; the rightward IS shift (from $A_{t+1}$) pushes it up. The diagram illustrates the case where the two forces exactly cancel ($r_t^*$ unchanged), but in general the sign depends on the relative magnitudes of the TFP increase in each period.
+
+**Nominal block.** The change in $P_t$ depends on both channels:
+
+- **Output channel:** $Y_t^* \uparrow$ raises real money demand, which — with fixed $\bar{M}_t$ — pushes $P_t$ **down**.
+- **Interest-rate channel:** Since $r_t^*$ is ambiguous, so is $i_t^*$ and hence the interest-rate contribution to money demand.
+
+If $r_t^*$ is approximately unchanged (as illustrated), the output channel dominates: $M^d$ rises and $P_t$ falls. If $r_t^*$ rises (demand side dominates), the two channels work in opposite directions and the sign of $\Delta P_t$ is ambiguous. The diagram below shows the case where the output effect prevails and $P_t$ falls.
+
+```{r}
+#| label: fig-ex195-part-c-nominal
+#| fig-cap: "Money market after a permanent productivity increase. The rise in $Y_t$ increases real money demand (outward rotation). In the illustrated case ($r_t^*$ approximately unchanged), the price level falls from $P_{0,t}$ to $P_{1,t}$."
+#| fig-alt: "Money market diagram. Money demand ray rotates outward (red). New equilibrium on vertical supply line is lower. P falls from P0 to P1."
+#| fig-height: 5.5
+#| fig-width: 6.0
+
+# Part (c): Y↑ dominates (r ≈ unchanged) → M^d rises (outward rotation) → P falls
+m0c  <- 1.00
+m1c  <- 1.45   # M^d larger → P1 ≈ 0.69
+
+P0c  <- M_s / m0c;  P1c <- M_s / m1c
+Pmax_c <- 1.30;  Mmax_c <- 1.80
+P_seq_c <- seq(0, Pmax_c, length.out = 300)
+
+ggplot() +
+  geom_line(data = data.frame(M = P_seq_c * m0c, P = P_seq_c),
+            aes(M, P), color = "black",    linewidth = 1.1) +
+  geom_line(data = data.frame(M = P_seq_c * m1c, P = P_seq_c),
+            aes(M, P), color = "firebrick", linewidth = 1.1) +
+  annotate("segment", x = M_s, xend = M_s, y = 0, yend = Pmax_c * 1.02,
+           color = "black", linewidth = 1.1) +
+  annotate("segment", x = 0, xend = M_s, y = P0c, yend = P0c,
+           linetype = "dotted", color = "black",    linewidth = 0.6) +
+  annotate("segment", x = 0, xend = M_s, y = P1c, yend = P1c,
+           linetype = "dotted", color = "firebrick", linewidth = 0.6) +
+  geom_point(aes(x = M_s, y = P0c), color = "black",    size = 2.5) +
+  geom_point(aes(x = M_s, y = P1c), color = "firebrick", size = 2.5) +
+  annotate("text", x = -0.005, y = P0c,
+           label = expression(P["0,t"]), hjust = 1, size = 4, color = "black") +
+  annotate("text", x = -0.005, y = P1c,
+           label = expression(P["1,t"]), hjust = 1, size = 4, color = "firebrick") +
+  annotate("text", x = M_s + 0.04, y = Pmax_c * 0.96,
+           label = expression(M[t]^s), hjust = 0, size = 4, color = "black") +
+  annotate("text", x = M_s, y = -0.05,
+           label = expression(bar(M)[t]), size = 4, color = "black") +
+  annotate("text", x = Pmax_c * m0c * 0.4, y = Pmax_c * 0.65,
+           label = expression(P[t]*M^d*(i["0,t"]*","~Y["0,t"])),
+           hjust = 0, size = 4, color = "black") +
+  annotate("text", x = Pmax_c * m1c * 0.63, y = Pmax_c * 0.80,
+           label = expression(P[t]*M^d*(i["1,t"]*","~Y["1,t"])),
+           hjust = 0, size = 4, color = "firebrick") +
+  scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(xlim = c(0, Mmax_c), ylim = c(0, Pmax_c), clip = "off") +
+  labs(x = expression(M[t]), y = expression(P[t])) + th_mm
+```
+
+---
+
+### Summary of endogenous variable responses
+
+| Variable | (a) $G_{t+1} \uparrow$ | (b) $A_{t+1} \uparrow$ | (c) $A_t$ and $A_{t+1} \uparrow$ |
+|----------|:----------------------:|:----------------------:|:---------------------------------:|
+| $N_t^*$  | Unchanged | Unchanged | $\uparrow$ |
+| $w_t^*$  | Unchanged | Unchanged | $\uparrow$ |
+| $Y_t^*$  | Unchanged | Unchanged | $\uparrow$ |
+| $r_t^*$  | $\downarrow$ | $\uparrow$ | Ambiguous |
+| $i_t^*$  | $\downarrow$ | $\uparrow$ | Ambiguous |
+| $P_t^*$  | $\downarrow$ | $\uparrow$ | Ambiguous ($\downarrow$ if $Y$ effect dominates) |
+
+**Key takeaways.** (1) Pure demand shocks ($G_{t+1}$ and $A_{t+1}$) leave the real allocation unchanged — employment, the real wage, and output are all supply-determined. Only $r_t^*$ and $P_t^*$ move, and they move in opposite directions for the two shocks. (2) A permanent productivity increase is the only shock here that raises $Y_t^*$, $N_t^*$, and $w_t^*$, because it works through the supply side. (3) The response of $r_t^*$ (and hence $P_t^*$) to the permanent shock is ambiguous: the supply-side expansion (rightward $Y^s$) tends to lower $r_t$, while the demand-side expansion (rightward IS) tends to raise it.
+
+---
+
+# Exercise 19.6 — MPC and the Slope of the IS Curve
+
+**Problem.** Consider two different versions of the basic neoclassical model. In one, the
+marginal propensity to consume (MPC) is relatively large; in the other the MPC is
+relatively small.
+
+**(a)** Show how a higher or lower value of the MPC affects the slope of the IS curve.
+
+**(b)** Suppose that there is an increase in $A_t$. Show graphically how this impacts
+equilibrium $r_t$ in the two cases — one in which the MPC is relatively large, and one in
+which the MPC is relatively small.
+
+---
+
+## Solution
+
+### Setup: the IS curve and the spending multiplier
+
+The IS curve summarizes combinations $(Y_t, r_t)$ consistent with goods-market
+equilibrium and optimal household and firm behavior:
+
+$$Y^*_t = C^d(Y^*_t - G_t,\, Y_{t+1} - G_{t+1},\, r_t) + I^d(r_t,\, A_{t+1},\, K_t) + G_t.$$
+Re-writing in a more compact form $Y^*_t=Y^d_t(Y^*_t,r_t)$ and total differentiating:
+
+$$d Y^*_t=\frac{\partial Y^d_t}{\partial Y_t} dY^*_t+\frac{\partial Y^d_t}{\partial r_t} dr_t.$$
+Notice that $\frac{\partial Y^d_t}{\partial Y_t}=\frac{\partial C^d_t}{\partial Y_t}=MPC,$ so we can write
+
+$$dY^*_t=\text{MPC} dY^*_t+\frac{\partial Y^d_t}{\partial r_t} dr_t,$$
+which simplifies to:
+
+$$\frac{dY^*_t}{dr_t} = \frac{1}{1-\text{MPC}} \cdot \frac{\partial Y^d_t}{\partial r_t} < 0,$$
+Because both consumption and investment are decreasing in $r_t.$
+
+The factor $1/(1-\text{MPC})$ is the **spending multiplier**. When MPC is large, the multiplier is large: any fall in autonomous expenditure (caused by a higher $r_t$) is amplified through many rounds of induced consumption cuts, generating a large drop in equilibrium output. The IS curve is therefore **flatter** (more elastic in $Y_t$) when MPC is large, and **steeper** when MPC is small.
+
+---
+
+### Part (a) — IS curve slope and MPC
+
+The figure below derives the IS curve via the Keynesian cross for both a high-MPC and a low-MPC economy. Defining the *autonomous expenditure* 
+
+$$E_0:=C^d(- G_t,\, Y_{t+1} - G_{t+1},\, r_t) + I^d(r_t,\, A_{t+1},\, K_t) + G_t.$$ 
+
+as the aggregate expenditure when $Y_t=0$, the **same** increase in $r_t$ shifts the expenditure schedule down by the same amount $\Delta E_0 < 0$ in both panels (since $E_0$ does not depend on MPC). The spending multiplier then amplifies this shift differently: $|\Delta Y^*| = |\Delta E_0|/(1-\text{MPC})$ is larger when MPC is larger.
+
+```{r}
+#| label: fig-ex196-part-a
+#| fig-cap: "Keynesian cross (top row) and IS curve (bottom row) for a **high-MPC** economy (left column) and a **low-MPC** economy (right column). Both top panels show the **same** vertical shift $\\Delta E_0$ (identical for both economies since $E_0$ does not depend on MPC), but the high-MPC expenditure schedule is steeper, so the same $\\Delta E_0$ produces a **larger** $\\Delta Y^*$ (left) than with low MPC (right). Plotting both IS curves on the **same axis** makes the slope difference visible: the high-MPC IS is **flat** while the low-MPC IS is **steep**."
+#| fig-alt: "Four panels in a 2x2 grid with shared axes. Top row: Keynesian-cross diagrams with the same vertical gap between expenditure schedules (ΔE0) but different ΔY — large in the high-MPC panel, small in the low-MPC panel. Bottom row: IS curves on the same (Y,r) scale — flat IS on the left, steep IS on the right."
+#| fig-height: 7
+#| fig-width: 9
+
+library(tidyverse)
+
+# ── Fixed parameters (identical for both economies) ──────────────────────────
+r_lo    <- 0.02;  r_hi    <- 0.08
+e0_base <- 60;    e0_sens <- 200
+mpc_hi  <- 0.75;  mpc_lo  <- 0.30
+
+E0_lo <- e0_base - e0_sens * r_lo   # = 56  (at r_lo)
+E0_hi <- e0_base - e0_sens * r_hi   # = 44  (at r_hi)
+# NOTE: E0_lo - E0_hi = e0_sens*(r_hi - r_lo) = 12 — same for both economies.
+
+# Equilibria: Y* = E0 / (1 - MPC)
+Y_lo_hi <- E0_lo / (1 - mpc_hi)    # = 224   high-MPC, low-r
+Y_lo_lo <- E0_lo / (1 - mpc_lo)    # ≈  80   low-MPC,  low-r
+
+# ── Shared axis ranges (critical: same scale lets slope differences show) ─────
+Ymax_kc <- Y_lo_hi * 1.25          # = 280  (both KC panels)
+Ymax_is <- Y_lo_hi * 1.20          # ≈ 269  (both IS panels)
+rmax_is <- 0.14
+
+# ── Shared theme ──────────────────────────────────────────────────────────────
+th <- theme_minimal(base_size = 11, base_family = "serif") +
+  theme(
+    plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid       = element_blank(),
+    axis.line        = element_line(color = "black", linewidth = 0.4),
+    axis.ticks       = element_blank(),
+    axis.text        = element_blank(),
+    axis.title.x     = element_text(hjust = 1, vjust = 0,  size = 12),
+    axis.title.y     = element_text(hjust = 1, angle = 0, vjust = 1, size = 12),
+    plot.title       = element_text(size = 12, face = "bold",
+                                    color = "#1a3a6b", hjust = 0.5)
+  )
+
+# ── Helper: KC + IS panels for a given MPC ────────────────────────────────────
+make_kc_is <- function(mpc, label_str) {
+
+  Y_lo <- E0_lo / (1 - mpc)
+  Y_hi <- E0_hi / (1 - mpc)
+
+  Y_seq <- seq(0, Ymax_kc, length.out = 300)
+  Yd_lo <- E0_lo + mpc * Y_seq
+  Yd_hi <- E0_hi + mpc * Y_seq
+
+  # ── Keynesian-cross panel (shared Ymax_kc) ───────────────────────────────
+  p_kc <- ggplot() +
+    # 45-degree line
+    geom_line(aes(x = Y_seq, y = Y_seq), color = "black", linewidth = 0.8) +
+    # Expenditure schedules
+    geom_line(aes(x = Y_seq, y = Yd_lo), color = "#2255cc",  linewidth = 1.0) +
+    geom_line(aes(x = Y_seq, y = Yd_hi), color = "firebrick", linewidth = 1.0) +
+    # Vertical drop lines to equilibria
+    geom_segment(aes(x = Y_lo, xend = Y_lo, y = 0, yend = Y_lo),
+                 linetype = "dotted", color = "#2255cc",  linewidth = 0.6) +
+    geom_segment(aes(x = Y_hi, xend = Y_hi, y = 0, yend = Y_hi),
+                 linetype = "dotted", color = "firebrick", linewidth = 0.6) +
+    annotate("text",
+             x =-20, y = (E0_hi + E0_lo) / 2,
+             label = expression(Delta * E[0]), size = 4, color = "grey30", hjust = 0) +
+    # ΔY brace above x-axis
+    annotate("segment", x = Y_hi, xend = Y_lo,
+             y = 20, yend = 20,
+             arrow = arrow(ends = "both", length = unit(0.07, "in"), type = "open"),
+             color = "grey40", linewidth = 0.6) +
+    annotate("text",
+             x = (Y_hi + Y_lo) / 2, y = 35,
+             label = expression(Delta * Y^"*"), size = 4, color = "grey30") +
+    # Curve labels
+    annotate("text",
+             x = Ymax_kc * 0.1, y = 20+(E0_lo + mpc *Ymax_kc*0.1) ,
+             label = expression(Y[t]^d ~ (r[lo])),
+             color = "#2255cc", size = 4) +
+    annotate("text",
+             x = Ymax_kc * 0.9, y = -20+(E0_hi + mpc *Ymax_kc*0.9),
+             label = expression(Y[t]^d ~ (r[hi])),
+             color = "firebrick", size = 4) +
+    # x-axis labels
+    annotate("text", x = Y_lo, y = -10,
+             label = expression(Y[lo]^"*"), size = 4, color = "#2255cc") +
+    annotate("text", x = Y_hi, y = -10,
+             label = expression(Y[hi]^"*"), size = 4, color = "firebrick") +
+    coord_cartesian(xlim = c(0, Ymax_kc), ylim = c(0, Ymax_kc),
+                    clip = "off") +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(x = expression(Y[t]), y = expression(Y[t]^d), title = label_str) +
+    th
+
+  # ── IS-curve panel (shared Ymax_is — this is what reveals the slope diff) ──
+  r_seq <- seq(0, rmax_is, length.out = 300)
+  Y_is  <- (e0_base - e0_sens * r_seq) / (1 - mpc)
+  is_df <- tibble(Y = Y_is, r = r_seq) |>
+    filter(Y > 0, Y <= Ymax_is)
+
+  # IS label: near the low-r (rightmost) end of the visible IS curve
+  is_label_x <- max(is_df$Y) * 0.90
+  is_label_y <- is_df$r[which.min(abs(is_df$Y - is_label_x))] + rmax_is * 0.06
+
+  p_is <- ggplot(is_df, aes(x = Y, y = r)) +
+    geom_line(color = "black", linewidth = 1.1) +
+    # Equilibrium points
+    geom_point(aes(x = Y_lo, y = r_lo), color = "#2255cc",  size = 2.5) +
+    geom_point(aes(x = Y_hi, y = r_hi), color = "firebrick", size = 2.5) +
+    # Drop lines — low r
+    geom_segment(aes(x = Y_lo, xend = Y_lo, y = 0, yend = rmax_is),
+                 linetype = "dotted", color = "#2255cc",  linewidth = 0.6) +
+    geom_segment(aes(x = 0,    xend = Y_lo, y = r_lo, yend = r_lo),
+                 linetype = "dotted", color = "#2255cc",  linewidth = 0.6) +
+    # Drop lines — high r
+    geom_segment(aes(x = Y_hi, xend = Y_hi, y = 0, yend = rmax_is),
+                 linetype = "dotted", color = "firebrick", linewidth = 0.6) +
+    geom_segment(aes(x = 0,    xend = Y_hi, y = r_hi, yend = r_hi),
+                 linetype = "dotted", color = "firebrick", linewidth = 0.6) +
+    # ΔY brace on x-axis (visually larger in the high-MPC panel)
+    annotate("segment", x = Y_hi, xend = Y_lo,
+             y = 0.004, yend = 0.004,
+             arrow = arrow(ends = "both", length = unit(0.07, "in"), type = "open"),
+             color = "grey40", linewidth = 0.6) +
+    annotate("text",
+             x = (Y_hi + Y_lo) / 2, y = 0.01,
+             label = expression(Delta * Y^"*"), size = 3.3, color = "grey30") +
+    # IS label
+    annotate("text", x = is_label_x+10, y = is_label_y,
+             label = "IS", size = 4, fontface = "italic") +
+    # Axis value labels
+    annotate("text", x = -8, y = r_lo,
+             label = expression(r[lo]), size = 4, color = "#2255cc") +
+    annotate("text", x = -8, y = r_hi,
+             label = expression(r[hi]), size = 4, color = "firebrick") +
+    annotate("text", x = Y_lo, y = -10,
+             label = expression(Y[lo]^"*"), size = 4, color = "#2255cc") +
+    annotate("text", x = Y_hi, y = -10,
+             label = expression(Y[hi]^"*"), size = 4, color = "firebrick") +
+    coord_cartesian(xlim = c(0, Ymax_kc), ylim = c(0, rmax_is), clip = "off") +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(x = expression(Y[t]), y = expression(r[t])) +
+    th
+
+  list(kc = p_kc, is = p_is)
+}
+
+panels_hi <- make_kc_is(mpc = mpc_hi, label_str = "High MPC = 0.75")
+panels_lo <- make_kc_is(mpc = mpc_lo, label_str = "Low MPC = 0.30")
+
+# Convert to grobs and equalise column widths so KC and IS rows align vertically
+g_hi_kc <- ggplotGrob(panels_hi$kc)
+g_lo_kc <- ggplotGrob(panels_lo$kc)
+g_hi_is <- ggplotGrob(panels_hi$is)
+g_lo_is <- ggplotGrob(panels_lo$is)
+
+maxW_hi <- grid::unit.pmax(g_hi_kc$widths, g_hi_is$widths)
+g_hi_kc$widths <- maxW_hi;  g_hi_is$widths <- maxW_hi
+
+maxW_lo <- grid::unit.pmax(g_lo_kc$widths, g_lo_is$widths)
+g_lo_kc$widths <- maxW_lo;  g_lo_is$widths <- maxW_lo
+
+gridExtra::grid.arrange(g_hi_kc, g_lo_kc, g_hi_is, g_lo_is,
+  ncol = 2,
+  heights = c(1.1, 1)
+)
+```
+
+**Key result.** The IS curve is **flatter** when MPC is large and **steeper** when MPC is
+small. The mechanism is the spending multiplier $1/(1-\text{MPC})$: a larger MPC
+amplifies any interest-rate-driven reduction in autonomous expenditure into a larger
+output contraction, so a small increase in $r_t$ produces a large fall in $Y_t^*$.
+Conversely, with a small MPC the multiplier is close to one, autonomous and total
+expenditure are nearly the same thing, and the IS curve is steep.
+
+---
+
+### Part (b) — Effect of an increase in $A_t$ on $r_t^*$
+
+An increase in $A_t$ works **entirely through the supply side**:
+
+1. It raises the marginal product of labor ($\text{MPN}_t = A_t F_N \uparrow$), shifting
+   **labor demand** right in the $(N_t, w_t)$ plane.
+2. Higher equilibrium employment and higher $A_t$ both raise output, shifting
+   **$Y^s$ rightward** in the IS–$Y^s$ diagram.
+3. The IS curve is **unaffected** — $A_t$ does not appear in the investment or
+   consumption demand functions (only $A_{t+1}$ matters for investment).
+
+Because $Y^s$ is vertical, output $Y_t^*$ is fully determined by supply; the real
+interest rate $r_t^*$ then adjusts along the IS curve to clear the goods market. A
+rightward shift of $Y^s$ by $\Delta Y$ moves the equilibrium down the IS curve.
+
+**The MPC determines how far $r_t^*$ must fall:**
+
+$$\Delta r_t^* = MPC \cdot \left(\frac{\partial Y^d_t}{\partial r_t}\right)^{-1} \cdot \Delta Y^*_t.$$
+
+- With a **flat IS** (high MPC): moving from $Y_0^*$ to $Y_1^*$ along the IS requires
+  only a **small** fall in $r_t^*$, because the IS curve is nearly horizontal.
+- With a **steep IS** (low MPC): the same rightward shift in $Y^s$ requires a
+  **large** fall in $r_t^*$ to move along the steep IS to the new output level.
+
+```{r}
+#| label: fig-ex196-part-b
+#| fig-cap: "Effect of an increase in $A_t$ in the IS–$Y^s$ diagram. $Y_0^s = Y_1^s$ are placed at the **same** positions in both panels, so $\\Delta Y$ is identical. Because the IS slope differs across panels, the required fall in $r_t^*$ is **small** with a flat IS (high MPC, left) and **large** with a steep IS (low MPC, right)."
+#| fig-alt: "Two IS-Ys diagrams on a shared scale. Both show identical rightward Ys shifts. The flat IS (left) requires only a small fall in r; the steep IS (right) requires a large fall in r."
+#| fig-height: 5
+#| fig-width: 9
+
+# ── Part (b): fix Y0 = 100 for both panels; derive e0_base per-MPC so that
+#    the IS passes through (Y0, r0).  Same dY in both panels → different Δr. ──
+
+e0_sens <- 200
+Y0 <- 100;  r0 <- 0.05;  dY <- 10;  Y1 <- Y0 + dY
+
+# For IS to pass through (Y0, r0): e0_base = Y0*(1-mpc) + e0_sens*r0
+e0_hi <- Y0 * (1 - 0.75) + e0_sens * r0   # = 25 + 10 = 35
+e0_lo <- Y0 * (1 - 0.30) + e0_sens * r0   # = 70 + 10 = 80
+
+# New equilibrium r after supply shock: r1 = (e0_base - (1-mpc)*Y1) / e0_sens
+r1_hi <- (e0_hi - (1 - 0.75) * Y1) / e0_sens   # = 7.5/200 = 0.0375  → Δr = 0.0125
+r1_lo <- (e0_lo - (1 - 0.30) * Y1) / e0_sens   # = 3.0/200 = 0.015   → Δr = 0.035
+
+# IS at r = 0: Y_max_hi = 35/0.25 = 140;  Y_max_lo = 80/0.70 ≈ 114.3
+# Shared axes: Ymax = 155, rmax = 0.08
+Ymax_b <- 155;  rmax_b <- 0.08
+
+make_isys <- function(mpc, e0_b, r1, label_str) {
+
+  r_seq <- seq(0, rmax_b, length.out = 300)
+  Y_is  <- (e0_b - e0_sens * r_seq) / (1 - mpc)
+  is_df <- tibble(Y = Y_is, r = r_seq) |> filter(Y > 0, Y <= Ymax_b)
+
+  # IS label near the low-r end of the visible IS
+  is_label_x <- max(is_df$Y) * 0.90
+  is_label_y <- is_df$r[which.min(abs(is_df$Y - is_label_x))] + rmax_b * 0.07
+
+  th <- theme_minimal(base_size = 11, base_family = "serif") +
+    theme(
+      plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+      panel.background = element_rect(fill = "#fdfcf8", color = NA),
+      panel.grid       = element_blank(),
+      axis.line        = element_line(color = "black", linewidth = 0.4),
+      axis.ticks       = element_blank(),
+      axis.text        = element_blank(),
+      axis.title.x     = element_text(hjust = 1, vjust = 0,  size = 12),
+      axis.title.y     = element_text(hjust = 1, angle = 0, vjust = 1, size = 12),
+      plot.title       = element_text(size = 12, face = "bold",
+                                      color = "#1a3a6b", hjust = 0.5)
+    )
+
+  ggplot() +
+    # IS curve
+    geom_line(data = is_df, aes(x = Y, y = r), color = "black", linewidth = 1.1) +
+    # Baseline Y^s
+    geom_segment(aes(x = Y0, xend = Y0, y = 0, yend = rmax_b * 0.92),
+                 color = "black", linewidth = 1.0) +
+    # Shifted Y^s
+    geom_segment(aes(x = Y1, xend = Y1, y = 0, yend = rmax_b * 0.92),
+                 color = "firebrick", linewidth = 1.0) +
+    # Arrow between Y^s curves
+    annotate("segment",
+             x = Y0 + dY * 0.15, xend = Y1 - dY * 0.15,
+             y = rmax_b * 0.80,  yend = rmax_b * 0.80,
+             arrow = arrow(length = unit(0.10, "in"), type = "closed"),
+             color = "firebrick", linewidth = 0.7) +
+    # Horizontal drop lines
+    geom_segment(aes(x = 0, xend = Y0, y = r0, yend = r0),
+                 linetype = "dotted", color = "black",     linewidth = 0.6) +
+    geom_segment(aes(x = 0, xend = Y1, y = r1, yend = r1),
+                 linetype = "dotted", color = "firebrick", linewidth = 0.6) +
+    # Equilibrium points
+    geom_point(aes(x = Y0, y = r0), color = "black",     size = 2.5) +
+    geom_point(aes(x = Y1, y = r1), color = "firebrick", size = 2.5) +
+    # Δr annotation (visually small left, large right)
+    annotate("segment",
+             x = Ymax_b * 0.06, xend = Ymax_b * 0.06,
+             y = r1, yend = r0,
+             arrow = arrow(ends = "both", length = unit(0.07, "in"), type = "open"),
+             color = "grey40", linewidth = 0.6) +
+    annotate("text",
+             x = Ymax_b * 0.10, y = (r0 + r1) / 2,
+             label = expression(Delta * r[t]^"*"),
+             size = 4, color = "grey30", hjust = 0) +
+    # IS label
+    annotate("text", x = is_label_x+4, y = is_label_y,
+             label = "IS", size = 4, fontface = "italic") +
+    # r labels
+    annotate("text", x = -1, y = r0,
+             label = expression(r["0,t"]^"*"),
+             hjust = 1, size = 4, color = "black") +
+    annotate("text", x = -1, y = r1,
+             label = expression(r["1,t"]^"*"),
+             hjust = 1, size = 4, color = "firebrick") +
+    # Y labels
+    annotate("text", x = Y0, y = -0.003,
+             label = expression(Y["0,t"]^"*"),
+             hjust = 0.5, size = 4, color = "black") +
+    annotate("text", x = Y1, y = -0.003,
+             label = expression(Y["1,t"]^"*"),
+             hjust = 0.5, size = 4, color = "firebrick") +
+    # Y^s labels
+    annotate("text",
+             x = Y0 + 5, y = rmax_b * 0.88,
+             label = expression(Y[0]^{s}), size = 4, color = "black") +
+    annotate("text",
+             x = Y1 + 5, y = rmax_b * 0.88,
+             label = expression(Y[1]^{s}), size = 4, color = "firebrick") +
+    coord_cartesian(xlim = c(0, Ymax_b), ylim = c(0, rmax_b), clip = "off") +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    labs(x = expression(Y[t]), y = expression(r[t]), title = label_str) +
+    th
+}
+
+p_hi <- make_isys(mpc = 0.75, e0_b = e0_hi, r1 = r1_hi, label_str = "High MPC (flat IS)")
+p_lo <- make_isys(mpc = 0.30, e0_b = e0_lo, r1 = r1_lo, label_str = "Low MPC (steep IS)")
+
+gridExtra::grid.arrange(p_hi, p_lo, ncol = 2)
+```
+
+**Conclusion.** The same supply-side shock (a rightward shift in $Y^s$ driven by the
+increase in $A_t$) produces **different interest-rate responses** depending on the MPC:
+
+| | High MPC (flat IS) | Low MPC (steep IS) |
+|---|:---:|:---:|
+| $\Delta Y_t^*$ | Same | Same |
+| $\Delta r_t^*$ | **Small** $\downarrow$ | **Large** $\downarrow$ |
+
+The intuition is that the IS curve describes how much $r_t$ must fall to induce the
+extra demand needed to absorb the additional supply. With a large MPC, a small fall in
+$r_t$ triggers a large consumption response (amplified by the multiplier), so little
+adjustment in $r_t$ suffices. With a small MPC, the multiplier is weak and $r_t$ must
+fall substantially to stimulate enough demand.

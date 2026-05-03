@@ -1,0 +1,2032 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 26"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: true
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+theme_set(theme_econ503)
+
+# Clean diagram theme for IS-LM-AD charts (no tick labels, no grid)
+th <- theme_minimal(base_size = 11, base_family = "serif") +
+  theme(
+    plot.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid       = element_blank(),
+    axis.line        = element_line(color = "black", linewidth = 0.4),
+    axis.ticks       = element_blank(),
+    axis.text        = element_blank(),
+    axis.title.x     = element_text(hjust = 1, vjust = 0,  size = 12),
+    axis.title.y     = element_text(hjust = 1, angle = 0, vjust = 1, size = 12)
+  )
+
+# Helper: solve IS-LM intersection (returns plain numerics, no names)
+islm_eq <- function(is_int, is_slope, lm_c, lm_d) {
+  Y <- as.numeric((is_int - lm_c) / (is_slope + lm_d))
+  r <- as.numeric(is_int - is_slope * Y)
+  list(Y = Y, r = r)
+}
+
+# Helper: build AD curve data frame from three (Y, P) points
+make_ad <- function(Y_pts, P_pts, extend = 0.8) {
+  slope <- (P_pts[3] - P_pts[1]) / (Y_pts[3] - Y_pts[1])
+  int   <- P_pts[1] - slope * Y_pts[1]
+  Y_seq <- seq(min(Y_pts) - extend, max(Y_pts) + extend, by = 0.05)
+  tibble(Y = Y_seq, P = int + slope * Y_seq)
+}
+```
+
+---
+
+# Exercise 26.1 — IS Curve Slope and the AD Curve
+
+**Problem.** The equations characterizing the demand side in the New Keynesian (and
+Neoclassical) model are:
+
+$$C_t = C^d(Y_t - G_t,\;Y_{t+1} - G_{t+1},\; r_t),$$ 
+$$I_t = I^d(r_t,\; A_{t+1},\; K_t),$$ 
+$$Y_t = C_t + I_t + G_t,$$
+
+$$M_t = P_t M^d(r_t + \pi^e_{t+1},\; Y_t)$$
+
+**(a)** Which equations summarize the IS curve?
+
+**(b)** Under our standard assumptions, how are consumption and investment affected by
+changes in the interest rate?
+
+**(c)** Suppose consumption and investment are **very sensitive** to changes in the interest
+rate. How will this affect the slope of the IS curve? What is the economic intuition?
+Derive the AD curve in this case.
+
+**(d)** Now suppose **neither** consumption nor investment are affected by changes to the
+interest rate. Show how this will affect the slope of the IS curve and explain the economic
+intuition. Derive the AD curve in this case and discuss how the slope is different than
+in part (c).
+
+---
+
+## Solution
+
+### Part (a) — Equations that summarize the IS curve
+
+The **IS curve** is the set of $(r_t, Y_t)$ pairs for which the goods market clears — i.e.,
+for which households and firms choose consumption and investment optimally and the aggregate
+resource constraint is satisfied simultaneously. The three equations that define it are:
+
+$$C_t = C^d(Y_t - G_t,\; Y_{t+1} - G_{t+1},\; r_t) \tag{consumption demand}$$
+
+$$I_t = I^d(r_t,\; A_{t+1},\; K_t) \tag{investment demand}$$
+
+$$Y_t = C_t + I_t + G_t \tag{aggregate resource constraint}$$
+
+The fourth equation, $M_t = P_t M^d(r_t + \pi^e_{t+1},\; Y_t)$, characterizes the
+**LM curve** (money market equilibrium) rather than the IS curve.
+
+---
+
+### Part (b) — Effect of the interest rate on consumption and investment
+
+**Consumption $C_t$.** Under standard assumptions, an increase in $r_t$ makes current
+consumption more expensive relative to future consumption (the intertemporal substitution
+effect). Households substitute away from $C_t$ toward future consumption, so
+$\partial C^d / \partial r_t < 0$.
+
+**Investment $I_t$.** A higher real interest rate raises the opportunity cost of investing
+in new capital. Firms discount future returns at a higher rate, reducing the net present
+value of investment projects. Thus $\partial I^d / \partial r_t < 0$.
+
+Both channels operate in the same direction: a higher $r_t$ reduces total spending
+$C_t + I_t$, and the IS curve is therefore **downward-sloping** in the $(r_t, Y_t)$ plane.
+
+---
+
+### Part (c) — Very sensitive C and I: flat IS and flat AD
+
+**Slope of the IS curve.** Totally differentiate the resource constraint holding $G_t$,
+$G_{t+1}$, $A_{t+1}$, and $K_t$ fixed:
+
+$$dY = C_Y \, dY + C_r \, dr + I_r \, dr$$
+
+$$dY(1 - C_Y) = (C_r + I_r)\, dr \quad \Longrightarrow \quad
+  \frac{dr}{dY}\bigg|_{\text{IS}} = \frac{1 - C_Y}{C_r + I_r}$$
+
+where $C_Y = \partial C^d/\partial(Y_t - G_t) \in (0,1)$ is the marginal propensity to
+consume and $C_r, I_r < 0$.
+
+When consumption and investment are **very sensitive** to $r_t$, $|C_r + I_r|$ is very
+large. The slope $dr/dY|_{\text{IS}} = (1 - C_Y)/(C_r + I_r) \to 0^-$: the IS curve
+becomes **more horizontal (flat)**.
+
+**Economic intuition.** A small drop in $r_t$ triggers a large increase in both $C_t$
+and $I_t$. For the goods market to clear, output $Y_t$ must rise substantially to absorb
+this extra demand. Thus a tiny change in $r_t$ is associated with a large change in $Y_t$,
+making the IS more horizontal.
+
+**Deriving the AD curve.** The AD curve plots $(P_t, Y_t)$ pairs at which IS and LM hold
+simultaneously. A fall in $P_t$ raises real balances $M_t/P_t$, shifting the LM curve to
+the right. Because the IS is nearly horizontal, the new IS-LM intersection occurs at a
+**much higher** $Y_t$ with only a slightly lower $r_t$. Connecting the resulting
+$(P_t, Y_t)$ pairs traces a **flatter AD curve**.
+
+```{r}
+#| label: fig-ex261-part-c
+#| fig-cap: "Part (c): nearly flat IS. Upper panel shows the IS–LM diagram with a very flat IS and three LM curves at price levels $P_{2,t} > P_{0,t} > P_{1,t}$. Because the IS is flat, the same LM shifts produce large swings in $Y_t$. Lower panel: the resulting AD curve is also very flat."
+#| fig-alt: "Two stacked panels. Upper: a nearly horizontal IS curve intersected by three upward-sloping LM curves; the equilibrium Y values are spread far apart. Lower: the three (P, Y) pairs form a nearly horizontal AD curve."
+#| fig-height: 7
+#| fig-width: 6
+
+# ── Shared parameters ─────────────────────────────────────────────────────────
+Y_max <- 13; r_max <- 0.44; P_max <- 8.5; lw <- 1.1
+x_pad <- 0.55; r_pad <- 0.045; p_pad <- 0.75
+Y_seq <- seq(0.5, Y_max - 0.5, by = 0.05)
+
+# Price levels
+P0 <- 5.0; P1 <- 3.5; P2 <- 6.5
+
+# LM curves: r = lm_c + lm_d * Y  (lm_c increases with P)
+lm_d  <- 0.025
+lm_c0 <- -0.080   # baseline
+lm_c1 <- -0.150   # lower P → LM shifts right
+lm_c2 <- -0.010   # higher P → LM shifts left
+
+# ── Part (c): nearly flat IS ──────────────────────────────────────────────────
+# Choose baseline equilibrium Y0, r0 and anchor IS through it with small slope
+Y0_c <- 7.0; r0_c <- lm_c0 + lm_d * Y0_c   # on LM0
+
+is_slope_c <- 0.004          # very small → nearly horizontal
+is_int_c   <- r0_c + is_slope_c * Y0_c
+
+eq0_c <- islm_eq(is_int_c, is_slope_c, lm_c0, lm_d)
+eq1_c <- islm_eq(is_int_c, is_slope_c, lm_c1, lm_d)
+eq2_c <- islm_eq(is_int_c, is_slope_c, lm_c2, lm_d)
+
+Y0c <- eq0_c$Y; r0c <- eq0_c$r
+Y1c <- eq1_c$Y; r1c <- eq1_c$r
+Y2c <- eq2_c$Y; r2c <- eq2_c$r
+
+is_c_df  <- tibble(Y = Y_seq, r = is_int_c - is_slope_c * Y_seq) |> filter(r >= 0, r <= r_max)
+lm0_df   <- tibble(Y = Y_seq, r = lm_c0 + lm_d * Y_seq) |> filter(r >= 0, r <= r_max)
+lm1_df   <- tibble(Y = Y_seq, r = lm_c1 + lm_d * Y_seq) |> filter(r >= 0, r <= r_max)
+lm2_df   <- tibble(Y = Y_seq, r = lm_c2 + lm_d * Y_seq) |> filter(r >= 0, r <= r_max)
+ad_c_df  <- make_ad(c(Y2c, Y0c, Y1c), c(P2, P0, P1))
+
+# ── Upper panel: IS-LM ────────────────────────────────────────────────────────
+p_up_c <- ggplot() +
+  geom_segment(aes(x = 0, xend = Y_max, y = 0, yend = 0), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = 0, xend = 0, y = 0, yend = r_max), color = "black", linewidth = 0.4) +
+  geom_line(data = is_c_df, aes(x = Y, y = r), color = "black",     linewidth = lw) +
+  geom_line(data = lm0_df,  aes(x = Y, y = r), color = "black",     linewidth = lw) +
+  geom_line(data = lm1_df,  aes(x = Y, y = r), color = "steelblue", linewidth = lw) +
+  geom_line(data = lm2_df,  aes(x = Y, y = r), color = "firebrick", linewidth = lw) +
+  # Drop lines — baseline
+  geom_segment(aes(x = Y0c, xend = Y0c, y = 0,   yend = r0c), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = 0,   xend = Y0c, y = r0c, yend = r0c), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  # Drop lines — low P
+  geom_segment(aes(x = Y1c, xend = Y1c, y = 0,   yend = r1c), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = 0,   xend = Y1c, y = r1c, yend = r1c), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  # Drop lines — high P
+  geom_segment(aes(x = Y2c, xend = Y2c, y = 0,   yend = r2c), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  geom_segment(aes(x = 0,   xend = Y2c, y = r2c, yend = r2c), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  # Points
+  geom_point(aes(x = Y0c, y = r0c), color = "black",     size = 2.5) +
+  geom_point(aes(x = Y1c, y = r1c), color = "steelblue", size = 2.5) +
+  geom_point(aes(x = Y2c, y = r2c), color = "firebrick", size = 2.5) +
+  # Curve labels
+  annotate("text", x = 3, y = is_int_c - is_slope_c * 3 + 0.03,
+           label = "IS", color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = Y_max - 0.5, y = lm_c0 + lm_d * (Y_max - 0.5) + 0.018,
+           label = expression(LM(P["0,t"])), color = "black",     size = 4) +
+  annotate("text", x = Y_max - 0.5, y = lm_c1 + lm_d * (Y_max - 0.5) - 0.03,
+           label = expression(LM(P["1,t"])), color = "steelblue", size = 4) +
+  annotate("text", x = Y_max - 0.5, y = lm_c2 + lm_d * (Y_max - 0.5) + 0.015,
+           label = expression(LM(P["2,t"])), color = "firebrick", size = 4) +
+  # Axis value labels
+  annotate("text", x = Y0c,        y = -0.022, label = expression(Y["0,t"]), color = "black",     size = 4, vjust = 1) +
+  annotate("text", x = Y1c + 0.15, y = -0.022, label = expression(Y["1,t"]), color = "steelblue", size = 4, vjust = 1) +
+  annotate("text", x = Y2c - 0.15, y = -0.022, label = expression(Y["2,t"]), color = "firebrick", size = 3.8, vjust = 1) +
+  annotate("text", x = -0.38, y = r0c,        label = expression(r["0,t"]), color = "black",     size = 4, hjust = 1) +
+  annotate("text", x = -0.38, y = r1c - 0.01, label = expression(r["1,t"]), color = "steelblue", size = 4, hjust = 1) +
+  annotate("text", x = -0.38, y = r2c + 0.01, label = expression(r["2,t"]), color = "firebrick", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(-x_pad, Y_max), ylim = c(-r_pad, r_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(r[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+# ── Lower panel: AD ───────────────────────────────────────────────────────────
+p_down_c <- ggplot() +
+  geom_segment(aes(x = 0, xend = Y_max, y = 0, yend = 0), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = 0, xend = 0, y = 0, yend = P_max), color = "black", linewidth = 0.4) +
+  geom_line(data = ad_c_df, aes(x = Y, y = P), color = "black", linewidth = lw) +
+  geom_segment(aes(x = Y0c, xend = Y0c, y = 0,  yend = P_max), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = 0,   xend = Y0c, y = P0, yend = P0),    linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = Y1c, xend = Y1c, y = 0,  yend = P_max), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = 0,   xend = Y1c, y = P1, yend = P1),    linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = Y2c, xend = Y2c, y = 0,  yend = P_max), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  geom_segment(aes(x = 0,   xend = Y2c, y = P2, yend = P2),    linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  geom_point(aes(x = Y0c, y = P0), color = "black",     size = 2.5) +
+  geom_point(aes(x = Y1c, y = P1), color = "steelblue", size = 2.5) +
+  geom_point(aes(x = Y2c, y = P2), color = "firebrick", size = 2.5) +
+  annotate("text", x = max(ad_c_df$Y) - 0.3, y = min(ad_c_df$P) - 0.3,
+           label = "AD", color = "black", size = 4, fontface = "italic") +
+  annotate("text", x = Y0c,        y = -0.55, label = expression(Y["0,t"]), color = "black",     size = 4, vjust = 1) +
+  annotate("text", x = Y1c + 0.15, y = -0.55, label = expression(Y["1,t"]), color = "steelblue", size = 4, vjust = 1) +
+  annotate("text", x = Y2c - 0.15, y = -0.55, label = expression(Y["2,t"]), color = "firebrick", size = 4, vjust = 1) +
+  annotate("text", x = -0.38, y = P0,        label = expression(P["0,t"]), color = "black",     size = 4, hjust = 1) +
+  annotate("text", x = -0.38, y = P1 - 0.15, label = expression(P["1,t"]), color = "steelblue", size = 4, hjust = 1) +
+  annotate("text", x = -0.38, y = P2 + 0.15, label = expression(P["2,t"]), color = "firebrick", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(-x_pad, Y_max), ylim = c(-p_pad, P_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(P[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+# ── Stack panels ──────────────────────────────────────────────────────────────
+g_up   <- ggplotGrob(p_up_c)
+g_down <- ggplotGrob(p_down_c)
+g_up$widths <- g_down$widths <- grid::unit.pmax(g_up$widths, g_down$widths)
+gridExtra::grid.arrange(g_up, g_down, nrow = 2, heights = c(3, 2))
+```
+
+**Takeaway.** A nearly horizontal IS means the LM channel is very powerful: a change in
+the price level produces a large response in equilibrium output, so the AD curve is also
+very flat. Monetary policy (or any shock that shifts LM) has a large effect on output.
+
+---
+
+### Part (d) — C and I unresponsive to $r_t$: vertical IS and vertical AD
+
+**Slope of the IS curve.** Return to the implicit differentiation from part (c):
+
+$$\frac{dr}{dY}\bigg|_{\text{IS}} = \frac{1 - C_Y}{C_r + I_r}$$
+
+If neither $C$ nor $I$ responds to $r_t$, then $C_r = I_r = 0$, making the denominator
+zero. The IS slope is **undefined** — equivalently, the slope $dY/dr|_{\text{IS}} = 0$.
+The IS curve is **perfectly vertical**.
+
+Algebraically, when $C_r = I_r = 0$, the resource constraint becomes:
+
+$$Y_t = C(Y_t - G_t,\; Y_{t+1} - G_{t+1}) + I(A_{t+1},\; K_t) + G_t.$$
+
+This equation determines $Y_t^*$ independently of $r_t$. Any value of $r_t$ is consistent with the same $Y_t^*,$ so the IS is a vertical line at $Y_t = Y_t^*$.
+
+**Economic intuition.** The interest rate is the price that allocates spending between the present and the future. If spending decisions are completely insensitive to this price, changing $r_t$ cannot alter total demand. Output is pinned by the income-expenditure balance alone, regardless of monetary conditions.
+
+**Deriving the AD curve.** As $P_t$ changes, the LM curve shifts. However, because the IS is vertical, every LM curve intersects it at the same $Y_t^*$. Only $r_t$ adjusts; output does not. The $(P_t, Y_t)$ pairs that satisfy IS and LM simultaneously all share the same $Y_t^*$, so the AD curve is also **perfectly vertical**.
+
+```{r}
+#| label: fig-ex261-part-d
+#| fig-cap: "Part (d): vertical IS. Upper panel shows the IS–LM diagram with a vertical IS at $Y_t^*$ and three LM curves. The three intersections all share the same $Y_t^*$; only the real interest rate $r_t$ differs across price levels. Lower panel: all three $(P_t, Y_t)$ pairs coincide at $Y_t^*$, producing a vertical AD curve."
+#| fig-alt: "Two stacked panels. Upper: a vertical IS line at Y* crossed by three upward-sloping LM curves; the three equilibrium points share the same Y coordinate but differ in r. Lower: three identical Y* values at different P levels trace a vertical AD line."
+#| fig-height: 7
+#| fig-width: 6
+
+# ── Part (d): vertical IS at Y* ───────────────────────────────────────────────
+Y_star <- 7.0   # vertical IS pinned at this output level
+
+# Intersections: vertical IS meets LM at r = lm_c + lm_d * Y_star
+r0d <- lm_c0 + lm_d * Y_star
+r1d <- lm_c1 + lm_d * Y_star
+r2d <- lm_c2 + lm_d * Y_star
+
+# ── Upper panel: IS-LM ────────────────────────────────────────────────────────
+p_up_d <- ggplot() +
+  geom_segment(aes(x = 0, xend = Y_max, y = 0, yend = 0), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = 0, xend = 0, y = 0, yend = r_max), color = "black", linewidth = 0.4) +
+  # Vertical IS
+  geom_segment(aes(x = Y_star, xend = Y_star, y = 0, yend = r_max * 0.95),
+               color = "black", linewidth = lw) +
+  # LM curves
+  geom_line(data = lm0_df, aes(x = Y, y = r), color = "black",     linewidth = lw) +
+  geom_line(data = lm1_df, aes(x = Y, y = r), color = "steelblue", linewidth = lw) +
+  geom_line(data = lm2_df, aes(x = Y, y = r), color = "firebrick", linewidth = lw) +
+  # Horizontal dotted lines to r axis (no vertical drop lines — Y is the same)
+  geom_segment(aes(x = 0,      xend = Y_star, y = r0d, yend = r0d), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = 0,      xend = Y_star, y = r1d, yend = r1d), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = 0,      xend = Y_star, y = r2d, yend = r2d), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  # Shared vertical drop to x-axis
+  geom_segment(aes(x = Y_star, xend = Y_star, y = 0, yend = r0d), linetype = "dotted", color = "black", linewidth = 0.5) +
+  # Equilibrium points
+  geom_point(aes(x = Y_star, y = r0d), color = "black",     size = 2.5) +
+  geom_point(aes(x = Y_star, y = r1d), color = "steelblue", size = 2.5) +
+  geom_point(aes(x = Y_star, y = r2d), color = "firebrick", size = 2.5) +
+  # Labels
+  annotate("text", x = Y_star + 0.25, y = r_max * 0.88,
+           label = "IS", color = "black", size = 4, fontface = "italic", hjust = 0) +
+  annotate("text", x = Y_max - 0.5, y = lm_c0 + lm_d * (Y_max - 0.5) + 0.018,
+           label = expression(LM(P["0,t"])), color = "black",     size = 4) +
+  annotate("text", x = Y_max - 0.5, y = lm_c1 + lm_d * (Y_max - 0.5) - 0.03,
+           label = expression(LM(P["1,t"])), color = "steelblue", size = 4) +
+  annotate("text", x = Y_max - 0.5, y = lm_c2 + lm_d * (Y_max - 0.5) + 0.018,
+           label = expression(LM(P["2,t"])), color = "firebrick", size = 4) +
+  # Axis value labels
+  annotate("text", x = Y_star, y = -0.022,
+           label = expression(Y[t]^"*"), color = "black", size = 4, vjust = 1) +
+  annotate("text", x = -0.38, y = r0d,        label = expression(r["0,t"]), color = "black",     size = 4, hjust = 1) +
+  annotate("text", x = -0.38, y = r1d - 0.01, label = expression(r["1,t"]), color = "steelblue", size = 4, hjust = 1) +
+  annotate("text", x = -0.38, y = r2d + 0.01, label = expression(r["2,t"]), color = "firebrick", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(-x_pad, Y_max), ylim = c(-r_pad, r_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(r[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+# ── Lower panel: vertical AD ──────────────────────────────────────────────────
+p_down_d <- ggplot() +
+  geom_segment(aes(x = 0, xend = Y_max, y = 0, yend = 0), color = "black", linewidth = 0.4) +
+  geom_segment(aes(x = 0, xend = 0, y = 0, yend = P_max), color = "black", linewidth = 0.4) +
+  # Vertical AD at Y_star
+  geom_segment(aes(x = Y_star, xend = Y_star, y = 0.3, yend = P_max * 0.95),
+               color = "black", linewidth = lw) +
+  # Dotted horizontal lines for each price level
+  geom_segment(aes(x = 0,      xend = Y_star, y = P0, yend = P0), linetype = "dotted", color = "black",     linewidth = 0.5) +
+  geom_segment(aes(x = 0,      xend = Y_star, y = P1, yend = P1), linetype = "dotted", color = "steelblue", linewidth = 0.5) +
+  geom_segment(aes(x = 0,      xend = Y_star, y = P2, yend = P2), linetype = "dotted", color = "firebrick", linewidth = 0.5) +
+  # Points
+  geom_point(aes(x = Y_star, y = P0), color = "black",     size = 2.5) +
+  geom_point(aes(x = Y_star, y = P1), color = "steelblue", size = 2.5) +
+  geom_point(aes(x = Y_star, y = P2), color = "firebrick", size = 2.5) +
+  # Labels
+  annotate("text", x = Y_star + 0.25, y = P_max * 0.88,
+           label = "AD", color = "black", size = 4, fontface = "italic", hjust = 0) +
+  annotate("text", x = Y_star, y = -0.55,
+           label = expression(Y[t]^"*"), color = "black", size = 4, vjust = 1) +
+  annotate("text", x = -0.38, y = P0,        label = expression(P["0,t"]), color = "black",     size = 4, hjust = 1) +
+  annotate("text", x = -0.38, y = P1 - 0.15, label = expression(P["1,t"]), color = "steelblue", size = 4, hjust = 1) +
+  annotate("text", x = -0.38, y = P2 + 0.15, label = expression(P["2,t"]), color = "firebrick", size = 4, hjust = 1) +
+  coord_cartesian(xlim = c(-x_pad, Y_max), ylim = c(-p_pad, P_max), clip = "off") +
+  labs(x = expression(Y[t]), y = expression(P[t])) +
+  th +
+  theme(
+    axis.title.x = element_text(hjust = 1, vjust = 0, size = 12, margin = margin(t = -10)),
+    axis.title.y = element_text(hjust = 1, angle = 0, vjust = 1, size = 12, margin = margin(r = -10)),
+    axis.line = element_blank(),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+# ── Stack panels ──────────────────────────────────────────────────────────────
+g_up_d   <- ggplotGrob(p_up_d)
+g_down_d <- ggplotGrob(p_down_d)
+g_up_d$widths <- g_down_d$widths <- grid::unit.pmax(g_up_d$widths, g_down_d$widths)
+gridExtra::grid.arrange(g_up_d, g_down_d, nrow = 2, heights = c(3, 2))
+```
+
+**Contrast with part (c).** The two cases represent polar extremes:
+
+| Case | IS slope | AD slope | Monetary policy effect on $Y_t$ |
+|------|----------|----------|----------------------------------|
+| Part (c): $C$, $I$ very sensitive to $r_t$ | Nearly **horizontal** | Nearly **horizontal** | Very **large** |
+| Part (d): $C$, $I$ insensitive to $r_t$ | **Vertical** | **Vertical** | **Zero** |
+
+In part (c), a shift of the LM (due to a change in $P_t$ or $M_t$) moves the IS-LM
+intersection far along the nearly-flat IS, generating a large output response. In part (d), no LM shift can move the intersection horizontally because the IS is a vertical wall — the interest rate absorbs the entire adjustment instead. 
+
+The implications for monetary policy are clear. The monetary transmission mechanism depends crucially on how sensitive consumption and investment are to interest rates and the monetary channel is more potent the higher this sensitivity is. 
+
+---
+
+# Exercise 26.2 — Effect of a $\theta_t$ Increase in Three Models
+
+**Problem.** Graphically analyze the effects of an increase in $\theta_t$ in the
+(i) Neoclassical, (ii) simple sticky-price, and (iii) partial sticky-price models.
+When possible, compare the magnitudes of the changes of each endogenous variable.
+
+---
+
+## Setup
+
+$\theta_t$ is the **labor supply preference parameter**: an increase in $\theta_t$ raises
+the marginal disutility of labor, shifting $N^s(w_t,\theta_t)$ to the **left** — workers
+demand a higher real wage to supply any given quantity of labor. This is a **
+supply shock**: $\theta_t$ does not enter the IS curve (which depends on $r_t$, incomes,
+and $A_{t+1}$) nor the LM curve (which depends on $r_t+\pi^e_{t+1}$ and $Y_t$). The
+direct impact is therefore:
+
+$$\theta_t \uparrow \;\Longrightarrow\; N^s \text{ shifts LEFT}
+  \;\Longrightarrow\; N^f \downarrow,\; w^f \uparrow
+  \;\Longrightarrow\; Y^f = A_t F(K_t, N^f) \downarrow$$
+
+How much of this supply contraction passes into lower actual output depends entirely on the degree of nominal price rigidity.
+
+```{r}
+#| label: setup-ex262
+#| include: false
+
+orange262 <- rgb(1, 0.624, 0)       # MATLAB orange [255,159,0]/255
+lw262     <- 1.1
+seq262    <- seq(0, 100, by = 0.5)
+ax_pad    <- 8
+
+# Baseline (all axes normalized to [0,100])
+Y0 <- 50; r0 <- 50; N0 <- 50; w0 <- 50; P0 <- 50
+
+# Common curves
+# IS:    r = 100-Y  |  N^d:   w = 100-N
+# LM_0:  r = Y      |  N^s_0: w = N  (baseline; w0=N0=50 ✓)
+#                      N^s_1: w = 20+N  (post-shock, shifted LEFT)
+# PF:    Y = sqrt(50*N)  (Y0=50 at N0=50 ✓)
+# AD:    P = 100-Y
+
+# NCL post-shock: N^s_1 ∩ N^d → 100-N = 20+N → N=40, w=60
+N1_ncl <- 40;  w1_ncl <- 60
+Y1_ncl <- sqrt(50 * N1_ncl)      # sqrt(2000) ≈ 44.72
+P1_ncl <- 100 - Y1_ncl           # ≈ 55.28 (on AD)
+r1_ncl <- 100 - Y1_ncl           # ≈ 55.28 (on IS)
+lm1_int_ncl <- r1_ncl - Y1_ncl   # ≈ 10.56
+
+# PSP post-shock
+# AS_psp_0: P = Y  (upward-sloping, through (50,50))
+# AS_psp_1: P = Y+5 (shifted left by 5 units)
+# AS_psp_1 ∩ AD: 100-Y = Y+5 → Y=47.5, P=52.5
+Y1_psp <- 47.5; P1_psp <- 52.5; r1_psp <- 52.5
+N1_psp <- Y1_psp^2 / 50          # from Y=sqrt(50·N): N=Y²/50 ≈ 45.1
+w1_psp <- 100 - N1_psp           # on N^d ≈ 54.9
+lm1_int_psp <- r1_psp - Y1_psp   # = 5.0
+
+# SSP post-shock: demand-determined — all unchanged
+Y1_ssp <- Y0; r1_ssp <- r0; N1_ssp <- N0; w1_ssp <- w0; P1_ssp <- P0
+
+# Hypothetical flexible-price output post-shock (same for all models)
+Yf1 <- Y1_ncl    # ≈ 44.72
+
+# Clean panel theme (extends th from setup)
+th6 <- th + theme(
+  axis.title.x = element_text(hjust=1, vjust=0, size=11, margin=margin(t=-8)),
+  axis.title.y = element_text(hjust=1, angle=0, vjust=1, size=11, margin=margin(r=-8)),
+  axis.line    = element_blank(),
+  plot.margin  = margin(4, 4, 4, 4)
+)
+
+# Shared data frames
+is_df   <- tibble(Y=seq262, r=100-Y)    |> filter(r>=0, r<=100)
+lm0_df  <- tibble(Y=seq262, r=Y)        |> filter(Y>=0, r<=100)
+nd_df   <- tibble(N=seq262, w=100-N)    |> filter(w>=0, N>=0)
+ns0_df  <- tibble(N=seq262, w=N)        |> filter(N>=0)
+ns1_df  <- tibble(N=seq262, w=20+N)     |> filter(N>=0, w<=100)
+pf_df   <- tibble(N=seq262, Y=sqrt(50*N))
+ad_df   <- tibble(Y=seq262, P=100-Y)    |> filter(P>=0, Y>=0)
+```
+
+---
+
+## (i) Neoclassical Model
+
+In the Neoclassical model prices are **fully flexible**. The supply side alone determines output and prices adjust instantly to clear all markets.
+
+**Mechanism.** $\theta_t\uparrow$ shifts $N^s$ left $\Rightarrow$ equilibrium  the wage rate $w_t$ rises, labor $N_t$ falls $\Rightarrow$ output $Y_t$ falls via the production function $\Rightarrow$ vertical $AS$ shifts left along the downward-sloping $AD$,  which implies a decrease in output $Y_t$ and an increase in the price level $P_t$  $\Rightarrow$ $LM$ shifts left causing an increase in the real interest rate $r_t$.
+
+Because the $AS$ is vertical, the full supply contraction is absorbed by lower output.
+
+```{r}
+#| label: fig-ex262-ncl
+#| fig-cap: "Neoclassical model: $\\theta_t$ increase. Black = original; red = post-shock. Labor supply shifts left, employment and output fall, the real wage and real interest rate rise, and the price level rises."
+#| fig-height: 8
+#| fig-width: 7
+
+lm1_ncl_df <- tibble(Y=seq262, r=lm1_int_ncl+Y) |> filter(Y>=0, r<=100)
+
+# ── Legend ────────────────────────────────────────────────────────────────────
+p_leg_n <- ggplot() +
+  annotate("segment",x=5,xend=22,y=90,yend=90,color="black",linewidth=1.2) +
+  annotate("segment",x=5,xend=22,y=75,yend=75,color="red",  linewidth=1.2) +
+   annotate("segment",x=5,xend=22,y=60,yend=60,color="royalblue",linewidth=1.2)+
+  annotate("text",x=26,y=90,label="Original",   hjust=0,size=4) +
+  annotate("text",x=26,y=75,label="Post-shock", hjust=0,size=4) +
+  annotate("text",x=26,y=60,label="Post-shock indir. P effect on LM", hjust=0,size=4) +
+  annotate("text",x=5, y=45,label="0 subscript: Original",   hjust=0,size=4) +
+  annotate("text",x=5, y=30,label="1 subscript: Post-shock", hjust=0,size=4) +
+  xlim(0,100)+ylim(0,100)+
+  theme_void()+theme(plot.background=element_rect(fill="#fdfcf8",color=NA))
+
+# ── IS-LM ─────────────────────────────────────────────────────────────────────
+p_islm_n <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=is_df,      aes(x=Y,y=r),color="black",linewidth=lw262)+
+  geom_line(data=lm0_df,     aes(x=Y,y=r),color="black",linewidth=lw262)+
+  geom_line(data=lm1_ncl_df, aes(x=Y,y=r),color="royalblue",  linewidth=lw262)+
+  geom_segment(aes(x=Y0,    xend=Y0,    y=0,yend=r0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=Y0,    y=r0,yend=r0),  linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=Y1_ncl,xend=Y1_ncl,y=0,yend=r1_ncl),linetype="dotted",color="royalblue",linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_ncl,y=r1_ncl,yend=r1_ncl),linetype="dotted",color="royalblue",linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=r0),    size=1)+
+  geom_point(aes(x=Y1_ncl,y=r1_ncl),color="royalblue",size=1)+
+  annotate("text",x=14,y=93,label="IS",size=4,fontface="italic")+
+  annotate("text",x=80,y=60,label=expression(LM(M[t],P["0,t"])),size=4)+
+  annotate("text",x=55,y=lm1_int_ncl+76+2,label=expression(LM(M[t],P["1,t"])),size=4,color="royalblue")+
+  annotate("text",x=Y0+2,y=-6,label=expression(Y["0,t"]),size=4,vjust=1)+
+  annotate("text",x=Y1_ncl-1, y=-6,label=expression(Y["1,t"]),size=4,vjust=1,color="red")+
+  annotate("text",x=-6,y=r0,label=expression(r["0,t"]),size=4,hjust=1)+
+  annotate("text",x=-6,y=r1_ncl+1.5, label=expression(r["1,t"]),size=4,hjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(r[t]))+th6
+
+# ── Labor market ──────────────────────────────────────────────────────────────
+p_lab_n <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=nd_df, aes(x=N,y=w),color="black",linewidth=lw262)+
+  geom_line(data=ns0_df,aes(x=N,y=w),color="black",linewidth=lw262)+
+  geom_line(data=ns1_df,aes(x=N,y=w),color="red",  linewidth=lw262)+
+  geom_segment(aes(x=N0,    xend=N0,    y=0,yend=w0),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=N0,    y=w0,yend=w0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N1_ncl,xend=N1_ncl,y=0,yend=w1_ncl),linetype="dotted",color="red",linewidth=0.5)+
+  geom_segment(aes(x=0,xend=N1_ncl,y=w1_ncl,yend=w1_ncl),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=N0,    y=w0),    size=1)+
+  geom_point(aes(x=N1_ncl,y=w1_ncl),color="red",size=1)+
+  annotate("text",x=82,y=64,label=expression(N^s*(w[t]*","*theta["0,t"])),size=4)+
+  annotate("text",x=54,y=90,label=expression(N^s*(w[t]*","*theta["1,t"])),size=4,color="red")+
+  annotate("text",x=83,y=36,label=expression(N^d*(w[t]*","*A[t]*","*K[t])),  size=4)+
+  annotate("text",x=N0,       y=-6,label=expression(N["0,t"]),size=4,vjust=1)+
+  annotate("text",x=N1_ncl-1, y=-6,label=expression(N["1,t"]),size=4,vjust=1,color="red")+
+  annotate("text",x=-6,y=w0,         label=expression(w["0,t"]),size=4,hjust=1)+
+  annotate("text",x=-6,y=w1_ncl+1.5, label=expression(w["1,t"]),size=4,hjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(w[t]))+th6
+
+# ── AS-AD (vertical AS) ───────────────────────────────────────────────────────
+p_asad_n <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ad_df,aes(x=Y,y=P),color="black",linewidth=lw262)+
+  geom_segment(aes(x=Y0,    xend=Y0,    y=0,yend=93),color="black",linewidth=lw262)+
+  geom_segment(aes(x=Y1_ncl,xend=Y1_ncl,y=0,yend=93),color="red",  linewidth=lw262)+
+  geom_segment(aes(x=0,xend=Y0,    y=P0,    yend=P0),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_ncl,y=P1_ncl,yend=P1_ncl),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=P0),    size=1)+
+  geom_point(aes(x=Y1_ncl,y=P1_ncl),color="red",size=1)+
+  annotate("text",x=Y0+2,    y=96,label=expression(AS[0]),size=4,hjust=0)+
+  annotate("text",x=Y1_ncl-10,y=96,label=expression(AS[1]),size=4,hjust=0,color="red")+
+  annotate("text",x=88,y=20,label="AD",size=4,fontface="italic")+
+  annotate("text",x=Y0+2,y=-6,label=expression(Y["0,t"]),size=4,vjust=1)+
+  annotate("text",x=Y1_ncl-1, y=-6,label=expression(Y["1,t"]),size=4,vjust=1,color="red")+
+  annotate("text",x=-6,y=P0-1,label=expression(P["0,t"]),size=4,hjust=1)+
+  annotate("text",x=-6,y=P1_ncl+2, label=expression(P["1,t"]),size=4,hjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(P[t]))+th6
+
+# ── Production function ───────────────────────────────────────────────────────
+p_pf_n <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=pf_df,aes(x=N,y=Y),color="black",linewidth=lw262)+
+  geom_segment(aes(x=N0,    xend=N0,    y=0,yend=100),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N0,    xend=100,   y=Y0,yend=Y0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N1_ncl,xend=N1_ncl,y=0,yend=100),linetype="dotted",color="red",linewidth=0.5)+
+  geom_segment(aes(x=N1_ncl,xend=100,   y=Y1_ncl,yend=Y1_ncl),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=N0,    y=Y0),    size=1)+
+  geom_point(aes(x=N1_ncl,y=Y1_ncl),color="red",size=1)+
+  annotate("text",x=81,y=78,label=expression(A[t]*F(K[t],N[t])),size=4,hjust=0)+
+  annotate("text",x=N0,       y=-6,label=expression(N["0,t"]),size=4,vjust=1)+
+  annotate("text",x=N1_ncl-1, y=-6,label=expression(N["1,t"]),size=4,vjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(Y[t]))+th6
+
+# ── 45-degree ─────────────────────────────────────────────────────────────────
+p_45_n <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=100,y=0,yend=100),color="black",linewidth=lw262)+
+  geom_segment(aes(x=Y0,    xend=Y0,    y=0,yend=100),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=Y0,    y=Y0,yend=Y0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=Y1_ncl,xend=Y1_ncl,y=0,yend=100),linetype="dotted",color="red",linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_ncl,y=Y1_ncl,yend=Y1_ncl),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=Y0),    size=1)+
+  geom_point(aes(x=Y1_ncl,y=Y1_ncl),color="red",size=1)+
+  annotate("text",x=86,y=73,label=expression(Y[t]==Y[t]),size=4)+
+  annotate("text",x=Y0+2,y=-6,label=expression(Y["0,t"]),size=4,vjust=1)+
+  annotate("text",x=Y1_ncl-1, y=-6,label=expression(Y["1,t"]),size=4,vjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(Y[t]))+th6
+
+gridExtra::grid.arrange(p_leg_n,p_islm_n,p_lab_n,p_asad_n,p_pf_n,p_45_n,nrow=3,ncol=2)
+```
+
+---
+
+## (ii) Simple Sticky-Price Model
+
+In the simple sticky-price model the price level is **fully fixed** in the short run at $\bar{P}_{0,t}$. Output is **demand-determined** since firms produce whatever output level the AS–AD intersection requires.
+
+**Mechanism.** Because $\theta_t$ does not enter IS or LM, the IS–LM equilibrium is
+**unchanged**: output $Y_t$ and the real interest rate $Y_t$ remain at their original levels. The horizontal $AS$ does not shift (the sticky price is unchanged). 
+
+What does change is the labor supply curve $N^s$ in the labor market. This means that in order to continue to produce the same amount of output, firms need to continue to hire the same amount of labor $N_t$, but need to pay higher wages $w_t$.   
+
+
+```{r}
+#| label: fig-ex262-ssp
+#| fig-cap: "Simple sticky-price model: $\\theta_t$ increase. Black = original ( Red = post-shock, unchanged except for wages)."
+#| fig-height: 8
+#| fig-width: 7
+
+asf_psp0 <- tibble(Y=seq262, P=Y)  |> filter(Y>=0, P<=100)  # upward-sloping AS^f (PSP only)
+
+w1_sp <- 100 - N0
+
+# ── Legend ────────────────────────────────────────────────────────────────────
+p_leg_s <- ggplot() +
+  annotate("segment",x=5,xend=22,y=85,yend=85,color="black",    linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=65,yend=65,color="red",    linewidth=1.2)+
+  annotate("text",x=26,y=85,label="Original",hjust=0,size=4)+
+  annotate("text",x=26,y=65,label="Post-shock",hjust=0,size=4)+
+  annotate("text",x=5, y=45,label="0 subscript: Original",   hjust=0,size=4)+
+  annotate("text",x=5, y=30,label="1 subscript: Post shock",hjust=0,size=4)+
+  xlim(0,100)+ylim(0,100)+
+  theme_void()+theme(plot.background=element_rect(fill="#fdfcf8",color=NA))
+
+# ── IS-LM (unchanged) ────────────────────────────────────────────────────────
+p_islm_s <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=is_df, aes(x=Y,y=r),color="black",linewidth=lw262)+
+  geom_line(data=lm0_df,aes(x=Y,y=r),color="black",linewidth=lw262)+
+  geom_segment(aes(x=Y0,xend=Y0,y=0,yend=r0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=Y0,y=r0,yend=r0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=Y0,y=r0),size=1)+
+  annotate("text",x=16,y=93,label="IS",size=4,fontface="italic")+
+  annotate("text",x=75,y=93,label=expression(LM(M[t],bar(P)["0,t"])),size=4)+
+  annotate("text",x=Y0,y=-6,label=expression(Y["0,t"]),size=4,vjust=1)+
+  annotate("text",x=-6,y=r0,label=expression(r["0,t"]),size=4,hjust=1)+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(r[t]))+th6
+
+# ── Labor market ──────────────────────────────────────────────────────────────
+p_lab_s <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ns0_df,aes(x=N,y=w),color="black",linewidth=lw262)+
+  geom_line(data=ns1_df,aes(x=N,y=w),color="red",  linewidth=lw262)+
+  # Employment unchanged (demand-determined)
+  geom_segment(aes(x=N0,xend=N0,y=0,yend=20+N0),linetype="dotted",color="red",linewidth=0.5)+
+  geom_segment(aes(x=N0,xend=N0,y=0,yend=w0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=N0,y=w0,yend=w0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=N0,y=20+N0,yend=20+N0),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=N0,y=w0),size=1)+
+  geom_point(aes(x=N0,y=N0+20),size=1,color="red")+
+  annotate("text",x=90,y=70,label=expression(N^s*(w[t]*","*theta["0,t"])),size=4)+
+  annotate("text",x=65,y=90,label=expression(N^s*(w[t]*","*theta["1,t"])),size=4,color="red",hjust=1)+
+  annotate("text",x=N0,y=-6,label=expression(N["0,t"]),size=4,vjust=1)+
+  annotate("text",x=-6,y=w0,label=expression(w["0,t"]),size=4,hjust=1)+
+  annotate("text",x=-6,y=20+N0,label=expression(w["1,t"]),size=4,color="red",hjust=1)+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(w[t]))+th6
+
+# ── AS-AD (horizontal sticky AS; AS^f shifts left) ────────────────────────────
+p_asad_s <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ad_df,aes(x=Y,y=P),color="black",linewidth=lw262)+
+  # Horizontal sticky AS at P_bar = P0 = 50
+  geom_segment(aes(x=0,xend=93,y=P0,yend=P0),color="black",linewidth=lw262)+
+  geom_segment(aes(x=Y0,xend=Y0,y=0,yend=100),linetype="dotted",color="black",linewidth=0.5)+
+  # Equilibrium (unchanged)
+  geom_segment(aes(x=0, xend=Y0,y=P0,yend=P0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=Y0,y=P0),size=1)+
+  # Labels
+  annotate("text",x=95,y=P0+7,label=expression(AS),size=4,hjust=0)+
+  annotate("text",x=88,y=20,label="AD",size=4,fontface="italic")+
+  annotate("text",x=Y0,y=-6, label=expression(Y["0,t"]),size=4,vjust=1)+
+  annotate("text",x=-6,y=P0,label=expression(bar(P)["0,t"]),size=4,hjust=1)+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(P[t]))+th6
+
+# ── Production function (unchanged) ──────────────────────────────────────────
+p_pf_s <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=pf_df,aes(x=N,y=Y),color="black",linewidth=lw262)+
+  geom_segment(aes(x=N0,xend=N0,y=0,yend=100), linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,xend=100,y=Y0,yend=Y0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=N0,y=Y0),size=1)+
+  annotate("text",x=80,y=80,label=expression(A[t]*F(K[t],N[t])),size=4,hjust=0)+
+  annotate("text",x=-6,y=Y0,label=expression(Y["0,t"]),size=4,hjust=1)+
+  annotate("text",x=N0,y=-6,label=expression(N["0,t"]),size=4,vjust=1)+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(Y[t]))+th6
+
+# ── 45-degree (unchanged) ─────────────────────────────────────────────────────
+p_45_s <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=100,y=0,yend=100),color="black",linewidth=lw262)+
+  geom_segment(aes(x=Y0,xend=Y0,y=0,yend=100), linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=Y0,y=Y0,yend=Y0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=Y0,y=Y0),size=1)+
+  annotate("text",x=85,y=70,label=expression(Y[t]==Y[t]),size=4)+
+  annotate("text",x=Y0,y=-6,label=expression(Y["0,t"]),size=4,vjust=1)+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(Y[t]))+th6
+
+gridExtra::grid.arrange(p_leg_s,p_islm_s,p_lab_s,p_asad_s,p_pf_s,p_45_s,nrow=3,ncol=2)
+```
+
+---
+
+## (iii) Partial Sticky-Price Model
+
+In the partial sticky-price model, prices are **partially flexible**: the upward-sloping $AS$ lies somewhere between the horizontal $AS$ of the simple sticky-price model and the vertical $AS^f$ of the Neoclassical model, the two extremes.
+
+**Mechanism.** $\theta_t\uparrow$ shifts $N^s$ left, decreasing the flexible output level $Y^f_t$ and with it the vertical $AS^f$. This causes the upward-sloping $AS$ to shift left (decrease) along the downward-sloping $AD$, which in turn means the price level $P_t$ rises (less than in the Neoclassical case) and output $Y_t$ falls (less than in the Neoclassical case). The higher price level $P_t$ shifts the $LM$ left (less than in the Neoclassical case) causing the real interest rate $r_t$ to rise (less than in the Neoclassical case).
+
+
+```{r}
+#| label: fig-ex262-psp
+#| fig-cap: "Partial sticky-price model: $\\theta_t$ increase. Black = original; red = post-shock PSP equilibrium; blue = post-shock LM (indirect $P_t$ effect); green = shift of hypothetical flex-price $AS^f$; orange = flex-price (NCL) benchmark."
+#| fig-height: 8
+#| fig-width: 7
+
+lm1_psp_df  <- tibble(Y=seq262, r=lm1_int_psp+Y) |> filter(Y>=0, r<=100)
+lm1_ncl_df2 <- tibble(Y=seq262, r=lm1_int_ncl+Y) |> filter(Y>=0, r<=100)
+asp0_df <- tibble(Y=seq262, P=Y)   |> filter(P>=0, P<=100, Y>=0)
+asp1_df <- tibble(Y=seq262, P=Y+5) |> filter(P>=0, P<=100, Y>=0)
+
+# ── Legend ────────────────────────────────────────────────────────────────────
+p_leg_p <- ggplot() +
+  annotate("segment",x=5,xend=22,y=88,yend=88,color="black",     linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=73,yend=73,color="red",       linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=58,yend=58,color="green3",    linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=43,yend=43,color="royalblue", linewidth=1.2)+
+  annotate("text",x=26,y=88,label="Original",                            hjust=0,size=4)+
+  annotate("text",x=26,y=73,label="Post-shock",                          hjust=0,size=4)+
+  annotate("text",x=26,y=58,label="Shift of hyp. flex. price AS",        hjust=0,size=4)+
+  annotate("text",x=26,y=43,label="Post-shock, indir. P effect on LM", hjust=0,size=4)+
+  annotate("text",x=5, y=25,label="0 subscript: Original",               hjust=0,size=4)+
+  annotate("text",x=5, y=12,label="1 subscript: Post-shock",             hjust=0,size=4)+
+  annotate("text",x=5, y=-1,label="f superscript: Flex-price",           hjust=0,size=4)+
+  xlim(0,100)+ylim(0,100)+
+  theme_void()+theme(plot.background=element_rect(fill="#fdfcf8",color=NA))
+
+# ── IS-LM ─────────────────────────────────────────────────────────────────────
+p_islm_p <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=is_df,      aes(x=Y,y=r),color="black",     linewidth=lw262)+
+  geom_line(data=lm0_df,     aes(x=Y,y=r),color="black",     linewidth=lw262)+
+  geom_line(data=lm1_psp_df, aes(x=Y,y=r),color="royalblue", linewidth=lw262)+
+  # Baseline
+  geom_segment(aes(x=Y0,    xend=Y0,    y=0,yend=r0),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=Y0,    y=r0,yend=r0),   linetype="dotted",color="black",linewidth=0.5)+
+  # PSP post-shock
+  geom_segment(aes(x=Y1_psp,xend=Y1_psp,y=0,yend=r1_psp),linetype="dotted",color="blue",linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_psp,y=r1_psp,yend=r1_psp),linetype="dotted",color="blue",linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=r0),    size=1)+
+  geom_point(aes(x=Y1_psp,y=r1_psp),color="blue",size=1)+
+  # Labels
+  annotate("text",x=18,y=93,label="IS",size=4,fontface="italic")+
+  annotate("text",x=87,y=68,label=expression(LM(M[t],P["0,t"])),size=4,fontface="italic")+
+  annotate("text",x=64,y=lm1_int_psp+83+2,label=expression(LM(M[t],P["1,t"])),size=4,color="royalblue",fontface="italic")+
+  annotate("text",x=Y0+3, y=-6,label=expression(Y["0,t"]),size=4)+
+  annotate("text",x=Y1_psp-3,y=-6,label=expression(Y["1,t"]),size=4,color="red")+
+  annotate("text",x=-6,y=r0-2,label=expression(r["0,t"]),size=4)+
+  annotate("text",x=-6,y=r1_psp+2, label=expression(r["1,t"]),size=4,,color="red")+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(r[t]))+th6
+
+# ── Labor market ──────────────────────────────────────────────────────────────
+p_lab_p <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=nd_df, aes(x=N,y=w),color=orange262,linewidth=0.5)+
+  geom_line(data=ns0_df,aes(x=N,y=w),color="black",  linewidth=lw262)+
+  geom_line(data=ns1_df,aes(x=N,y=w),color="red",    linewidth=lw262)+
+  # Baseline
+  geom_segment(aes(x=N0,    xend=N0,    y=0,yend=w0),    linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=N0,    y=w0,yend=w0),   linetype="dotted",color="black",  linewidth=0.5)+
+  # PSP post-shock
+  geom_segment(aes(x=N1_psp,xend=N1_psp,y=0,yend=N1_psp+20),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_segment(aes(x=0,xend=N1_psp,y=N1_psp+20,yend=N1_psp+20),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_segment(aes(x=N1_ncl,xend=N1_ncl,y=0,yend=w1_ncl),linetype="dotted",color=orange262,linewidth=0.5)+
+  geom_segment(aes(x=0,xend=N1_ncl,y=w1_ncl,yend=w1_ncl),linetype="dotted",color=orange262,linewidth=0.5)+
+  # NCL benchmark
+  geom_point(aes(x=N0,    y=w0),    size=1)+
+  geom_point(aes(x=N1_psp,y=N1_psp+20),color="red",size=1)+
+  geom_point(aes(x=N1_ncl,y=w1_ncl),color=orange262,size=1)+
+  annotate("text",x=87,y=70,label=expression(N^s*(w[t]*","*theta["0,t"])),size=4,fontface="italic")+
+  annotate("text",x=50,y=90,label=expression(N^s*(w[t]*","*theta["1,t"])),size=4,color="red",fontface="italic")+
+  annotate("text",x=85,y=35,label=expression(N^d*(w[t]*","*A[t]*","*K[t])),size=4,color=orange262,fontface="italic")+
+  annotate("text",x=N0+5,y=-6,label=expression(N["0,t"]),size=4)+
+  annotate("text",x=N1_psp, y=-6,label=expression(N["1,t"]),size=4,color="red")+
+  annotate("text",x=N1_ncl-5,y=-6,label=expression(N["1,t"]^f),size=4)+
+  annotate("text",x=-6,y=w0-3,label=expression(w["0,t"]),size=4)+
+  annotate("text",x=-6,y=N1_psp+25, label=expression(w["1,t"]),size=4,color="red")+
+  annotate("text",x=-6,y=w1_ncl,label=expression(w["1,t"]^f),size=4)+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(w[t]))+th6
+
+# ── AS-AD (upward-sloping AS) ─────────────────────────────────────────────────
+p_asad_p <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ad_df, aes(x=Y,y=P),color="black",linewidth=lw262)+
+  geom_line(data=asp0_df,aes(x=Y,y=P),color="black",linewidth=lw262)+
+  geom_line(data=asp1_df,aes(x=Y,y=P),color="red",  linewidth=lw262)+
+  # AS^f: original flex-price (orange vertical at Y0); post-shock flex-price (green at Yf1)
+  geom_segment(aes(x=Y0, xend=Y0, y=0,yend=93),color=orange262,linewidth=0.5)+
+  geom_segment(aes(x=Yf1,xend=Yf1,y=0,yend=93),color="green3",linewidth=0.5)+
+  # Drop lines
+  geom_segment(aes(x=0,xend=Y0,y=P0,yend=P0),linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=0,    xend=Y1_psp,y=P1_psp,yend=P1_psp),linetype="dotted",color="red", linewidth=0.5)+
+  geom_segment(aes(x=Y1_psp,xend=Y1_psp,y=0,yend=P1_psp),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_point(aes(x=Y0,y=P0),size=1)+
+  geom_point(aes(x=Y1_psp,y=P1_psp),color="red",size=1)+
+  annotate("text",x=93,y=86, label="AS",size=4,fontface="italic")+
+  annotate("text",x=82,y=97, label=expression(AS*"'"),size=4,color="red",fontface="italic")+
+  annotate("text",x=Y0+2, y=97, label=expression(AS^f),         size=4,hjust=0,color=orange262,fontface="italic")+
+  annotate("text",x=Yf1-1,y=97, label=expression(AS^{"f'"}),    size=4,hjust=1,color="green3",fontface="italic")+
+  annotate("text",x=88,y=20, label="AD",size=4,fontface="italic")+
+  annotate("text",x=Y0+5,y=-6,label=expression(Y["0,t"]),size=4)+
+  annotate("text",x=Y1_psp, y=-6,label=expression(Y["1,t"]),size=4,color="red")+
+  annotate("text",x=Y1_ncl-5, y=-6,label=expression(Y["1,t"]^f),size=4)+
+  annotate("text",x=-6,y=P0-3,label=expression(P["0,t"]),  size=4)+
+  annotate("text",x=-6,y=P1_psp+3, label=expression(P["1,t"]),size=4,color="red")+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(P[t]))+th6
+
+# ── Production function ───────────────────────────────────────────────────────
+p_pf_p <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=pf_df,aes(x=N,y=Y),color="black",linewidth=lw262)+
+  geom_segment(aes(x=N0,    xend=N0,    y=0,yend=100),    linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=N0,    xend=100,   y=Y0,yend=Y0),   linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=N1_psp,xend=N1_psp,y=0,yend=100),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_segment(aes(x=N1_psp,xend=100,   y=Y1_psp,yend=Y1_psp),linetype="dotted",color="red",linewidth=0.5)+
+  geom_segment(aes(x=N1_ncl,xend=N1_ncl,y=0,yend=100),linetype="dotted",color=orange262,linewidth=0.5)+
+  geom_segment(aes(x=N1_ncl,xend=100,   y=Y1_ncl,yend=Y1_ncl),linetype="dotted",color=orange262,linewidth=0.5)+
+  geom_point(aes(x=N0,    y=Y0),    size=1)+
+  geom_point(aes(x=N1_psp,y=Y1_psp),color="red",    size=1)+
+  geom_point(aes(x=N1_ncl,y=Y1_ncl),color=orange262,size=1)+
+  annotate("text",x=80,y=80,label=expression(A[t]*F(K[t],N[t])),size=4,hjust=0,fontface="italic")+
+  annotate("text",x=N0+5,y=-6,label=expression(N["0,t"]),size=4)+
+  annotate("text",x=N1_psp,y=-6,label=expression(N["1,t"]),size=4,color="red")+
+  annotate("text",x=N1_ncl-5, y=-6,label=expression(N["1,t"]^f),size=4)+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(Y[t]))+th6
+
+# ── 45-degree ─────────────────────────────────────────────────────────────────
+p_45_p <- ggplot() +
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=100,y=0,yend=100),color="black",linewidth=lw262)+
+  geom_segment(aes(x=Y0,    xend=Y0,    y=0,yend=100),    linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=Y0,    y=Y0,yend=Y0),   linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=Y1_psp,xend=Y1_psp,y=0,yend=100),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_psp,y=Y1_psp,yend=Y1_psp),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_segment(aes(x=Y1_ncl,xend=Y1_ncl,y=0,yend=100),linetype="dotted",color=orange262,linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_ncl,y=Y1_ncl,yend=Y1_ncl),linetype="dotted",color=orange262,linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=Y0),    size=1)+
+  geom_point(aes(x=Y1_psp,y=Y1_psp),color="red",    size=1)+
+  geom_point(aes(x=Y1_ncl,y=Y1_ncl),color=orange262,size=1)+
+  annotate("text",x=87,y=73,label=expression(Y[t]==Y[t]),size=4)+
+  annotate("text",x=Y0+5,y=-6,label=expression(Y["0,t"]),size=4)+
+  annotate("text",x=Y1_psp, y=-6,label=expression(Y["1,t"]),  size=4,color="red")+
+  annotate("text",x=Y1_ncl-5, y=-6,label=expression(Y["1,t"]^f),size=4)+
+  coord_cartesian(xlim=c(-ax_pad,100),ylim=c(-ax_pad,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(Y[t]))+th6
+
+gridExtra::grid.arrange(p_leg_p,p_islm_p,p_lab_p,p_asad_p,p_pf_p,p_45_p,nrow=3,ncol=2)
+```
+
+---
+
+## Magnitude Comparison
+
+| Variable | Neoclassical | Partial Sticky | Simple Sticky |
+|----------|:---:|:---:|:---:|
+| $\Delta Y_t$ | $\downarrow\downarrow$ (largest) | $\downarrow$ | $0$ |
+| $\Delta P_t$ | $\uparrow\uparrow$ | $\uparrow$ | $0$ |
+| $\Delta r_t$ | $\uparrow\uparrow$ | $\uparrow$ | $0$ |
+| $\Delta N_t$ | $\downarrow\downarrow$ | $\downarrow$ | $0$ |
+| $\Delta w_t$ | $\uparrow\uparrow$ | $\uparrow$ | $\uparrow\uparrow$ |
+
+The **supply shock** makes labor, and therefore output, relatively scarcer. The price mechanism is the way markets signal scarcity and compel agents to react appropriately. When prices are completely sticky, this mechanism is inoperative and quantities remain unchanged. 
+
+When prices are fully flexible, as a result of the new reluctance to work, firms hire less labor (and pay more for it) producing less output. Since the same amount of money is chasing less goods, prices increase, which means that real money balances decrease. To compel households to hold less real money balances, interest rates increase, reducing consumption and investment to match the fall in output.     
+
+The partial sticky-price model interpolates between these extremes, with the share of
+adjustment falling on output versus prices determined by the AS slope.
+
+---
+
+# Exercise 26.3 — AD Curve and Equilibrium Output in the Sticky-Price NK Model
+
+**Problem.** Suppose that we have a simple sticky price New Keynesian model. The
+consumption, investment, and money demand functions are:
+
+$$C_t = c_1(Y_t - G_t) + c_2(Y_{t+1} - G_{t+1}) - c_3 r_t$$
+
+$$I_t = -b_1 r_t + b_2 A_{t+1} - b_3 K_t$$
+
+$$M_t = P_t\!\left[-m_1(r_t + \pi^e_{t+1}) + m_2 Y_t\right]$$
+
+where $c_1, c_2, c_3, b_1, b_2, b_3, m_1, m_2 > 0$ and government spending $G_t$ is
+exogenous. All other equations of the model are standard.
+
+**(a)** Derive an algebraic expression for the AD curve.
+
+**(b)** In the simple sticky price model the AS curve is $P_t = \bar{P}_t$, which is
+exogenous. Use this to derive an expression for the equilibrium level of output.
+
+---
+
+## Solution
+
+### Preliminary: two useful shorthand quantities
+
+To keep the algebra compact, define:
+
+$$\phi \;\equiv\; \frac{c_3 + b_1}{1 - c_1} \;>\; 0$$
+
+$$\Omega_t \;\equiv\; \frac{c_2(Y_{t+1} - G_{t+1}) + b_2 A_{t+1} - b_3 K_t}{1 - c_1}$$
+
+$\phi$ captures the combined interest-sensitivity of IS (direct effect through $c_3$
+plus investment effect through $b_1$, scaled up by the multiplier $1/(1-c_1)$).
+$\Omega_t$ collects all autonomous spending terms that are exogenous from the
+perspective of the current-period goods market.
+
+---
+
+### Part (a) — Deriving the AD curve
+
+The AD curve is obtained by combining the **IS curve** (goods market equilibrium) with
+the **LM curve** (money market equilibrium) and eliminating the real interest rate
+$r_t$.
+
+#### Step 1: IS curve
+
+Goods market equilibrium requires $Y_t = C_t + I_t + G_t$. Substituting:
+
+$$Y_t = c_1(Y_t - G_t) + c_2(Y_{t+1} - G_{t+1}) - c_3 r_t - b_1 r_t + b_2 A_{t+1} - b_3 K_t + G_t$$
+
+Collecting the $Y_t$ terms on the left:
+
+$$Y_t(1 - c_1) = (1 - c_1)G_t + c_2(Y_{t+1} - G_{t+1}) - (c_3 + b_1)r_t + b_2 A_{t+1} - b_3 K_t$$
+
+Dividing through by $(1 - c_1)$ gives the **IS curve**:
+
+$$Y_t = G_t + \Omega_t - \phi\, r_t \tag{IS}$$
+
+The IS curve slopes downward in $(Y_t, r_t)$ space: a higher $r_t$ reduces both
+consumption (intertemporal substitution, governed by $c_3$) and investment (governed by
+$b_1$), lowering equilibrium output. The steepness is determined by $\phi$.
+
+#### Step 2: LM curve
+
+Money market equilibrium requires money supply to equal money demand:
+
+$$M_t = P_t\!\left[-m_1(r_t + \pi^e_{t+1}) + m_2 Y_t\right]$$
+
+Dividing both sides by $P_t$:
+
+$$\frac{M_t}{P_t} = m_2 Y_t - m_1 r_t - m_1 \pi^e_{t+1}$$
+
+Solving for $r_t$:
+
+$$r_t = \frac{m_2}{m_1}Y_t - \frac{1}{m_1}\frac{M_t}{P_t} - \pi^e_{t+1} \tag{LM}$$
+
+The LM curve slopes upward in $(Y_t, r_t)$ space: higher $Y_t$ raises real money
+demand, so $r_t$ must rise to restore equilibrium given a fixed real money supply
+$M_t/P_t$.
+
+#### Step 3: Eliminate $r_t$ — the AD curve
+
+Substitute the LM expression for $r_t$ into the IS curve:
+
+$$Y_t = G_t + \Omega_t - \phi\!\left(\frac{m_2}{m_1}Y_t - \frac{1}{m_1}\frac{M_t}{P_t} - \pi^e_{t+1}\right)$$
+
+$$Y_t = G_t + \Omega_t - \frac{\phi m_2}{m_1}Y_t + \frac{\phi}{m_1}\frac{M_t}{P_t} + \phi\,\pi^e_{t+1}$$
+
+Collecting $Y_t$ on the left and using $1 + \phi m_2/m_1 = (m_1 + \phi m_2)/m_1$:
+
+$$Y_t \cdot \frac{m_1 + \phi m_2}{m_1} = G_t + \Omega_t + \phi\,\pi^e_{t+1} + \frac{\phi}{m_1}\frac{M_t}{P_t}$$
+
+Multiplying both sides by $m_1/(m_1 + \phi m_2)$ gives the **AD curve**:
+
+$$Y_t = \frac{m_1}{m_1 + \phi m_2}\!\left(G_t + \Omega_t + \phi\,\pi^e_{t+1}\right) + \frac{\phi}{m_1 + \phi m_2}\cdot\frac{M_t}{P_t}$$
+
+where $\phi = (c_3+b_1)/(1-c_1)$ and
+$\Omega_t = [c_2(Y_{t+1}-G_{t+1})+b_2 A_{t+1}-b_3 K_t]/(1-c_1)$.
+
+**Why does the AD curve slope downward?** The second term contains $M_t/P_t$ — the real
+money supply. A higher $P_t$ reduces the real money supply, which through the LM curve
+raises $r_t$. Higher $r_t$ depresses consumption and investment, lowering equilibrium
+output. Therefore $\partial Y_t/\partial P_t < 0$.
+
+```{r}
+#| label: fig-ex263
+#| fig-cap: "AD–AS equilibrium in the sticky-price NK model. The downward-sloping AD curve is derived from the IS–LM system. The horizontal AS curve at $\\bar{P}_t$ reflects sticky prices. Equilibrium output $Y_t^*$ is determined entirely by aggregate demand at the prevailing price level."
+#| fig-alt: "AD-AS diagram. Downward-sloping AD curve intersects a horizontal AS line at P-bar, pinning equilibrium output Y-star on the horizontal axis."
+#| fig-height: 4.5
+#| fig-width: 5.5
+
+# ── Parameters ────────────────────────────────────────────────────────────────
+Y_star <- 100
+P_bar  <- 1.0
+A_ad   <- 3
+B_ad   <- (A_ad - P_bar) / Y_star   # AD passes through (Y_star, P_bar)
+
+ad_data <- tibble::tibble(
+  Y = seq(70, 128, length.out = 300),
+  P = A_ad-B_ad * Y
+) |> dplyr::filter(P >= 0.3, P <= 2.2)
+
+# ── Plot ──────────────────────────────────────────────────────────────────────
+ggplot2::ggplot() +
+  ggplot2::geom_line(data = ad_data, ggplot2::aes(x = Y, y = P),
+                     color = "steelblue", linewidth = 1.2) +
+  ggplot2::geom_hline(yintercept = P_bar,
+                      color = "firebrick", linewidth = 1.2) +
+  ggplot2::geom_point(ggplot2::aes(x = Y_star, y = P_bar),
+                      color = "black", size = 3) +
+  ggplot2::geom_segment(ggplot2::aes(x = Y_star, xend = Y_star,
+                                     y = 0.3,    yend = P_bar),
+                        linetype = "dotted", color = "gray40", linewidth = 0.6) +
+  ggplot2::geom_segment(ggplot2::aes(x = 70, xend = Y_star,
+                                     y = P_bar,  yend = P_bar),
+                        linetype = "dotted", color = "gray40", linewidth = 0.6) +
+  ggplot2::annotate("text", x = 80,    y = 1.5,
+                    label = "AD", color = "steelblue", size = 4.5,
+                    fontface = "italic", family = "serif") +
+  ggplot2::annotate("text", x = 127,    y = P_bar + 0.06,
+                    label = "AS", color = "firebrick", size = 4.5,
+                    fontface = "italic", family = "serif") +
+  ggplot2::annotate("text", x = Y_star, y = 0.26,
+                    label = expression(Y[t]^"*"), color = "black", size = 4,
+                    family = "serif") +
+  ggplot2::annotate("text", x = 68.5,   y = P_bar,
+                    label = expression(bar(P)[t]), color = "firebrick", size = 4,
+                    family = "serif") +
+  ggplot2::scale_x_continuous(name   = expression(Y[t]),
+                               limits = c(70, 130), breaks = NULL,
+                               expand = c(0, 0)) +
+  ggplot2::scale_y_continuous(name   = expression(P[t]),
+                               limits = c(0.3, 2.2), breaks = NULL,
+                               expand = c(0, 0)) +
+  th +
+  ggplot2::coord_cartesian(clip = "off")
+```
+
+---
+
+### Part (b) — Equilibrium output under sticky prices
+
+In the simple sticky price New Keynesian model the AS curve is horizontal:
+
+$$P_t = \bar{P}_t \tag{AS}$$
+
+The price level is exogenous (set by firms that cannot adjust prices in the short run),
+so output is **demand-determined**: it equals whatever the AD curve implies at
+$P_t = \bar{P}_t$. Substituting:
+
+$$Y_t^* = \frac{m_1}{m_1 + \phi m_2}\!\left(G_t + \Omega_t + \phi\,\pi^e_{t+1}\right) + \frac{\phi}{m_1 + \phi m_2}\cdot\frac{M_t}{\bar{P}_t}$$
+
+This is fully determined by exogenous variables: current government spending $G_t$,
+expected future output and government spending (embedded in $\Omega_t$), expected future
+productivity $A_{t+1}$, current capital $K_t$, expected inflation $\pi^e_{t+1}$, the
+nominal money supply $M_t$, and the sticky price level $\bar{P}_t$.
+
+**Interpretation.** Because firms do not adjust prices, any shortfall or surplus in
+aggregate demand translates directly into a change in output rather than a change in
+the price level. The two multiplier terms reflect the standard channels:
+
+- The first term collects all non-monetary demand shifters, scaled by $m_1/(m_1+\phi m_2)$. A fiscal expansion ($G_t \uparrow$) or improvement in future fundamentals ($A_{t+1}\uparrow$) raises $Y_t^*$ through this channel.
+- The second term captures the **real-balance channel**: a higher real money supply $M_t/\bar{P}_t$ lowers $r_t$ via LM, which stimulates $C_t$ and $I_t$ and raises output.
+
+---
+
+# Exercise 26.4 — Effect of $\pi^e_{t+1}\uparrow$ in Three Models
+
+**Problem.** Suppose that agents come to expect a higher inflation rate, which in the
+model is represented by an increase in the exogenous variable $\pi^e_{t+1}$.
+
+**(a)** Graphically (with the 5-panel diagram used in class) show how this affects
+the endogenous variables in the **simple sticky-price** model. Discuss how consumption,
+investment, the real wage, and the labor input change.
+
+**(b)** Same analysis for the **partial sticky-price** model.
+
+**(c)** Same analysis for the **Neoclassical** model.
+
+---
+
+## Solution
+
+### Shock mechanism
+
+$\pi^e_{t+1}$ enters the model exclusively through the **money demand function**, via
+the **nominal interest rate** $i_t = r_t + \pi^e_{t+1}$:
+
+$$M_t = P_t\, M^d\!\left(r_t + \pi^e_{t+1},\; Y_t\right), \qquad \partial M^d/\partial i_t < 0.$$
+
+An increase in $\pi^e_{t+1}$ raises $i_t$, reducing real money demand at any given
+$(r_t, Y_t)$. To restore money-market equilibrium the real interest rate $r_t$ must
+fall. Graphically, the **LM curve shifts to the right** (downward): for a given $Y_t$,
+the market-clearing $r_t$ is lower.
+
+Because $\pi^e_{t+1}$ does not appear in the IS curve (households and firms discount at
+the real rate $r_t$, not $i_t$) and does not affect the production function or labor
+supply, this is a **purely demand-side, monetary-channel shock**. The IS curve and the
+entire supply side are unchanged.
+
+In the AD–AS diagram, the LM shift implies that for any given $P_t$ the IS–LM
+intersection now occurs at a **higher** $Y_t$: the **AD curve shifts to the right**.
+How much of this rightward AD shift becomes higher output versus a higher price level
+depends entirely on price flexibility.
+
+```{r}
+#| label: setup-ex264
+#| include: false
+
+orange264 <- rgb(1, 0.624, 0)
+lw264  <- 1.1
+seq264 <- seq(0, 100, by = 0.5)
+ax264  <- 8
+
+# ── Baseline (same [0,100] normalization as Ex 26.2) ─────────────────────────
+# IS: r = 100-Y  |  LM₀ at P=50: r = Y  |  AD₀: P = 100-Y
+# N^d: w = 100-N  |  N^s: w = N  |  PF: Y = sqrt(50*N)
+Y0 <- 50; r0 <- 50; N0 <- 50; w0 <- 50; P0 <- 50
+
+# ── Shock: π_e rises by δ=10 ─────────────────────────────────────────────────
+# LM at price P after shock: r = Y + 2P - 110
+# AD₁: P = 105 - Y  (rightward shift of 5 in output space)
+
+# SSP: AS horizontal at P=50
+Y1_ssp <- 55;   r1_ssp <- 45;  P1_ssp <- 50
+N1_ssp <- Y1_ssp^2 / 50        # 60.5
+w1_ssp <- 100 - N1_ssp          # 39.5
+
+# PSP: AS upward-sloping P=Y; AD₁∩AS → P=Y=52.5
+Y1_psp <- 52.5; r1_psp <- 47.5; P1_psp <- 52.5
+N1_psp <- Y1_psp^2 / 50        # 55.125
+w1_psp <- 100 - N1_psp          # 44.875
+
+# NCL: AS vertical at Y=50; real variables unchanged, P rises
+Y1_ncl <- 50;   r1_ncl <- 50;  P1_ncl <- 55
+N1_ncl <- 50;   w1_ncl <- 50
+
+# LM intercepts at equilibrium prices (r = Y + lm_c)
+lm_c1_ssp  <- 2 * P1_ssp - 110   # -10  LM₁ at P=50: r = Y-10
+lm_c1_psp  <- 2 * P1_psp - 110   #  -5  LM₁ at P=52.5: r = Y-5
+lm_c1_ncl  <- 2 * P1_ncl - 110   #   0  LM₁ at P=55: r = Y  (= LM₀)
+lm_c1_init <- -10                  # intermediate: π_e effect before P adjusts
+
+# ── Shared data frames ────────────────────────────────────────────────────────
+is264        <- tibble(Y=seq264, r=100-Y)          |> filter(r>=0, r<=100)
+lm0264       <- tibble(Y=seq264, r=Y)              |> filter(Y>=0, r<=100)
+lm1ssp264    <- tibble(Y=seq264, r=Y+lm_c1_ssp)   |> filter(r>=0, r<=100, Y>=0)
+lm1psp264    <- tibble(Y=seq264, r=Y+lm_c1_psp)   |> filter(r>=0, r<=100, Y>=0)
+lm1init264   <- tibble(Y=seq264, r=Y+lm_c1_init)  |> filter(r>=0, r<=100, Y>=0)
+
+ad0264       <- tibble(Y=seq264, P=100-Y)          |> filter(P>=0, Y>=0)
+ad1264       <- tibble(Y=seq264, P=105-Y)          |> filter(P>=0, Y>=0)
+nd264        <- tibble(N=seq264, w=100-N)          |> filter(w>=0, N>=0)
+ns264        <- tibble(N=seq264, w=N)              |> filter(N>=0)
+pf264        <- tibble(N=seq264, Y=sqrt(50*N))
+asp264       <- tibble(Y=seq264, P=Y)              |> filter(P>=0, Y>=0)
+
+th264 <- th + theme(
+  axis.title.x = element_text(hjust=1, vjust=0,  size=11, margin=margin(t=-8)),
+  axis.title.y = element_text(hjust=1, angle=0, vjust=1, size=11, margin=margin(r=-8)),
+  axis.line    = element_blank(),
+  plot.margin  = margin(4, 4, 4, 4)
+)
+```
+
+---
+
+### Part (a) — Simple Sticky-Price Model
+
+With prices fully fixed at $\bar{P}_{0,t}$, the rightward LM shift feeds entirely into higher output and a lower real interest rate.
+
+**Mechanism:** $\pi^e_{t+1}\uparrow$ $\Rightarrow$ LM shifts right $\Rightarrow$
+IS–LM: $Y_t\uparrow$, $r_t\downarrow$ $\Rightarrow$ horizontal AS: $P_t = \bar{P}_{0,t}$ unchanged.
+
+**Labor market.** With $Y_t\uparrow$ and the production function unchanged, more labor is required: $N_t\uparrow$. Employment is supply-determined; moving right along $N^s(w_t)$ implies $w_t\uparrow$.
+
+**Consumption** rises through two channels: $r_t\downarrow$ (intertemporal substitution) and $Y_t\uparrow$ (income effect). **Investment** rises because $r_t\downarrow$ directly lowers the cost of capital.
+
+```{r}
+#| label: fig-ex264-ssp
+#| fig-cap: "Simple sticky-price model: $\\pi^e_{t+1}$ increase. Black = original; red = post-shock. The LM shifts right (lower $r_t$ for any $Y_t$), raising output and lowering the real interest rate. The price level is unchanged. Employment rises and the real wage rises along $N^s$."
+#| fig-alt: "Six-panel diagram for SSP model. IS-LM: LM shifts right, equilibrium moves to higher Y and lower r. AS-AD: AD shifts right along horizontal AS, Y rises, P unchanged. Labor market: equilibrium moves right along Ns to higher N and higher w. PF and 45-degree panels confirm higher output."
+#| fig-height: 8
+#| fig-width: 7
+
+# ── Legend ────────────────────────────────────────────────────────────────────
+p_leg_a <- ggplot()+
+  annotate("segment",x=5,xend=22,y=75,yend=75,color="black",linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=58,yend=58,color="red",  linewidth=1.2)+
+  annotate("text",x=26,y=75,label="Original",   hjust=0,size=4)+
+  annotate("text",x=26,y=58,label="Post-shock", hjust=0,size=4)+
+  annotate("text",x=5, y=38,label="0 subscript: Original",  hjust=0,size=4)+
+  annotate("text",x=5, y=22,label="1 subscript: Post-shock",hjust=0,size=4)+
+  xlim(0,100)+ylim(0,100)+
+  theme_void()+theme(plot.background=element_rect(fill="#fdfcf8",color=NA))
+
+# ── IS-LM ─────────────────────────────────────────────────────────────────────
+p_islm_a <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=is264,    aes(x=Y,y=r),color="black",linewidth=lw264)+
+  geom_line(data=lm0264,   aes(x=Y,y=r),color="black",linewidth=lw264)+
+  geom_line(data=lm1ssp264,aes(x=Y,y=r),color="red",  linewidth=lw264)+
+  geom_segment(aes(x=Y0,    xend=Y0,    y=0,yend=r0),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=Y0,    y=r0,yend=r0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=Y1_ssp,xend=Y1_ssp,y=0,yend=r1_ssp),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_ssp,y=r1_ssp,yend=r1_ssp),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=r0),    size=1)+
+  geom_point(aes(x=Y1_ssp,y=r1_ssp),color="red",size=1)+
+  annotate("text",x=15,y=93,label="IS",size=4,fontface="italic")+
+  annotate("text",x=70,y=88,label=expression(LM(pi["t+1,0"]^e)),size=4)+
+  annotate("text",x=82,y=55,label=expression(LM(pi["t+1,1"]^e)),size=4,color="red")+
+  annotate("text",x=Y0-2,y=-6,label=expression(Y["0,t"]),size=4)+
+  annotate("text",x=Y1_ssp+2,y=-6,label=expression(Y["1,t"]),size=4,color="red")+
+  annotate("text",x=-6,y=r0+1,label=expression(r["0,t"]),size=4)+
+  annotate("text",x=-6,y=r1_ssp-1,label=expression(r["1,t"]),size=4,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(r[t]))+th264
+
+# ── Labor market ──────────────────────────────────────────────────────────────
+p_lab_a <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ns264,aes(x=N,y=w),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0,    xend=N0,    y=0,yend=w0),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=N0,    y=w0,yend=w0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N1_ssp,xend=N1_ssp,y=0,yend=N1_ssp),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_segment(aes(x=0,xend=N1_ssp,y=N1_ssp,yend=N1_ssp),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_point(aes(x=N0,    y=w0),    size=1)+
+  geom_point(aes(x=N1_ssp,y=N1_ssp),color="red",size=1)+
+  annotate("text",x=80,y=93,label=expression(N^s*(w[t])),size=4)+
+  annotate("text",x=N0,      y=-6,label=expression(N["0,t"]),size=4)+
+  annotate("text",x=N1_ssp+1,y=-6,label=expression(N["1,t"]),size=4,color="red")+
+  annotate("text",x=-6,y=w0-1,label=expression(w["0,t"]),size=4)+
+  annotate("text",x=-6,y=N1_ssp+1, label=expression(w["1,t"]),size=4,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(w[t]))+th264
+
+# ── AS-AD ─────────────────────────────────────────────────────────────────────
+p_asad_a <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ad0264,aes(x=Y,y=P),color="black",linewidth=lw264)+
+  geom_line(data=ad1264,aes(x=Y,y=P),color="red",  linewidth=lw264)+
+  geom_segment(aes(x=0,xend=93,y=P0,yend=P0),color="black",linewidth=lw264)+
+  geom_segment(aes(x=Y0,xend=Y0,    y=0,yend=100),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=Y0, y=P0,yend=P0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=Y1_ssp,xend=Y1_ssp,y=0,yend=100),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=P0),size=1)+
+  geom_point(aes(x=Y1_ssp,y=P0),color="red",size=1)+
+  annotate("text",x=94,y=P0+7, label=expression(AS),  size=4,fontface="italic")+
+  annotate("text",x=85,y=5,   label=expression(AD[0]),size=4,fontface="italic")+
+  annotate("text",x=85,y=30,   label=expression(AD[1]),size=4,color="red",fontface="italic")+
+  annotate("text",x=Y0-2,y=-6,label=expression(Y["0,t"]),size=4,)+
+  annotate("text",x=Y1_ssp+2, y=-6,label=expression(Y["1,t"]),size=4,color="red")+
+  annotate("text",x=-6,y=P0,label=expression(bar(P)["0,t"]),size=4,hjust=1)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(P[t]))+th264
+
+# ── Production function ───────────────────────────────────────────────────────
+p_pf_a <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=pf264,aes(x=N,y=Y),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0,    xend=N0,    y=0,yend=100),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N0,    xend=100,   y=Y0,yend=Y0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N1_ssp,xend=N1_ssp,y=0,yend=100),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_segment(aes(x=N1_ssp,xend=100,   y=Y1_ssp,yend=Y1_ssp),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=N0,    y=Y0),    size=1)+
+  geom_point(aes(x=N1_ssp,y=Y1_ssp),color="red",size=1)+
+  annotate("text",x=78,y=80,label=expression(A[t]*F(K[t],N[t])),size=4,hjust=0)+
+  annotate("text",x=N0,      y=-6,label=expression(N["0,t"]),size=4,vjust=1)+
+  annotate("text",x=N1_ssp+1,y=-6,label=expression(N["1,t"]),size=4,vjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(Y[t]))+th264
+
+# ── 45-degree ─────────────────────────────────────────────────────────────────
+p_45_a <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=100,y=0,yend=100),color="black",linewidth=lw264)+
+  geom_segment(aes(x=Y0,    xend=Y0,    y=0,yend=100),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=Y0,    y=Y0,yend=Y0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=Y1_ssp,xend=Y1_ssp,y=0,yend=100),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_ssp,y=Y1_ssp,yend=Y1_ssp),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=Y0),    size=1)+
+  geom_point(aes(x=Y1_ssp,y=Y1_ssp),color="red",size=1)+
+  annotate("text",x=87,y=73,label=expression(Y[t]==Y[t]),size=4)+
+  annotate("text",x=Y0-2,    y=-6,label=expression(Y["0,t"]),size=4,vjust=1,hjust=1)+
+  annotate("text",x=Y1_ssp+2,y=-6,label=expression(Y["1,t"]),size=4,vjust=1,hjust=0,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(Y[t]))+th264
+
+gridExtra::grid.arrange(p_leg_a,p_islm_a,p_lab_a,p_asad_a,p_pf_a,p_45_a,nrow=3,ncol=2)
+```
+
+---
+
+### Part (b) — Partial Sticky-Price Model
+
+With prices partially flexible, the AD shift is split between higher output and a
+higher price level. Both effects split the difference between the simple sticky-price and Neoclassical outcomes.
+
+**Mechanism:** AD shifts right $\Rightarrow$ upward-sloping AS: $P_t\uparrow$ and
+$Y_t\uparrow$ $\Rightarrow$. Higher $P_t$ shifts LM partially back left $\Rightarrow$ $r_t\downarrow$.
+
+**Labor market.** $Y_t\uparrow$ $\Rightarrow$ $N_t\uparrow$, $w_t\uparrow$.
+
+**Consumption** rises (both because $r_t\downarrow$ and $Y_t\uparrow$).
+**Investment** rises (because $r_t\downarrow$). 
+
+```{r}
+#| label: fig-ex264-psp
+#| fig-cap: "Partial sticky-price model: $\\pi^e_{t+1}$ increase. Black = original; red = post-shock PSP equilibrium; orange = Neoclassical (flex-price) benchmark. Adjustments are intermediate between SSP (full output effect) and NCL (zero output effect). Note: in IS–LM and the labor market the NCL benchmark (orange) coincides with the original equilibrium (black) since all real variables are unchanged."
+#| fig-alt: "Six-panel diagram for PSP model. IS-LM: LM shifts right (less than SSP), output rises moderately, r falls moderately. AS-AD: AD shifts right along upward-sloping AS. Labor market: employment and real wage both increase."
+#| fig-height: 8
+#| fig-width: 7
+
+# ── Legend ────────────────────────────────────────────────────────────────────
+p_leg_b <- ggplot()+
+  annotate("segment",x=5,xend=22,y=85,yend=85,color="black",  linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=70,yend=70,color="red",    linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=55,yend=55,color="royalblue",linewidth=1.2)+
+  annotate("text",x=26,y=85,label="Original", hjust=0, size=4)+
+  annotate("text",x=26,y=70,label="Post-shock",  hjust=0,size=4)+
+  annotate("text",x=26,y=55,label="Post-shock, indir. P efect on LM", hjust=0,size=4)+
+  annotate("text",x=5, y=35,label="0 subscript: Original", hjust=0,size=4)+
+  annotate("text",x=5, y=21,label="1 subscript: Post-shock", hjust=0,size=4)+
+  xlim(0,100)+ylim(0,100)+
+  theme_void()+theme(plot.background=element_rect(fill="#fdfcf8",color=NA))
+
+# ── IS-LM ─────────────────────────────────────────────────────────────────────
+p_islm_b <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=is264,    aes(x=Y,y=r),color="black",  linewidth=lw264)+
+  geom_line(data=lm0264,   aes(x=Y,y=r),color="black",  linewidth=lw264)+
+  geom_line(data=lm1psp264,aes(x=Y,y=r),color="royalblue",    linewidth=lw264)+
+  
+  geom_line(data=lm1ssp264,aes(x=Y,y=r),color="red",    linewidth=lw264)+
+  
+  
+  geom_segment(aes(x=Y0,    xend=Y0,    y=0,yend=r0),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=Y0,    y=r0,yend=r0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=Y1_psp,xend=Y1_psp,y=0,yend=r1_psp),linetype="dotted",color="royalblue",  linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_psp,y=r1_psp,yend=r1_psp),linetype="dotted",color="royalblue",  linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=r0),    size=1)+
+  geom_point(aes(x=Y1_psp,y=r1_psp),color="royalblue",    size=1)+
+  annotate("text",x=15,y=93,label="IS",size=4,fontface="italic")+
+  annotate("text",x=72,y=95,label=expression(LM(P["0,t"],pi["0,t+1"]^e)),size=4,color="black")+
+  annotate("text",x=60,y=82,label=expression(LM(P["1,t"],pi["1,t+1"]^e)),size=4,color="royalblue")+
+  annotate("text",x=85,y=52,label=expression(LM(P["0,t"],pi["1,t+1"]^e)),size=4,color="red")+
+  annotate("text",x=Y0-3,y=-6,label=expression(Y["0,t"]),size=4)+
+  annotate("text",x=Y1_psp+3, y=-6,label=expression(Y["1,t"]),size=4,color="red")+
+  annotate("text",x=-6,y=r0+3,label=expression(r["0,t"]),size=4,)+
+  annotate("text",x=-6,y=r1_psp-3,label=expression(r["1,t"]),              size=4,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(r[t]))+th264
+
+# ── Labor market ──────────────────────────────────────────────────────────────
+p_lab_b <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=nd264,aes(x=N,y=w),color=orange264,linewidth=0.5)+
+  geom_line(data=ns264,aes(x=N,y=w),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0,    xend=N0,    y=0,yend=w0),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=N0,    y=w0,yend=w0),   linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N1_psp,xend=N1_psp,y=0,yend=N1_psp),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_segment(aes(x=0,xend=N1_psp,y=N1_psp,yend=N1_psp),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_point(aes(x=N0,    y=w0),    size=1)+
+  geom_point(aes(x=N1_psp,y=N1_psp),color="red",    size=1)+
+  annotate("text",x=75,y=90,label=expression(N^s*(w[t])),                    size=4)+
+  annotate("text",x=82,y=37,label=expression(N^d*(w[t]*","*A[t]*","*K[t])), size=4, color=orange264)+
+  annotate("text",x=N0-2,y=-6,label=expression(N["0,t"]),size=4,)+
+  annotate("text",x=N1_psp+2, y=-6,label=expression(N["1,t"]),                size=4,,color="red")+
+  annotate("text",x=-6,y=w0-2,label=expression(w["0,t"]),size=4)+
+  annotate("text",x=-6,y=N1_psp+2,label=expression(w["1,t"]),              size=4,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(w[t]))+th264
+
+# ── AS-AD ─────────────────────────────────────────────────────────────────────
+p_asad_b <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ad0264,aes(x=Y,y=P),color="black",linewidth=lw264)+
+  geom_line(data=ad1264,aes(x=Y,y=P),color="red",  linewidth=lw264)+
+  geom_line(data=asp264,aes(x=Y,y=P),color="black",linewidth=lw264)+
+  # NCL vertical AS at Y=50 (orange)
+  geom_segment(aes(x=Y1_ncl,xend=Y1_ncl,y=0,yend=93),color=orange264,linewidth=0.5)+
+  geom_segment(aes(x=0,    xend=Y0,    y=P0,    yend=P0),    linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=Y0,   xend=Y0,    y=0,     yend=P0),    linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=0,    xend=Y1_psp,y=P1_psp,yend=P1_psp),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_segment(aes(x=Y1_psp,xend=Y1_psp,y=0,    yend=100),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=P0),    size=1)+
+  geom_point(aes(x=Y1_psp,y=P1_psp),color="red",    size=1)+
+  annotate("text",x=15,  y=8, label="AS",size=4,fontface="italic")+
+  annotate("text",x=Y1_ncl-10,y=95,label=expression(AS^f),size=4,hjust=0,color=orange264)+
+  annotate("text",x=85, y=8,label=expression(AD[0]),size=4)+
+  annotate("text",x=85, y=30,label=expression(AD[1]),size=4,color="red")+
+  annotate("text",x=Y0-3,y=-6,label=expression(Y["0,t"]),size=4)+
+  annotate("text",x=Y1_psp+3, y=-6,label=expression(Y["1,t"]),  size=4,,color="red")+
+  annotate("text",x=-6,y=P0-3,label=expression(P["0,t"]),  size=4)+
+  annotate("text",x=-6,y=P1_psp+3, label=expression(P["1,t"]),  size=4,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(P[t]))+th264
+
+# ── Production function ───────────────────────────────────────────────────────
+p_pf_b <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=pf264,aes(x=N,y=Y),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0,    xend=N0,    y=0,yend=100),    linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=N0,    xend=100,   y=Y0,yend=Y0),   linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=N1_psp,xend=N1_psp,y=0,yend=100),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_segment(aes(x=N1_psp,xend=100,   y=Y1_psp,yend=Y1_psp),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=N0,    y=Y0),    size=1)+
+  geom_point(aes(x=N1_psp,y=Y1_psp),color="red",    size=1)+
+  annotate("text",x=80,y=80,label=expression(A[t]*F(K[t],N[t])),size=4,hjust=0)+
+  annotate("text",x=N0-3,y=-6,label=expression(N["0,t"]),size=4)+
+  annotate("text",x=N1_psp+3, y=-6,label=expression(N["1,t"]),                size=4,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(Y[t]))+th264
+
+# ── 45-degree ─────────────────────────────────────────────────────────────────
+p_45_b <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=100,y=0,yend=100),color="black",linewidth=lw264)+
+  geom_segment(aes(x=Y0,    xend=Y0,    y=0,yend=100),    linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=0,     xend=Y0,    y=Y0,yend=Y0),   linetype="dotted",color="black",  linewidth=0.5)+
+  geom_segment(aes(x=Y1_psp,xend=Y1_psp,y=0,yend=100),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y1_psp,y=Y1_psp,yend=Y1_psp),linetype="dotted",color="red",    linewidth=0.5)+
+  geom_point(aes(x=Y0,    y=Y0),    size=1)+
+  geom_point(aes(x=Y1_psp,y=Y1_psp),color="red",    size=1)+
+  annotate("text",x=85,y=73,label=expression(Y[t]==Y[t]),size=4)+
+  annotate("text",x=Y0-3,y=-6,label=expression(Y["0,t"]),size=4)+
+  annotate("text",x=Y1_psp+3, y=-6,label=expression(Y["1,t"]),                size=4,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(Y[t]))+th264
+
+gridExtra::grid.arrange(p_leg_b,p_islm_b,p_lab_b,p_asad_b,p_pf_b,p_45_b,nrow=3,ncol=2)
+```
+
+---
+
+### Part (c) — Neoclassical Model
+
+With prices fully flexible, the supply side alone determines output. Since
+$\pi^e_{t+1}$ leaves the IS curve and the labor market completely unchanged, the
+supply-determined output $Y_t^*$ does not move.
+
+**Mechanism:** The rightward LM shift also shifts AD right which, given $\Rightarrow$ vertical AS (supply-determined $Y_t^*$unchanged) $\Rightarrow$ $P_t\uparrow$. In turn,  a higher $P_t$ reduces real balances, shifting LM back left $\Rightarrow$ the two LM effects (rightward from $\pi^e_{t+1}$, leftward from $P_t\uparrow$) exactly cancel $\Rightarrow$ $r_t$ unchanged.
+
+**Labor market, consumption, investment:** All unchanged. The shock has no real effects in the Neoclassical model — only the price level rises proportionally to absorb the excess money demand created by the expected inflation. The real interest rate is pinned by the supply side and the IS; the nominal interest rate $i_t = r_t + \pi^e_{t+1}$ rises by the full amount of the shock (the Fisher effect).
+
+```{r}
+#| label: fig-ex264-ncl
+#| fig-cap: "Neoclassical model: $\\pi^e_{t+1}$ increase. Black = original = post-shock real equilibrium (unchanged). Red dashed = intermediate LM position at original price level $P_0$, illustrating the initial rightward LM shift before prices adjust. In equilibrium $P_t$ rises from 50 to 55, shifting the LM back to its original position; all real variables are unchanged."
+#| fig-alt: "Six-panel Neoclassical diagram. IS-LM: shows initial LM shift right (red dashed) and final return to original LM; equilibrium Y and r unchanged. AS-AD: AD shifts right along vertical AS; P rises, Y unchanged. All other panels show single unchanged equilibrium."
+#| fig-height: 8
+#| fig-width: 7
+
+# ── Legend ────────────────────────────────────────────────────────────────────
+p_leg_c <- ggplot()+
+  annotate("segment",x=5,xend=22,y=85,yend=85,color="black",  linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=70,yend=70,color="red",    linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=55,yend=55,color="royalblue",    linewidth=1.2)+
+  
+  annotate("text",x=26,y=85,label="Original",hjust=0,size=4)+
+  annotate("text",x=26,y=70,label="Post-shock",hjust=0,size=4)+
+  annotate("text",x=26,y=55,label="Post-shock indir. P effect on LM",hjust=0,size=4)+
+  annotate("text",x=5, y=43,label="0 subscript: Original",hjust=0,size=4)+
+  annotate("text",x=5, y=27,label="1 subscript: Post-shock",  hjust=0,size=4)+
+  xlim(0,100)+ylim(0,100)+
+  theme_void()+theme(plot.background=element_rect(fill="#fdfcf8",color=NA))
+
+# ── IS-LM ─────────────────────────────────────────────────────────────────────
+p_islm_c <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=is264,    aes(x=Y,y=r),color="black",linewidth=lw264)+
+  geom_line(data=lm0264,   aes(x=Y,y=r),color="royalblue",linewidth=lw264)+
+  # Intermediate LM at P=50 after shock (red)
+  geom_line(data=lm1init264,aes(x=Y,y=r),color="red",linewidth=lw264,)+
+  geom_segment(aes(x=Y0,xend=Y0,y=0,yend=r0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=Y0,y=r0,yend=r0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=Y0,y=r0),size=1)+
+  annotate("text",x=15,y=93,label="IS",size=4,fontface="italic")+
+  
+  annotate("text",x=60,y=95,label=expression(LM(P["0,t"],pi["0,t+1"]^e)),size=4,color="black")+
+  annotate("text",x=60,y=88,label=expression("="),size=4,color="black")+
+  
+  annotate("text",x=60,y=83,label=expression(LM(P["1,t"],pi["1,t+1"]^e)),size=4,color="royalblue")+
+  
+  annotate("text",x=85,y=50,label=expression(LM(P["0,t"],pi["1,t+1"]^e)),size=4,color="red")+
+  
+  
+  annotate("text",x=Y0,y=-6,label=expression(Y["0,t"]*"="*Y["1,t"]),size=4)+
+  annotate("text",x=-8,y=r0,label=expression(r["0,t"]*"="*r["1,t"]),size=4)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(r[t]))+th264
+
+# ── Labor market (unchanged) ──────────────────────────────────────────────────
+p_lab_c <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=nd264,aes(x=N,y=w),color="black",linewidth=lw264)+
+  geom_line(data=ns264,aes(x=N,y=w),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0,xend=N0,y=0,yend=w0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=N0,y=w0,yend=w0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=N0,y=w0),size=1)+
+  annotate("text",x=78,y=90,label=expression(N^s*(w[t])),                    size=4)+
+  annotate("text",x=90,y=30,label=expression(N^d*(w[t]*","*A[t]*","*K[t])), size=4)+
+  annotate("text",x=N0,y=-6,label=expression(N["0,t"]*"="*N["1,t"]),size=4)+
+  annotate("text",x=-8,y=w0,label=expression(w["0,t"]*"="*w["1,t"]),size=3)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(w[t]))+th264
+
+# ── AS-AD ─────────────────────────────────────────────────────────────────────
+p_asad_c <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ad0264,aes(x=Y,y=P),color="black",linewidth=lw264)+
+  geom_line(data=ad1264,aes(x=Y,y=P),color="red",  linewidth=lw264)+
+  # Vertical AS at Y=50 (unchanged)
+  geom_segment(aes(x=Y0,xend=Y0,y=0,yend=93),color="black",linewidth=lw264)+
+  geom_segment(aes(x=0,xend=Y0,y=P0,    yend=P0),    linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,xend=Y0,y=P1_ncl,yend=P1_ncl),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_point(aes(x=Y0,y=P0),    size=1)+
+  geom_point(aes(x=Y0,y=P1_ncl),color="red",size=1)+
+  annotate("text",x=Y0+5,y=95,label="AS",size=4,fontface="italic")+
+  annotate("text",x=85, y=5, label=expression(AD[0]),size=4)+
+  annotate("text",x=85, y=30, label=expression(AD[1]),size=4,color="red")+
+  annotate("text",x=Y0,y=-6,  label=expression(Y["0,t"]*"="*Y["1,t"]),size=4)+
+  annotate("text",x=-6,y=P0-2,label=expression(P["0,t"]),size=4)+
+  annotate("text",x=-6,y=P1_ncl+2, label=expression(P["1,t"]),size=4,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(P[t]))+th264
+
+# ── Production function (unchanged) ──────────────────────────────────────────
+p_pf_c <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=pf264,aes(x=N,y=Y),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0,xend=N0, y=0,yend=100),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N0,xend=100,y=Y0,yend=Y0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=N0,y=Y0),size=1)+
+  annotate("text",x=80,y=75,label=expression(A[t]*F(K[t],N[t])),size=4)+
+  annotate("text",x=N0,y=-6,label=expression(N["0,t"]*"="*N["1,t"]),size=4)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(Y[t]))+th264
+
+# ── 45-degree (unchanged) ─────────────────────────────────────────────────────
+p_45_c <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=100,y=0,yend=100),color="black",linewidth=lw264)+
+  geom_segment(aes(x=Y0,xend=Y0,y=0,yend=100), linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=Y0,y=Y0,yend=Y0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=Y0,y=Y0),size=1)+
+  annotate("text",x=85,y=70,label=expression(Y[t]==Y[t]),size=4)+
+  annotate("text",x=Y0,y=-6,label=expression(Y["0,t"]*"="*Y["1,t"]),size=4)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(Y[t]))+th264
+
+gridExtra::grid.arrange(p_leg_c,p_islm_c,p_lab_c,p_asad_c,p_pf_c,p_45_c,nrow=3,ncol=2)
+```
+
+---
+
+### Summary
+
+| Variable | Simple Sticky Price | Partial Sticky Price | Neoclassical |
+|----------|:---:|:---:|:---:|
+| $\Delta Y_t$ | $\uparrow\uparrow$ (largest) | $\uparrow$ | $0$ |
+| $\Delta P_t$ | $0$ | $\uparrow$ | $\uparrow\uparrow$ (largest) |
+| $\Delta r_t$ | $\downarrow\downarrow$ | $\downarrow$ | $0$ |
+| $\Delta N_t$ | $\uparrow\uparrow$ | $\uparrow$ | $0$ |
+| $\Delta w_t$ | $\downarrow\downarrow$ | $\downarrow$ | $0$ |
+| $\Delta C_t$ | $\uparrow\uparrow$ | $\uparrow$ | $0$ |
+| $\Delta I_t$ | $\uparrow\uparrow$ | $\uparrow$ | $0$ |
+
+This is a **pure demand shock** (monetary channel). Unlike the $\theta_t$ supply shock in
+Exercise 26.2, here greater price flexibility means the price level absorbs more of
+the adjustment, leaving real variables unchanged. In the Neoclassical model, the
+Fisher effect operates fully: $i_t = r_t + \pi^e_{t+1}$ rises by the full amount of the
+shock, $P_t$ rises proportionally, and all real quantities are unchanged. In the SSP
+model, prices cannot adjust, so the entire effect falls on real output and the real
+interest rate.
+
+---
+
+# Exercise 26.5 — CB Policy for Constant Real Wage: $A_{t+1}\uparrow$ in the PSP Model
+
+**Problem.** Suppose that we have a partial sticky-price New Keynesian model. Suppose
+that the economy is hit with an increase in $A_{t+1}$. Suppose that the central bank
+wants to adjust the money supply in such a way that the real wage does not change in
+response to this shock.
+
+**(a)** How must the central bank adjust policy in response to the increase in
+$A_{t+1}$ in order to achieve this end?
+
+**(b)** How does output react to the change in $A_{t+1}$ if the central bank follows
+such a policy?
+
+**(c)** How does this change in $Y_t$ compare to a world in which the money supply is
+exogenous (i.e. does not react to the increase in $A_{t+1}$)?
+
+---
+
+## Solution
+
+### How $A_{t+1}\uparrow$ affects the economy
+
+$A_{t+1}$ (expected future total factor productivity) enters **investment demand**:
+
+$$I_t = I^d(r_t,\; A_{t+1},\; K_t), \qquad \partial I^d/\partial A_{t+1} > 0.$$
+
+Higher expected productivity raises the return on capital investment today, directly
+increasing $I_t$ for any given $r_t$. This shifts the **IS curve to the right**.
+
+**Key fact.** $A_{t+1}$ does not affect: (i) current labor demand $N^d$ (which depends on
+$A_t$, not $A_{t+1}$), (ii) labor supply $N^s$, (iii) the LM curve, or (iv) the current production function. This is a **pure demand-side (IS) shock** with no direct supply-side channel.
+
+In the AD–AS diagram: IS shifts right $\Rightarrow$ for any $P_t$, IS–LM gives higher
+$Y_t$ $\Rightarrow$ **AD shifts right**. With the upward-sloping AS (unaffected by
+$A_{t+1}$), both $Y_t$ and $P_t$ rise. Employment rises and so does the real wage rate (movement along $N^s$). This is shown in Figure (a) below.
+
+### Why the CB must reduce $M_t$
+
+The real wage is determined by the labor supply curve. This means $w_t$ is constant if and only if $N_t$ is constant. Since $A_t$ and $K_t$ are unaffected this is equivalent to output $Y_t$ being constant. Therefore, to keep wages constant, 
+the CB must prevent output from rising. Without intervention, AD shifts right and the
+ equilibrium moves to higher $Y_t$. To restore the original equilibrium, the CB must
+shift AD back to its original position. Since IS shifted right, the CB must shift LM
+to the **left** by the same amount — which requires **contracting** (reducing) the
+money supply $M_t$.
+
+```{r}
+#| label: setup-ex265
+#| include: false
+
+# IS₀: r=100-Y; IS₁: r=120-Y (A_{t+1} shock, rightward shift of 20)
+# LM₀ at P: r=Y+2P-110 (original money supply)
+# AD₀: P=100-Y;  AD₁_nobc: P=115-Y;  AD₁_cb = AD₀ (CB restores AD)
+# PSP AS: P=Y  (same as Ex 26.2)
+
+# ── No-CB PSP equilibrium ─────────────────────────────────────────────────────
+# AD₁_nobc ∩ AS_psp: 115-Y = Y → Y=57.5, P=57.5
+# IS₁ at Y=57.5: r = 120-57.5 = 62.5
+Y1n <- 57.5;  r1n <- 62.5;  P1n <- 57.5
+N1n <- Y1n^2 / 50          # 66.125
+w1n <- 100 - N1n            # 33.875
+lm_cn <- 2*P1n - 110        # 5  (LM at P=57.5: r=Y+5)
+
+# ── CB PSP equilibrium ────────────────────────────────────────────────────────
+# CB shifts LM left until AD = AD₀; equilibrium: (Y₀, P₀) unchanged
+# IS₁ at Y=50: r=70 — this is the new r under CB policy
+Y1c <- 50;  r1c <- 70;  P1c <- 50;  N1c <- 50;  w1c <- 50
+lm_cc <- 20   # LM₁_cb at P=50: r = Y+20
+
+# ── Data frames (seq264, ax264, lw264, th264 from setup-ex264) ─────────────────
+is1_265     <- tibble(Y=seq264, r=120-Y)         |> filter(r>=0, r<=100)
+lm1n_265    <- tibble(Y=seq264, r=Y+lm_cn)       |> filter(r>=0, r<=100, Y>=0)
+lm1c_265    <- tibble(Y=seq264, r=Y+lm_cc)       |> filter(r>=0, r<=100, Y>=0)
+ad1n_265    <- tibble(Y=seq264, P=115-Y)         |> filter(P>=0, Y>=0)
+```
+
+---
+
+### Part (a) — Without CB Intervention (exogenous $M_t$)
+
+IS shifts right $\Rightarrow$ AD shifts right $\Rightarrow$  $Y_t\uparrow$,
+$P_t\uparrow$, $r_t\uparrow$, $N_t\uparrow$, $w_t\uparrow$.
+
+- **Consumption:** $r_t\uparrow$ depresses $C_t$ (intertemporal substitution); $Y_t\uparrow$
+  raises $C_t$ (income). Net effect ambiguous, depends on magnitudes.
+- **Investment:** $A_{t+1}\uparrow$ raises $I_t$ directly; $r_t\uparrow$ partially offsets. Since output increases, this means consumption plus investment must increase ($G_t$ is unchnaged).
+- **Real wage:** $w_t\uparrow$ — higher output pushes up $N_t$, raising the wage rate along the upward-sloping $N^s$.
+
+```{r}
+#| label: fig-ex265-nobc
+#| fig-cap: "PSP model without CB intervention: $A_{t+1}$ increase. Black = original; red = post-shock. IS shifts right (higher investment demand). AD shifts right. Along the upward-sloping AS, $Y_t$, $P_t$, and $r_t$ all rise; $N_t$ rises and $w_t$ rises."
+#| fig-alt: "Six-panel PSP diagram, no CB. IS-LM: IS shifts right, LM shifts left slightly as P rises, output and real rate both rise. AS-AD: AD shifts right along upward-sloping AS, Y and P rise. Labor market: equilibrium moves right along Ns to higher N and higher w. PF and 45-degree confirm higher output."
+#| fig-height: 8
+#| fig-width: 7
+
+# ── Legend ────────────────────────────────────────────────────────────────────
+p_leg_n265 <- ggplot()+
+  annotate("segment",x=5,xend=22,y=85,yend=85,color="black",linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=70,yend=70,color="red",  linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=55,yend=55,color="royalblue",  linewidth=1.2)+
+  annotate("text",x=26,y=85,label="Original",   hjust=0,size=4)+
+  annotate("text",x=26,y=70,label="Post-shock (no CB)",hjust=0,size=4)+
+  annotate("text",x=26,y=55,label="Post-shock, indir. P effect on LM",hjust=0,size=4)+
+  annotate("text",x=5, y=35,label="0: Original",  hjust=0,size=4)+
+  annotate("text",x=5, y=20,label="1: Post-shock",hjust=0,size=4)+
+  xlim(0,100)+ylim(0,100)+
+  theme_void()+theme(plot.background=element_rect(fill="#fdfcf8",color=NA))
+
+# ── IS-LM ─────────────────────────────────────────────────────────────────────
+p_islm_n265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=is264,    aes(x=Y,y=r),color="black",linewidth=lw264)+
+  geom_line(data=is1_265,  aes(x=Y,y=r),color="red",  linewidth=lw264)+
+  geom_line(data=lm0264,   aes(x=Y,y=r),color="black",linewidth=lw264)+
+  geom_line(data=lm1n_265, aes(x=Y,y=r),color="royalblue",  linewidth=lw264)+
+  # Drop lines — baseline
+  geom_segment(aes(x=Y0,xend=Y0,y=0,yend=r0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=Y0,y=r0,yend=r0),linetype="dotted",color="black",linewidth=0.5)+
+  # Drop lines — no-CB
+  geom_segment(aes(x=Y1n,xend=Y1n,y=0,yend=r1n),linetype="dotted",color="red",linewidth=0.5)+
+  geom_segment(aes(x=0,  xend=Y1n,y=r1n,yend=r1n),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=Y0, y=r0), size=1)+
+  geom_point(aes(x=Y1n,y=r1n),color="red",size=1)+
+  annotate("text",x=12,y=73, label=expression(IS(A["0,t+1"])),size=4)+
+  annotate("text",x=37,y=98, label=expression(IS(A["1,t+1"])),size=4,color="red")+
+  annotate("text",x=80,y=65, label=expression(LM(P["0,t"])),size=4)+
+  annotate("text",x=70,y=90, label=expression(LM(P["1,t"])),size=4,color="royalblue")+
+  annotate("text",x=Y0, y=-6,label=expression(Y["0,t"]),size=4,vjust=1)+
+  annotate("text",x=Y1n+1,y=-6,label=expression(Y["1,t"]),size=4,vjust=1,color="red")+
+  annotate("text",x=-6,y=r0,      label=expression(r["0,t"]),size=4,hjust=1)+
+  annotate("text",x=-6,y=r1n+1.5, label=expression(r["1,t"]),size=4,hjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(r[t]))+th264
+
+# ── Labor market ──────────────────────────────────────────────────────────────
+p_lab_n265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ns264,aes(x=N,y=w),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0, xend=N0, y=0,yend=w0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,  xend=N0, y=w0,yend=w0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N1n,xend=N1n,y=0,yend=N1n),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_segment(aes(x=0,  xend=N1n,y=N1n,yend=N1n),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=N0, y=w0), size=1)+
+  geom_point(aes(x=N1n,y=N1n),color="red",size=1)+
+  annotate("text",x=78,y=90,label=expression(N^s*(w[t])),                   size=4)+
+  annotate("text",x=N0,  y=-6,label=expression(N["0,t"]),size=4,vjust=1)+
+  annotate("text",x=N1n+1,y=-6,label=expression(N["1,t"]),size=4,vjust=1,color="red")+
+  annotate("text",x=-6,y=w0-1,label=expression(w["0,t"]),size=4,hjust=1)+
+  annotate("text",x=-6,y=N1n+1, label=expression(w["1,t"]),size=4,hjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(w[t]))+th264
+
+# ── AS-AD ─────────────────────────────────────────────────────────────────────
+p_asad_n265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ad0264,  aes(x=Y,y=P),color="black",linewidth=lw264)+
+  geom_line(data=ad1n_265,aes(x=Y,y=P),color="red",  linewidth=lw264)+
+  geom_line(data=asp264,  aes(x=Y,y=P),color="black",linewidth=lw264)+
+  geom_segment(aes(x=0,  xend=Y0, y=P0, yend=P0), linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=Y0, xend=Y0, y=0,  yend=100), linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,  xend=Y1n,y=P1n,yend=P1n),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_segment(aes(x=Y1n,xend=Y1n,y=0,  yend=100),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_point(aes(x=Y0, y=P0), size=1)+
+  geom_point(aes(x=Y1n,y=P1n),color="red",size=1)+
+  annotate("text",x=5, y=20, label=expression(AS[0]),size=4,hjust=0)+
+  annotate("text",x=85,y=5,label=expression(AD[0]),size=4)+
+  annotate("text",x=85,y=40,label=expression(AD[1]),size=4,color="red")+
+  annotate("text",x=Y0,  y=-6,label=expression(Y["0,t"]),size=4,vjust=1)+
+  annotate("text",x=Y1n+1,y=-6,label=expression(Y["1,t"]),size=4,vjust=1,color="red")+
+  annotate("text",x=-6,y=P0-1,      label=expression(P["0,t"]),size=4,hjust=1)+
+  annotate("text",x=-6,y=P1n+1, label=expression(P["1,t"]),size=4,hjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(P[t]))+th264
+
+# ── Production function ───────────────────────────────────────────────────────
+p_pf_n265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=pf264,aes(x=N,y=Y),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0, xend=N0, y=0,yend=100),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N0, xend=100,y=Y0,yend=Y0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N1n,xend=N1n,y=0,yend=100),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_segment(aes(x=N1n,xend=100,y=Y1n,yend=Y1n),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=N0, y=Y0), size=1)+
+  geom_point(aes(x=N1n,y=Y1n),color="red",size=1)+
+  annotate("text",x=75,y=80,label=expression(A[t]*F(K[t],N[t])),size=4,hjust=0)+
+  annotate("text",x=N0,  y=-6,label=expression(N["0,t"]),size=4,vjust=1)+
+  annotate("text",x=N1n+1,y=-6,label=expression(N["1,t"]),size=4,vjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(Y[t]))+th264
+
+# ── 45-degree ─────────────────────────────────────────────────────────────────
+p_45_n265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=100,y=0,yend=100),color="black",linewidth=lw264)+
+  geom_segment(aes(x=Y0, xend=Y0, y=0,yend=100), linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0,  xend=Y0, y=Y0,yend=Y0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=Y1n,xend=Y1n,y=0,yend=100),linetype="dotted",color="red",  linewidth=0.5)+
+  geom_segment(aes(x=0,  xend=Y1n,y=Y1n,yend=Y1n),linetype="dotted",color="red",linewidth=0.5)+
+  geom_point(aes(x=Y0, y=Y0), size=1)+
+  geom_point(aes(x=Y1n,y=Y1n),color="red",size=1)+
+  annotate("text",x=85,y=73,label=expression(Y[t]==Y[t]),size=4)+
+  annotate("text",x=Y0,  y=-6,label=expression(Y["0,t"]),size=4,vjust=1)+
+  annotate("text",x=Y1n+1,y=-6,label=expression(Y["1,t"]),size=4,vjust=1,color="red")+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(Y[t]))+th264
+
+gridExtra::grid.arrange(p_leg_n265,p_islm_n265,p_lab_n265,
+                        p_asad_n265,p_pf_n265,p_45_n265,nrow=3,ncol=2)
+```
+
+---
+
+### Part (b) — With CB Intervention (constant $w_t$)
+
+The CB reduces $M_t$, shifting LM to the left. It reduces $M_t$ by exactly the amount
+needed so that the new IS–LM intersection gives **the same AD curve as before the
+shock**: $AD_1^{CB} = AD_0$. In the new equilibrium, output and the price level are
+unchanged: $Y_t = Y_{0,t}$, $P_t = P_{0,t}$, $N_t = N_{0,t}$, $w_t = w_{0,t}$.
+
+**What changes is only the real interest rate:** IS shifted right and LM shifted left, so their intersection occurs at the original $Y_t$ but at ahigher $r_t$.
+
+- **Real interest rate:** $r_t\uparrow$ (IS right + LM left → same $Y$, higher $r$).
+- **Consumption:** $r_t\uparrow$ reduces $C_t$.
+- **Investment:** $A_{t+1}\uparrow$ raises desired investment, but $r_t\uparrow$ offsets it partially through the IS equilibrium condition. By construction of the IS, the goods market clears at $Y_{0,t}$ with higher $r_t$: the additional investment demand from $A_{t+1}$ is crowded out by the rise in the real interest rate induced by the CB's   contraction.
+- **Real wage:** unchanged by construction.
+
+The AS–AD diagram ends up **unchanged** — the CB's action keeps the AD curve at
+$AD_0$, so the AS–AD intersection remains at $(Y_{0,t},\,P_{0,t})$. The red
+curve shows where $AD_1$ would be without the CB intervention.
+
+```{r}
+#| label: fig-ex265-cb
+#| fig-cap: "PSP model with CB intervention (constant $w_t$ target): $A_{t+1}$ increase. IS₁ shifts right (shock); LM₁ shifts left (CB money contraction); their intersection occurs at the original $Y_t$ but a higher $r_t$. In the AS–AD panel, the shock brings $AD$ out (red) and the money stock contraction brings it back to its original position (green)."
+#| fig-alt: "Six-panel CB-intervention diagram. IS-LM: IS shifts right (red), LM shifts left (dark-green), new equilibrium has same Y but higher r. AS-AD: AD shifts right (red) and monetary contraction shifts it back to equilibrium at original Y and P. Labor market, PF, 45-degree all show single unchanged equilibrium."
+#| fig-height: 8
+#| fig-width: 7
+
+cb_col <- "darkgreen"
+
+# ── Legend ────────────────────────────────────────────────────────────────────
+p_leg_c265 <- ggplot()+
+  annotate("segment",x=5,xend=22,y=85,yend=85,color="black",   linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=70,yend=70,color="red",     linewidth=1.2)+
+  annotate("segment",x=5,xend=22,y=55,yend=55,color=cb_col,    linewidth=1.2)+
+  annotate("text",x=26,y=85,label="Original",hjust=0,size=4)+
+  annotate("text",x=26,y=70,label="Shock",hjust=0,size=4)+
+  annotate("text",x=26,y=55,label="CB policy",        hjust=0,size=4)+
+  annotate("text",x=5, y=26,label="0: Original",    hjust=0,size=4)+
+  annotate("text",x=5, y=12,label="1,CB: post-shock with CB",   hjust=0,size=4)+
+  xlim(0,100)+ylim(0,100)+
+  theme_void()+theme(plot.background=element_rect(fill="#fdfcf8",color=NA))
+
+# ── IS-LM ─────────────────────────────────────────────────────────────────────
+p_islm_c265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=is264,    aes(x=Y,y=r),color="black", linewidth=lw264)+
+  geom_line(data=is1_265,  aes(x=Y,y=r),color="red",  linewidth=lw264)+
+  geom_line(data=lm0264,   aes(x=Y,y=r),color="black", linewidth=lw264)+
+  geom_line(data=lm1c_265, aes(x=Y,y=r),color=cb_col,  linewidth=lw264)+
+  # Drop lines — baseline
+  geom_segment(aes(x=Y0,xend=Y0,y=0,yend=r0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=Y0,y=r0,yend=r0),linetype="dotted",color="black",linewidth=0.5)+
+  # Drop lines — CB (same Y, higher r)
+  geom_segment(aes(x=Y1c,xend=Y1c,y=0,yend=r1c),linetype="dotted",color=cb_col,linewidth=0.5)+
+  geom_segment(aes(x=0,  xend=Y1c,y=r1c,yend=r1c),linetype="dotted",color=cb_col,linewidth=0.5)+
+  geom_point(aes(x=Y0, y=r0), size=1)+
+  geom_point(aes(x=Y1c,y=r1c),color=cb_col,size=1)+
+  annotate("text",x=12,y=75, label=expression(IS(A["0,t+1"])),size=4)+
+  annotate("text",x=40,y=95, label=expression(IS(A["1,t+1"])),size=4,color="red")+
+  annotate("text",x=85,y=70, label=expression(LM(M["0,t"])),size=4)+
+  annotate("text",x=50,y=84, label=expression(LM(M["1,t"])),size=4,color=cb_col)+
+  annotate("text",x=Y0,  y=-6,label=expression(Y["0,t"]*"="*Y["1,t"]^CB),size=4,vjust=1)+
+  annotate("text",x=-4,y=r0,      label=expression(r["0,t"]),size=4,hjust=1)+
+  annotate("text",x=-4,y=r1c+1.5, label=expression(r["1,t"]^CB),size=4,hjust=1,color=cb_col)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(r[t]))+th264
+
+# ── Labor market (unchanged) ──────────────────────────────────────────────────
+p_lab_c265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ns264,aes(x=N,y=w),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0,xend=N0,y=0,yend=w0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=N0,y=w0,yend=w0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=N0,y=w0),size=1)+
+  annotate("text",x=78,y=90,label=expression(N^s*(w[t])),size=4)+
+  annotate("text",x=N0,y=-6,label=expression(N["0,t"]*"="*N["1,t"]^CB),size=4,vjust=1)+
+  annotate("text",x=-6,y=w0,label=expression(w["0,t"]*"="*w["1,t"]^CB),size=3)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(w[t]))+th264
+
+# ── AS-AD (CB keeps AD = AD₀; dashed red = counterfactual no-CB) ─────────────
+p_asad_c265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=ad0264,  aes(x=Y,y=P),color=cb_col,linewidth=lw264)+
+  geom_line(data=ad1n_265,aes(x=Y,y=P),color="red",  linewidth=lw264)+
+  geom_line(data=asp264,  aes(x=Y,y=P),color="black",linewidth=lw264)+
+  geom_segment(aes(x=0, xend=Y0,y=P0,yend=P0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=Y0,xend=Y0,y=0, yend=100),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=Y0,y=P0),size=1, color=cb_col)+
+  annotate("text",x=5, y=20, label=expression(AS),size=4,hjust=0)+
+  annotate("text",x=65,y=15,label=expression(AD[0]*"="*AD[1]^CB),size=4)+
+  annotate("text",x=85,y=40,label=expression(AD[1]),size=4,color="red")+
+  annotate("text",x=Y0,y=-6,label=expression(Y["0,t"]*"="*Y["1,t"]^CB),size=4,vjust=1)+
+  annotate("text",x=-4,y=P0,label=expression(P["0,t"]*"="*P["1,t"]^CB),size=4,hjust=1)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(P[t]))+th264
+
+# ── Production function (unchanged) ──────────────────────────────────────────
+p_pf_c265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_line(data=pf264,aes(x=N,y=Y),color="black",linewidth=lw264)+
+  geom_segment(aes(x=N0,xend=N0, y=0,yend=100),linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=N0,xend=100,y=Y0,yend=Y0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=N0,y=Y0),size=1)+
+  annotate("text",x=70,y=80,label=expression(A[t]*F(K[t],N[t])),size=4,hjust=0)+
+  annotate("text",x=N0,y=-6,label=expression(N["0,t"]*"="*N["1,t"]^CB),size=4,vjust=1)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(N[t]),y=expression(Y[t]))+th264
+
+# ── 45-degree (unchanged) ─────────────────────────────────────────────────────
+p_45_c265 <- ggplot()+
+  geom_segment(aes(x=0,xend=100,y=0,yend=0),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=0,y=0,yend=100),color="black",linewidth=0.4)+
+  geom_segment(aes(x=0,xend=100,y=0,yend=100),color="black",linewidth=lw264)+
+  geom_segment(aes(x=Y0,xend=Y0,y=0,yend=100), linetype="dotted",color="black",linewidth=0.5)+
+  geom_segment(aes(x=0, xend=Y0,y=Y0,yend=Y0),linetype="dotted",color="black",linewidth=0.5)+
+  geom_point(aes(x=Y0,y=Y0),size=1)+
+  annotate("text",x=85,y=70,label=expression(Y[t]==Y[t]),size=4)+
+  annotate("text",x=Y0,y=-6,label=expression(Y["0,t"]*"="*Y["1,t"]^CB),size=4,vjust=1)+
+  coord_cartesian(xlim=c(-ax264,100),ylim=c(-ax264,100),clip="off")+
+  labs(x=expression(Y[t]),y=expression(Y[t]))+th264
+
+gridExtra::grid.arrange(p_leg_c265,p_islm_c265,p_lab_c265,
+                        p_asad_c265,p_pf_c265,p_45_c265,nrow=3,ncol=2)
+```
+
+---
+
+### Part (c) — Comparison
+
+**With exogenous money supply** (no CB intervention): $A_{t+1}\uparrow$ shifts IS and
+AD right $\Rightarrow$ Equilibrium: $Y_t\uparrow$, $P_t\uparrow$, $r_t\uparrow$,
+$N_t\uparrow$, $w_t\uparrow$.
+
+**With CB policy** (constant $w_t$ target): $Y_t$ does not change at all. The CB
+contracts $M_t$ to fully offset the AD shift. Output is completely insulated from the
+$A_{t+1}$ shock.
+
+The cost of this stabilization is a higher real interest rate $r_t$: both the
+IS shift (rightward) and the CB's LM contraction (leftward) push $r_t$ up at the given $Y_t$. Consumption falls (higher $r_t$) by the same absolute amount of the increase in investment (which is pulled up by $A_{t+1}$ and down by the interest-rate response).
+
+| Variable | Exogenous $M_t$ (no CB) | CB policy ($\Delta w_t=0$) |
+|----------|:---:|:---:|
+| $\Delta Y_t$ | $\uparrow$ | $0$ |
+| $\Delta P_t$ | $\uparrow$ | $0$ |
+| $\Delta r_t$ | $\uparrow$ | $\uparrow\uparrow$ (much larger) |
+| $\Delta N_t$ | $\uparrow$ | $0$ |
+| $\Delta w_t$ | $\downarrow$ | $0$ (by design) |
+| $\Delta C_t$ | ambiguous | $\downarrow$ ($r_t\uparrow$, $Y_t$ unchanged) |
+| $\Delta I_t$ | $\uparrow$ (net) | $\uparrow$ (net) |
+

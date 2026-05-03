@@ -1,21 +1,18 @@
 ---
 title: "Constrained optimization"
-author: "Pedro Amaral"
-date: "2025-01-13"
 output:
   html_document: default
-  pdf_document: default
-css: style.css
+css: ../style.css
 ---
 
 ```{r setup, include=FALSE,}
 knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
 ```
 
+## Pedro Amaral
 
-```{r, include=FALSE}
-setwd("C:/Users/pamaral/CSU Fullerton Dropbox/Pedro Amaral/CSUF/Teaching/Econ 503/Resources/R")
-```
+## 2026-01-14
+
 One common definition of economics is that it is the study of how to best allocate scarce resources. Technically this is a process of constrained optimization (e.g., how to maximize utility subject to a limited income).
 
 Consider the canonical example of a consumer that draws utility from the consumption of two goods $X$ and $Y$ according to a Cobb-Douglas utility function $U(X,Y)=X^{\alpha}Y^{1-\alpha},$ where $0<\alpha<1$. This consumer has an income of $m$ and the price of the two goods is $p_X$ and $p_Y,$ respectively. How much of each good should this consumer buy?
@@ -71,7 +68,7 @@ Y=(1-\alpha)\frac{m}{p_Y}=0.5\frac{1,000}{0.6}=833.(3)$
 
 ## Using R to solve constrained maximization problems
      
-One of the routines we can use to solve a constrained optimization problem in R is `solnl` (but there are others). See [here](https://www.rdocumentation.org/packages/NlcOptim/versions/0.6/topics/solnl).
+One of the routines we can use to solve a constrained optimization problem in R is `solnl` (but there are others). See [the documentation](https://www.rdocumentation.org/packages/NlcOptim/versions/0.6/topics/solnl).
 
 ```{r}
 # Call the library that contains the routine solnl

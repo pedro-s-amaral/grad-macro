@@ -1,0 +1,175 @@
+---
+title: "Cross-country income dispersion"
+output:
+  html_document: default
+css: ../style.css
+---
+
+```{r setup, include=FALSE,}
+knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
+```
+
+## Pedro Amaral
+
+## 2026-01-24
+
+## Cross-country income dispersion
+
+Let's compute cross-country income dispersion measures using the Penn World Table (PWT) database.
+
+Start by installing the package ``pwt10` that contains the Penn World Table 10 data base. The PWT is a database with information on relative levels of income, output, input, and productivity, covering 183 countries between 1950 and 2019. You can see more details at the [Groningen's center's website](https://www.rug.nl/ggdc/productivity/pwt/).
+
+
+```{r}
+#install.packages("pwt10")
+
+# call the library
+library(pwt10)
+
+# get the data base that's called pwt10.0
+data("pwt10.0")
+```
+
+From this data base lets construct a smaller one, with the following variables from 1950 to 2019:
+
+1. `country`: country names `
+2. `years`: years from 1950 to 2019 for each country
+3. `rgdpe`: expenditure-side real GDP at chained PPPs (in mil. 2017US$):  
+4. `pop`: population (in millions)
+
+```{r}
+# choose appropriate variables
+df1 <- pwt10.0[,c(2,3,5,7)]
+```
+
+Now construct GDP per capita and keep only the names, years, and GDP per capita
+
+```{r}
+df1$gdp_pc<-df1$rgdpe/df1$pop
+df1 <- df1[c(1,2,5)] 
+```
+
+Next, keep only 1970 and 2019
+
+```{r}
+# compute the number of years we have
+n_years=max(df1$year)-min(df1$year)+1
+
+# use the number of years and the number of total observations to compute the number of countries
+n_countries=nrow(df1)/n_years
+
+# use the dplyr library (to use the function filter)
+library(dplyr)
+
+# filter data only for 1970 and 2019
+df1<- df1 %>% filter(year==1970|year==2019)
+```
+
+Create a new data frame with 3 columns, the country name, GDP per capita in 1970, and GDP per capita in 2019, with each observation being a different country and filter out countries for which we are missing observations, or are outliers
+
+```{r}
+
+# create the data frame
+df2 <- data.frame(column1 = factor(n_countries), column2 = numeric(n_countries), column3 = numeric(n_countries))
+colnames(df2) <- c(c("isocode","GDP_pc_1970","GDP_pc_2019")) 
+
+# populate the name column
+df2$isocode<-unique(df1[,1])
+
+# populate the two GDP per capita columns 
+for (i in 1:n_countries) {
+  df2$GDP_pc_1970[i] = df1$gdp_pc[2*i-1]
+  df2$GDP_pc_2019[i] = df1$gdp_pc[2*i]
+}
+
+# filter out NAs 
+df2 <- df2 %>% filter(!is.na(df2$GDP_pc_1970)) 
+
+# exclude outliers that report over 90,000 GDP per capita in 1970
+df2 <- df2 %>% filter(df2$GDP_pc_1970<90000) 
+```
+
+Next, chart an histogram with the distribution of GDP per capita in 2019
+
+```{r, fig.alt ="A histogram of cross-country GDP per capita in 2019"}
+#install.packages("ggplot2")
+library(ggplot2)
+
+# histogram
+ggplot(df2, aes(x=GDP_pc_2019)) + 
+  geom_histogram(aes(y = ..density..),color="black", fill="white", binwidth = 5000)+
+  geom_density(lwd = 1, color = "blue",
+               fill = "blue", alpha = 0.25)+
+  labs(x="GDP per capita 2019")+
+  labs(alt="A histogram of cross-country GDP per capita in 2019")
+```
+
+We can also compute some measures of dispersion, like decile ratios (90/10 and 80/20)
+
+
+```{r}
+# compute deciles cutoff
+deciles_2019 <- quantile(df2$GDP_pc_2019, c(0.1, 0.2, 0.8, 0.9))
+deciles_1970 <- quantile(df2$GDP_pc_1970, c(0.1, 0.2, 0.8, 0.9))
+
+
+# compute means within groups
+bot_10_2019 <- mean(df2$GDP_pc_2019[df2$GDP_pc_2019 < deciles_2019[1]])
+bot_20_2019 <- mean(df2$GDP_pc_2019[df2$GDP_pc_2019 < deciles_2019[2]])
+
+bot_10_1970 <- mean(df2$GDP_pc_1970[df2$GDP_pc_1970 < deciles_1970[1]])
+bot_20_1970 <- mean(df2$GDP_pc_1970[df2$GDP_pc_1970 < deciles_1970[2]])
+
+top_80_2019 <- mean(df2$GDP_pc_2019[df2$GDP_pc_2019 > deciles_2019[3]])
+top_90_2019 <- mean(df2$GDP_pc_2019[df2$GDP_pc_2019 > deciles_2019[4]])
+
+top_80_1970 <- mean(df2$GDP_pc_1970[df2$GDP_pc_1970 > deciles_1970[3]])
+top_90_1970 <- mean(df2$GDP_pc_1970[df2$GDP_pc_1970 > deciles_1970[4]])
+
+
+# compute ratios
+t9_2019=top_90_2019/bot_10_2019
+t9_1970=top_90_1970/bot_10_1970
+
+
+t8_2019=top_80_2019/bot_20_2019
+t8_1970=top_80_1970/bot_20_1970
+
+
+sprintf("The 90 to 10 ratio has grown from %.2f in 1970 to %.2f in 2019.", t9_1970, t9_2019)
+
+sprintf("The 80 to 20 ratio has grown from %.2f in 1970 to %.2f in 2019.", t8_1970, t8_2019)
+
+
+```
+
+Let's see which countries did particularly well when it comes to growth (miracles) and particularly poorly (disasters)
+
+
+```{r, fig.alt ="A scatterplot of cross-country GDP per capita in 1970 vs 2019"}
+# identify miracles and disasters
+i_miracles=which(df2$GDP_pc_2019/df2$GDP_pc_1970>=9)
+i_disasters=which(df2$GDP_pc_2019/df2$GDP_pc_1970<1)
+
+# lines for miracles and disasters
+diag_x <- c(0,max(df2$GDP_pc_1970))
+diag_disaster <- diag_x
+diag_miracle <- 9*diag_x
+
+
+# chart
+ggplot(df2, aes(x=GDP_pc_1970, y=GDP_pc_2019)) + 
+  geom_point()+
+  geom_abline(intercept = 0, slope = 9, color = "blue", lwd=1,linetype = "dashed")+
+  geom_abline(intercept = 0, slope = 1, color = "red",lwd=1,linetype = "dashed")+
+  geom_text(x=df2$GDP_pc_1970[149]+1000, y=df2$GDP_pc_2019[149], label=df2$isocode[149],size=3)+
+  geom_text(x=df2$GDP_pc_1970[108], y=df2$GDP_pc_2019[108]-2000, label=df2$isocode[108],size=3)+
+  geom_text(x=df2$GDP_pc_1970[69], y=df2$GDP_pc_2019[69]+3000, label=df2$isocode[69],size=3)+
+  geom_text(x=df2$GDP_pc_1970[81]+1000, y=df2$GDP_pc_2019[81], label=df2$isocode[81],size=3)+
+  geom_text(x=df2$GDP_pc_1970[23]-1000, y=df2$GDP_pc_2019[23], label=df2$isocode[23],size=3)+
+  labs(x="GDP per capita in 1970") +
+    labs(y="GDP per capita in 2019")+
+  labs(alt="A scatterplot of cross-country GDP per capita in 1970 vs 2019")
+ 
+```
+

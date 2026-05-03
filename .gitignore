@@ -1,0 +1,13 @@
+.Rhistory
+.RData
+.Rproj.user/
+
+# Rendered Quarto/R Markdown outputs
+*.html
+*_files/
+*_cache/
+.quarto/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

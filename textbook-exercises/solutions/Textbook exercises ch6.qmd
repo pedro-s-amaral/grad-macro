@@ -1,0 +1,275 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 6"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 6.1 — Surprise Increase in Technology Growth (Augmented Solow)
+
+**Problem.** Suppose that you have a standard Solow model with a Cobb-Douglas production function and both labor augmenting productivity growth and population growth. The central equation of the model is:
+$$\hat{k}_{t+1} = \frac{1}{(1+z)(1+n)}\!\left[sA\hat{k}_t^{\alpha} + (1-\delta)\hat{k}_t\right]$$
+
+**(a)** Suppose that the economy initially sits in a steady state. Suppose that at time $t$ there is a surprise increase in $z$ that is expected to last forever. Use the main diagram to show how this will impact the steady state capital stock per efficiency unit of labor.
+
+**(b)** Plot out a diagram showing how the capital stock per efficiency unit of labor ought to react dynamically to the surprise increase in $z$.
+
+**(c)** Plot out diagrams showing how consumption and output per efficiency unit of labor will react in a dynamic sense to the surprise increase in $z$.
+
+**(d)** Do you think agents in the model are better off or worse off with a higher $z$? How does your answer square with what happens to the steady state values of capital, output, and consumption per efficiency unit of labor? How can you reconcile these findings with one another?
+
+---
+
+## Solution
+
+```{r ex61_setup}
+alpha <- 1/3;  s <- 0.20;  A <- 1;  delta <- 0.10
+z0 <- 0.01;    z1 <- 0.03;  n <- 0.01
+
+# Exact break-even factor: phi = (1+z)(1+n) - (1-delta)
+phi0 <- (1 + z0) * (1 + n) - (1 - delta)
+phi1 <- (1 + z1) * (1 + n) - (1 - delta)
+
+k_star0 <- (s * A / phi0)^(1 / (1 - alpha))
+k_star1 <- (s * A / phi1)^(1 / (1 - alpha))
+```
+
+### Part (a) — Effect on steady state
+
+At steady state $\hat{k}_{t+1} = \hat{k}_t = \hat{k}^*$, so:
+$$(1+z)(1+n)\,\hat{k}^* = sA\hat{k}^{*\alpha} + (1-\delta)\hat{k}^* \implies \hat{k}^{*\,1-\alpha} = \frac{sA}{(1+z)(1+n)-(1-\delta)}$$
+
+$$\hat{k}^* = \left(\frac{sA}{\phi}\right)^{\!\frac{1}{1-\alpha}}, \quad \phi \equiv (1+z)(1+n)-(1-\delta)$$
+
+When $z$ increases, $\phi$ increases, so $\hat{k}^*$ **falls**. Graphically, an increase in $z$ shifts the curve $\frac{sAf(\hat{k})+(1-\delta)\hat{k}}{(1+z)(1+n)}$ **downward**, yielding a lower intersection with the 45° line.
+
+```{r ex61a_diagram, fig.cap="A higher z shifts the central equation curve down, reducing the steady-state capital per efficiency unit from $\\hat{k}_0^*$ to $\\hat{k}_1^*$.", fig.alt="Augmented Solow diagram: high-z curve shifted down, crossing 45° line at lower k-hat* than low-z curve."}
+k_max <- 1.3 * k_star0
+k_seq <- seq(0.001, k_max, length.out = 400)
+
+tibble(k = k_seq,
+       `Low z (before)`  = (s*A*k_seq^alpha + (1-delta)*k_seq) / ((1+z0)*(1+n)),
+       `High z (after)`  = (s*A*k_seq^alpha + (1-delta)*k_seq) / ((1+z1)*(1+n))) |>
+  pivot_longer(-k, names_to = "scenario", values_to = "k_next") |>
+  ggplot(aes(x = k, y = k_next, color = scenario)) +
+  geom_line(linewidth = 1) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray40") +
+  geom_vline(xintercept = k_star0, linetype = "dotted", color = "firebrick") +
+  geom_vline(xintercept = k_star1, linetype = "dotted", color = "steelblue") +
+  annotate("text", x = k_star0 + 0.003, y = 0.01,
+           label = expression(hat(k)[0]^"*"), color = "firebrick", hjust = 0) +
+  annotate("text", x = k_star1 - 0.015, y = 0.01,
+           label = expression(hat(k)[1]^"*"), color = "steelblue", hjust = 0) +
+  scale_color_manual(values = c("steelblue", "firebrick")) +
+  labs(x = expression(hat(k)[t]), y = expression(hat(k)[t+1]),
+       title = "Augmented Solow diagram: surprise increase in z",
+       color = NULL)
+```
+
+### Parts (b) and (c) — Dynamic paths per efficiency unit
+
+At time $t_0$, capital per efficiency unit $\hat{k}_{t_0} = \hat{k}_0^*$ is **predetermined** (neither $K_{t_0}$ nor $Z_{t_0}$ jumps at $t_0$; the higher $z$ only affects $Z_{t_0+1}$ and beyond). Starting from period $t_0 + 1$, $\hat{k}$ falls gradually toward the new lower steady state $\hat{k}_1^*$.
+
+```{r ex61bc_dynamics, fig.cap="Dynamic responses per efficiency unit to a surprise increase in z at period 20.", fig.height=5.5, fig.alt="Three normalized series (k-hat, y-hat, c-hat) decline gradually after period-20 shock to a lower steady state."}
+T <- 100;  t0 <- 20
+
+k_hat <- numeric(T)
+k_hat[1:t0] <- k_star0
+for (t in t0:(T - 1)) {
+  z_t <- ifelse(t >= t0, z1, z0)
+  k_hat[t + 1] <- (s * A * k_hat[t]^alpha + (1 - delta) * k_hat[t]) /
+                  ((1 + z_t) * (1 + n))
+}
+
+y_hat <- A * k_hat^alpha
+c_hat <- (1 - s) * y_hat
+
+tibble(period = 1:T,
+       `Capital per eff. unit`      = k_hat / k_star0,
+       `Output per eff. unit`       = y_hat / (A * k_star0^alpha),
+       `Consumption per eff. unit`  = c_hat / ((1-s)*A*k_star0^alpha)) |>
+  pivot_longer(-period, names_to = "variable", values_to = "value") |>
+  ggplot(aes(x = period, y = value, color = variable)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = t0, linetype = "dashed", color = "gray50") +
+  annotate("text", x = t0 + 1, y = 1.01, label = "Shock", color = "gray40",
+           hjust = 0, size = 3.5) +
+  scale_color_manual(values = c("steelblue", "darkorange", "darkgreen")) +
+  labs(x = "Period",
+       y = "Value (normalized to pre-shock steady state = 1)",
+       title = "Per efficiency unit variables fall to a new, lower steady state",
+       color = NULL)
+```
+
+### Part (d) — Are agents better or worse off?
+
+**Agents are unambiguously better off** with a higher $z$. The apparent paradox — that $\hat{k}^*$, $\hat{y}^*$, and $\hat{c}^*$ all *fall* — is resolved by noting that per-efficiency-unit variables are divided by technology $Z_t$, which now grows faster. What matters for welfare is **per-worker** consumption:
+$$c_t^{pw} = Z_t\,\hat{c}_t, \qquad Z_t \text{ grows at rate } z \text{ in steady state.}$$
+
+With higher $z$, even though $\hat{c}^*$ is lower, $Z_t$ grows so much faster that $c_t^{pw}$ eventually surpasses the path it would have taken under the old $z$.
+
+```{r ex61d_perworker, fig.cap="Per-worker consumption: higher z eventually dominates despite the fall in efficiency-unit consumption.", fig.alt="Per-worker consumption: high-z path dips below counterfactual at shock, then surpasses it as faster growth dominates."}
+# Reconstruct technology index Z_t (normalized to Z_1 = 1)
+Z <- numeric(T);  Z[1] <- 1
+for (t in 1:(T - 1))  Z[t + 1] <- (1 + ifelse(t >= t0, z1, z0)) * Z[t]
+
+# Counterfactual: z stays at z0 forever
+k_hat_cf <- rep(k_star0, T)
+Z_cf <- cumprod(c(1, rep(1 + z0, T - 1)))
+
+tibble(period = 1:T,
+       `High z (actual)`       = Z    * c_hat,
+       `Low z (counterfactual)` = Z_cf * (1 - s) * A * k_hat_cf^alpha) |>
+  pivot_longer(-period, names_to = "scenario", values_to = "c_pw") |>
+  ggplot(aes(x = period, y = c_pw, color = scenario)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = t0, linetype = "dashed", color = "gray50") +
+  scale_color_manual(values = c("firebrick", "steelblue")) +
+  labs(x = "Period", y = expression("Per-worker consumption " ~ c[t]),
+       title = "Per-worker consumption is higher under the high-z scenario",
+       subtitle = "Higher technology growth eventually dominates the lower growth steady state",
+       color = NULL)
+```
+
+**Reconciliation.** The fall in $\hat{c}^*$ simply reflects the fact that each worker is now "enhanced" by a faster-growing $Z_t$. Efficiency units are a normalization device that removes trend growth; a lower ratio $c/Z$ is perfectly consistent with a higher and faster-growing level of $c$. The apparent paradox vanishes once we work with per-worker (welfare-relevant) variables.
+
+---
+
+# Exercise 6.2 — Golden Rule in the Augmented Solow Model
+
+**Problem.** Consider the augmented Solow model with Cobb-Douglas production. The central
+equation of motion for capital per efficiency unit is
+
+$$\hat{k}_{t+1} = \frac{1}{(1+z)(1+n)}\!\left[sA\hat{k}_t^{\alpha} + (1-\delta)\hat{k}_t\right]$$
+
+and steady-state consumption per efficiency unit is $\hat{c}^* = (1-s)A(\hat{k}^*)^{\alpha}$.
+
+**(a)** Derive the steady-state capital per efficiency unit $\hat{k}^*$ as a function of the
+parameters $s$, $A$, $\alpha$, $\delta$, $z$, and $n$.
+
+**(b)** Using your answer to (a), derive steady-state consumption per efficiency unit
+$\hat{c}^*$ as a function of the same parameters.
+
+**(c)** Find the saving rate $s$ that maximizes $\hat{c}^*$. Does the Golden Rule saving rate
+depend on $z$ or $n$?
+
+---
+
+## Solution
+
+### Part (a) — Steady-state capital per efficiency unit
+
+At steady state $\hat{k}_{t+1} = \hat{k}_t = \hat{k}^*$, so
+
+$$\hat{k}^* = \frac{sA(\hat{k}^*)^{\alpha} + (1-\delta)\hat{k}^*}{(1+z)(1+n)}.$$
+
+Multiply both sides by $(1+z)(1+n)$ and collect $\hat{k}^*$ terms:
+
+$$\hat{k}^*\!\left[(1+z)(1+n) - (1-\delta)\right] = sA(\hat{k}^*)^{\alpha}.$$
+
+Define $\phi \equiv (1+z)(1+n)-(1-\delta)$. Then
+
+$$\phi\,\hat{k}^* = sA(\hat{k}^*)^{\alpha}$$
+
+$$(\hat{k}^*)^{1-\alpha} = \frac{sA}{\phi}$$
+
+$$\hat{k}^* = \left(\frac{sA}{\phi}\right)^{\!\frac{1}{1-\alpha}}$$
+
+Both $z$ and $n$ enter through $\phi$: higher technology growth or population growth raises
+$\phi$ and lowers $\hat{k}^*$.
+
+### Part (b) — Steady-state consumption per efficiency unit
+
+Substitute $\hat{k}^*$ into $\hat{c}^* = (1-s)A(\hat{k}^*)^{\alpha}$:
+
+$$\hat{c}^* = (1-s)A\!\left(\frac{sA}{\phi}\right)^{\!\frac{\alpha}{1-\alpha}}$$
+
+$$\hat{c}^* = (1-s)A\left(\frac{sA}{\phi}\right)^{\!\frac{\alpha}{1-\alpha}}$$
+
+### Part (c) — Golden Rule saving rate
+
+Maximize $\hat{c}^*(s)$ with respect to $s$. It is convenient to take logarithms:
+
+$$\ln\hat{c}^* = \ln(1-s) + \ln A + \frac{\alpha}{1-\alpha}\!\left[\ln s + \ln A - \ln\phi\right].$$
+
+Differentiating with respect to $s$ and setting to zero:
+
+$$\frac{d\ln\hat{c}^*}{ds} = -\frac{1}{1-s} + \frac{\alpha}{(1-\alpha)s} = 0$$
+
+$$\frac{\alpha}{(1-\alpha)s} = \frac{1}{1-s}$$
+
+$$\alpha(1-s) = (1-\alpha)s$$
+
+$$\alpha - \alpha s = s - \alpha s$$
+
+$$\alpha = s$$
+
+$$s^{GR} = \alpha$$
+
+**The Golden Rule saving rate equals the capital share $\alpha$ and is independent of both
+the technology growth rate $z$ and the population growth rate $n$.** Intuitively, at the
+optimum the marginal product of capital (net of depreciation and trend growth) equals the
+"capital maintenance" cost, and that condition pins down $s$ independently of trend growth.
+
+```{r ex62-golden-rule, fig.cap="Steady-state consumption per efficiency unit as a function of the saving rate", fig.alt="Hump-shaped c-hat* vs s curve for augmented Solow, peaking at s = alpha = 1/3 (red dashed line)."}
+alpha <- 1/3;  A <- 1;  delta <- 0.10
+z <- 0.02;     n <- 0.01
+phi <- (1 + z) * (1 + n) - (1 - delta)
+
+s_grid <- seq(0.01, 0.99, length.out = 300)
+k_star <- (s_grid * A / phi)^(1 / (1 - alpha))
+c_star <- (1 - s_grid) * A * k_star^alpha
+
+df62 <- data.frame(s = s_grid, c_hat = c_star)
+s_gr <- alpha  # Golden Rule
+
+ggplot(df62, aes(x = s, y = c_hat)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_vline(xintercept = s_gr, linetype = "dashed", color = "firebrick", linewidth = 0.8) +
+  annotate("text", x = s_gr + 0.03, y = max(c_star) * 0.5,
+           label = expression(s^GR == alpha),
+           color = "firebrick", size = 4.5, hjust = 0) +
+  labs(x = "Saving rate s",
+       y = expression(hat(c)^"*"),
+       title = expression(paste("Steady-state consumption per efficiency unit — maximum at ", s^GR == alpha)),
+       subtitle = bquote("Parameters:" ~ alpha == .(sprintf("%.2f", alpha)) * "," ~
+                         delta == .(sprintf("%.2f", delta)) * "," ~
+                         z == .(sprintf("%.2f", z)) * "," ~
+                         n == .(sprintf("%.2f", n))))
+```
+
+**Comparison with the basic Solow model.** In the basic model (no technology growth) the
+Golden Rule is also $s^{GR} = \alpha$ — see Exercise 5.4. Adding labor-augmenting
+technology growth and population growth does not change the optimal saving rate because
+both $z$ and $n$ affect only the "maintenance cost" $\phi$ in the denominator of
+$\hat{k}^*$, which cancels out when the first-order condition is taken.

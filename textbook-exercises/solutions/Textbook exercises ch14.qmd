@@ -1,0 +1,96 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 14"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 14.1 — Money Demand and the Quantity Equation
+
+**Problem.**
+
+In the basic model with money, the money demand curve is implicitly defined by:
+
+$$\phi'\!\left(\frac{M_t}{P_t}\right) = \frac{i_t}{1+i_t}\,u'(C_t)$$
+
+**(a)** Suppose $\phi\!\left(\frac{M_t}{P_t}\right) = \theta\ln\frac{M_t}{P_t}$ and $u(C_t)=\ln C_t$, where $\theta>0$. Write the money demand curve using these functional forms.
+
+The "quantity equation" is the identity $M_t V_t = P_t Y_t$, where $V_t \equiv P_t Y_t / M_t$ is velocity — the number of times the average unit of money is used in transactions.
+
+**(b)** Take the money demand expression from (a) and assume $C_t = Y_t$. Use this to derive the quantity equation. What must $V_t$ equal in terms of the model's parameters?
+
+**(c)** What is the relationship between the nominal interest rate $i_t$ and velocity $V_t$? Take the derivative of $V_t$ with respect to $i_t$ and determine its sign. Given the conceptual definition of velocity, explain why this sign does or does not make sense.
+
+---
+
+## Solution
+
+### Part (a)
+
+With $\phi(m) = \theta\ln m$, the derivative is $\phi'(m) = \theta/m$, so:
+
+$$\phi'\!\left(\frac{M_t}{P_t}\right) = \frac{\theta\,P_t}{M_t}$$
+
+With $u(C_t)=\ln C_t$, we have $u'(C_t)=1/C_t$. Substituting into the money demand condition:
+
+$$\frac{\theta\,P_t}{M_t} = \frac{i_t}{1+i_t}\cdot\frac{1}{C_t}$$
+
+Solving for real money balances $M_t/P_t$:
+
+$$\frac{M_t}{P_t} = \frac{\theta(1+i_t)}{i_t}\,C_t$$
+
+Money demand is increasing in consumption (a scale variable for transaction needs) and decreasing in the nominal interest rate (the opportunity cost of holding money rather than bonds).
+
+### Part (b)
+
+Substitute $C_t = Y_t$ into the money demand expression:
+
+$$\frac{M_t}{P_t} = \frac{\theta(1+i_t)}{i_t}\,Y_t$$
+
+Multiply both sides by $P_t$:
+
+$$M_t = \frac{\theta(1+i_t)}{i_t}\,P_t Y_t$$
+
+Rearranging to the form $M_t V_t = P_t Y_t$:
+
+$$P_t Y_t = \underbrace{\frac{i_t}{\theta(1+i_t)}}_{V_t} M_t$$
+
+$$V_t = \frac{i_t}{\theta(1+i_t)}$$
+
+### Part (c)
+
+Differentiating $V_t = \dfrac{i_t}{\theta(1+i_t)}$ with respect to $i_t$:
+
+$$\frac{dV_t}{di_t} = \frac{1}{\theta}\cdot\frac{(1+i_t)\cdot 1 - i_t\cdot 1}{(1+i_t)^2} = \frac{1}{\theta(1+i_t)^2} > 0$$
+
+Velocity is **increasing** in the nominal interest rate. This makes sense. When $i_t$ rises, the opportunity cost of holding money increases, so households economize on money balances — they hold less $M_t/P_t$ relative to income. Because velocity is defined as $V_t = P_t Y_t/M_t$, a smaller money stock relative to nominal GDP means each dollar must circulate more frequently. Hence higher $i_t \Rightarrow$ lower money demand $\Rightarrow$ higher velocity.

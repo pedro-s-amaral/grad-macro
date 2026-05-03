@@ -1,0 +1,727 @@
+---
+title: "ECON 503 Textbook Exercises — Chapter 11"
+author: "Pedro Amaral"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: show
+    css: style_C.css
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+
+# Custom ggplot theme matching the document CSS (Option C: warm off-white + navy)
+theme_econ503 <- theme_minimal(base_size = 14, base_family = "serif") +
+  theme(
+    plot.background   = element_rect(fill = "#fdfcf8", color = NA),
+    panel.background  = element_rect(fill = "#fdfcf8", color = NA),
+    panel.grid.major  = element_line(color = "#e2ddd4", linewidth = 0.3),
+    panel.grid.minor  = element_line(color = "#eeeae0", linewidth = 0.2),
+    plot.title        = element_text(color = "#1a3a6b", face = "bold", size = 16),
+    axis.title        = element_text(color = "#2c5282"),
+    axis.text         = element_text(color = "#4a5568"),
+    legend.background = element_rect(fill = "#fdfcf8", color = NA),
+    legend.text       = element_text(color = "#4a5568"),
+    legend.position   = "bottom"
+  )
+
+# Set as default theme for all plots
+theme_set(theme_econ503)
+```
+
+---
+
+# Exercise 11.1 — General Equilibrium in an Endowment Economy
+
+**Problem.** The economy is populated by many identical price-taking agents who live for
+two periods ($t$ and $t+1$) and solve a standard consumption-savings problem, yielding:
+$$C_t = C(Y_t,\, Y_{t+1},\, r_t)$$
+
+**(a)** Signs of the partial derivatives? Intuition?
+
+**(b)** $Y_t$ rises, $Y_{t+1}$ and $r_t$ held fixed — how does the consumer adjust $C_t$ and $S_t$?
+
+**(c)** $Y_{t+1}$ rises, $Y_t$ and $r_t$ held fixed — how does the consumer adjust $C_t$ and $S_t$?
+
+**(d)** What is the generic definition of a competitive equilibrium?
+
+**(e)** Define the IS curve and graphically derive it.
+
+**(f)** Graph the $Y^s$ curve with the IS curve and show how the equilibrium $r_t$ is determined.
+
+**(g)** Suppose $Y_t$ increases. Show how this affects the equilibrium $r_t$. Explain the intuition.
+
+**(h)** Meteorologists in period $t$ anticipate a hurricane in $t+1$ that will wipe out most of the fruit. How is this forecast reflected in $r_t$? Show in the IS–$Y^s$ graph and explain.
+
+**(i)** Generalizing from (h): what might the equilibrium $r_t$ tell you about expectations of $Y_{t+1}$ relative to $Y_t$?
+
+---
+
+## Solution
+
+### Part (a) — Signs of the partial derivatives
+
+Let's use a log utility as an example (but the derivative signs would generalize to any utlity with the assumptions we discussed in class), $C_t = W/(1+\beta)$ where
+$W = Y_t + Y_{t+1}/(1+r_t)$:
+
+$$\frac{\partial C_t}{\partial Y_t} = \frac{1}{1+\beta} > 0$$
+
+**Intuition:** Higher current income raises permanent income (wealth), so the consumer
+spends more today (but less than the full increase — MPC $<1$ — due to smoothing).
+
+$$\frac{\partial C_t}{\partial Y_{t+1}} = \frac{1}{(1+\beta)(1+r_t)} > 0$$
+
+**Intuition:** Higher future income raises permanent income; the consumer smooths by
+consuming more today (borrowing against future income).
+
+$$\frac{\partial C_t}{\partial r_t} < 0$$
+
+**Intuition:** A higher $r_t$ makes future consumption cheaper relative to current
+consumption (substitution effect → save more today) and reduces the present value of
+future income (initial endowment wealth effect → consume less today). With log utility both effects reduce
+$C_t$. In general the sign can be ambiguous, we will assume the substitution effect dominates and
+$\partial C_t/\partial r_t < 0$.
+
+### Part (b) — Increase in $Y_t$
+
+Higher $Y_t$ → $C_t$ increases by $\Delta C_t = \Delta Y_t/(1+\beta) < \Delta Y_t$.
+Saving $S_t = Y_t - C_t$ **rises** because $\Delta Y_t > \Delta C_t$ (MPC $<1$).
+
+**Intuition:** The consumer smooths the windfall across both periods, consuming some today
+and saving the rest to finance higher $C_{t+1}$.
+
+### Part (c) — Increase in $Y_{t+1}$
+
+Higher $Y_{t+1}$ (at fixed $Y_t$, $r_t$) → $C_t$ increases by
+$\Delta C_t = \Delta Y_{t+1}/[(1+\beta)(1+r_t)] > 0$.
+Saving $S_t = Y_t - C_t$ **falls** (consumer dissaves or borrows more).
+
+**Intuition:** Anticipating higher future income, the consumer borrows against it to
+smooth consumption — raising $C_t$ even though $Y_t$ is unchanged.
+
+### Part (d) — Competitive equilibrium
+
+A **competitive equilibrium** is a set of prices and quantities such that:
+
+1. **Households optimize** — taking prices (here: $r_t$) as given, each household
+   chooses $C_t$, $C_{t+1}$, $S_t$ to maximize lifetime utility subject to their budget
+   constraints.
+2. **All markets clear** — supply equals demand in every market at every date.
+
+In this endowment economy there are only two markets: the oods market and the the bond (credit) market. Because all
+households are identical, they cannot all borrow or all lend simultaneously; in
+equilibrium aggregate saving must equal zero: $S_t = 0$, or equivalently $Y_t = C_t$. By Walras' Law  -- *if $n-1$ markets clear the $n$th market must also clear* -- the goods market must also clear.
+
+### Part (e) — The IS curve
+
+The **IS curve** is the locus of $(Y_t,\, r_t)$ pairs for which the goods market clears
+and households behave optimally:
+$$Y_t = C^d(Y_t,\, Y_{t+1},\, r_t)$$
+
+**Graphical derivation via the Keynesian cross.** For a given $r_t$ the desired
+expenditure $Y^d = C^d(Y_t, Y_{t+1}, r_t)$ is an increasing function of $Y_t$ with
+slope MPC $\in (0,1)$. Equilibrium occurs where $Y^d = Y_t$ (the 45° line). A lower
+$r_t$ raises autonomous expenditure, shifting the expenditure
+line up and yielding a higher equilibrium $Y_t^*$. Plotting the resulting pairs
+$(Y_t^*, r_t)$ traces out the IS curve — which slopes **downward**.
+
+```{r ex111_kc, fig.cap="Keynesian cross (top) and IS curve (bottom) sharing a common $Y_t$ axis. Lower $r_t$ shifts the expenditure line up, raising equilibrium $Y_t^*$. Each $(Y_t^*, r_t)$ pair is one point on the downward-sloping IS curve.", fig.alt="Two stacked panels. Top: Keynesian cross with 45-degree line and two expenditure lines intersecting it at Y=80 and Y=110. Bottom: downward-sloping IS curve through those two points.", fig.height=6}
+mpc    <- 0.5
+A_hi   <- 40;  Y_eq_hi <- A_hi / (1 - mpc)   # 80
+A_lo   <- 55;  Y_eq_lo <- A_lo / (1 - mpc)   # 110
+r_hi   <- 0.10   # interest rate paired with Y_eq_hi
+r_lo   <- 0.03   # interest rate paired with Y_eq_lo
+Y_range <- c(60, 130)
+
+# IS line extended slightly beyond the two equilibria
+is_slope <- (r_lo - r_hi) / (Y_eq_lo - Y_eq_hi)
+is_ext   <- tibble(Y = c(68, 122),
+                   r = c(r_hi + (68  - Y_eq_hi) * is_slope,
+                         r_lo + (122 - Y_eq_lo) * is_slope))
+
+# ── Top panel: Keynesian cross ────────────────────────────────────────────────
+p_top <- ggplot() +
+  geom_abline(slope = 1, intercept = 0, color = "gray40",
+              linetype = "dashed", linewidth = 0.8) +
+  geom_abline(slope = mpc, intercept = A_hi, color = "firebrick",  linewidth = 1) +
+  geom_abline(slope = mpc, intercept = A_lo, color = "steelblue", linewidth = 1) +
+  geom_segment(aes(x = Y_eq_hi, xend = Y_eq_hi, y = 60, yend = Y_eq_hi),
+               linetype = "dotted", color = "firebrick") +
+  geom_segment(aes(x = Y_eq_lo, xend = Y_eq_lo, y = 60, yend = Y_eq_lo),
+               linetype = "dotted", color = "steelblue") +
+  geom_point(aes(x = c(Y_eq_hi, Y_eq_lo), y = c(Y_eq_hi, Y_eq_lo)),
+             color = c("firebrick", "steelblue"), size = 3) +
+  annotate("text", x = 125, y = 125 * mpc + A_hi - 5,
+           label = expression(paste(Y^d, " (high ", r[t], ")")),
+           color = "firebrick", size = 4) +
+  annotate("text", x = 125, y = 125 * mpc + A_lo - 2,
+           label = expression(paste(Y^d, " (low ",  r[t], ")")),
+           color = "steelblue", hjust = 0, size = 4) +
+  annotate("text", x = Y_eq_hi - 1, y = 63,
+           label = expression(Y[t]^"*"~"= 80"),
+           color = "firebrick",  hjust = 1, size = 4) +
+  annotate("text", x = Y_eq_lo + 1, y = 63,
+           label = expression(Y[t]^"*"~"= 110"),
+           color = "steelblue", hjust = 0, size = 4) +
+  coord_cartesian(xlim = Y_range, ylim = Y_range) +
+  labs(x = NULL, y = expression(Y[t]^d),
+       title = "Keynesian cross derivation of the IS curve",
+       subtitle = bquote("Equilibrium:" ~ Y[t]^d == Y[t] ~
+                         ":each (" * Y[t]^"*" * "," ~ r[t] *
+                         ") pair maps to one point on the IS curve below")) +
+  theme(axis.text.x  = element_blank(),
+        axis.ticks.x = element_blank())
+
+# ── Bottom panel: IS curve ────────────────────────────────────────────────────
+p_bot <- ggplot() +
+  geom_line(data = is_ext, aes(x = Y, y = r),
+            color = "darkgreen", linewidth = 1.2) +
+  geom_point(aes(x = c(Y_eq_hi, Y_eq_lo), y = c(r_hi, r_lo)),
+             color = c("firebrick", "steelblue"), size = 3) +
+  # Vertical reference lines to x-axis
+  geom_segment(aes(x = Y_eq_hi, xend = Y_eq_hi, y = 0, yend = r_hi+0.1),
+               linetype = "dotted", color = "firebrick") +
+  geom_segment(aes(x = Y_eq_lo, xend = Y_eq_lo, y = 0, yend = r_hi+0.1),
+               linetype = "dotted", color = "steelblue") +
+  # Horizontal reference lines to y-axis
+  geom_segment(aes(x = 60, xend = Y_eq_hi, y = r_hi, yend = r_hi),
+               linetype = "dotted", color = "firebrick") +
+  geom_segment(aes(x = 60, xend = Y_eq_lo, y = r_lo, yend = r_lo),
+               linetype = "dotted", color = "steelblue") +
+  annotate("text", x = 95, y = (r_hi + r_lo) / 2 + 0.02,
+           label = "IS", color = "darkgreen", fontface = "bold", size = 4.5) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     breaks = c(r_lo, r_hi)) +
+  coord_cartesian(xlim = Y_range, ylim = c(0, 0.13)) +
+  labs(x = expression(Y[t]), y = expression(r[t]))
+
+# ── Align widths so panels share x-axis, then arrange ────────────────────────
+p_top_g <- ggplotGrob(p_top)
+p_bot_g <- ggplotGrob(p_bot)
+p_top_g$widths <- p_bot_g$widths <- grid::unit.pmax(p_top_g$widths, p_bot_g$widths)
+gridExtra::grid.arrange(p_top_g, p_bot_g, nrow = 2, heights = c(2, 1))
+```
+
+### Parts (f) and (g): IS – $Y^s$ diagram and effect of higher $Y_t$
+
+The **$Y^s$ curve** is a vertical line at the endowment $Y_t = \bar{Y}$ — income is
+exogenous and independent of $r_t$. The equilibrium real interest rate $r_t^*$ is
+determined by the intersection of the downward-sloping IS curve with the vertical $Y^s$ curve.
+
+**Effect of an increase in $Y_t$ (part g).** The $Y^s$ curve shifts **rightward** (higher
+endowment); the IS curve is unchanged. The new intersection lies to the right and below
+the old one: $r_t^*$ **falls**.
+
+**Intuition:** With higher income, households want to save more (smooth the windfall into
+the future). But in a closed economy everyone is identical — aggregate saving cannot be
+positive. The interest rate must fall to make saving less attractive and restore the
+equilibrium $S_t = 0$.
+
+```{r ex111_is, fig.cap="IS–$Y^s$ diagram. An increase in the endowment shifts $Y^s$ rightward ($Y^s_1$ to $Y^s_2$); moving along the downward-sloping IS curve, the equilibrium interest rate falls from $r^*_1$ to $r^*_2$.", fig.alt="Downward sloping IS curve with two vertical supply curves (Ys). Right shift of Ys moves equilibrium down the IS curve to a lower interest rate."}
+# IS curve: two points define the schematic line
+is_pts <- tibble(Y = c(75, 120), r = c(0.14, 0.02))
+
+# Equilibria for two Y* values
+Y_star1 <- 90;  r_star1 <- 0.14 + (Y_star1 - 75) * (0.02 - 0.14) / (120 - 75)
+Y_star2 <- 108; r_star2 <- 0.14 + (Y_star2 - 75) * (0.02 - 0.14) / (120 - 75)
+
+ggplot() +
+  geom_line(data = is_pts, aes(x = Y, y = r),
+            color = "steelblue", linewidth = 1.2) +
+  # Y* lines
+  geom_vline(xintercept = Y_star1, color = "darkgreen",  linewidth = 1, linetype = "solid") +
+  geom_vline(xintercept = Y_star2, color = "darkorange", linewidth = 1, linetype = "solid") +
+  # Equilibrium points
+  geom_point(aes(x = c(Y_star1, Y_star2), y = c(r_star1, r_star2)),
+             color = c("darkgreen", "darkorange"), size = 3) +
+  # Horizontal dashed lines to y-axis
+  geom_segment(aes(x = 75, xend = Y_star1, y = r_star1, yend = r_star1),
+               linetype = "dotted", color = "darkgreen") +
+  geom_segment(aes(x = 75, xend = Y_star2, y = r_star2, yend = r_star2),
+               linetype = "dotted", color = "darkorange") +
+  # Labels
+  annotate("text", x = 116, y = 0.042, label = "IS",
+           color = "steelblue", size = 4, fontface = "bold", hjust = 0) +
+  annotate("text", x = Y_star1 + 0.5, y = 0.145,
+           label = expression(Y[1]^"s"), color = "darkgreen",  hjust = 0, size = 3.5) +
+  annotate("text", x = Y_star2 + 0.5, y = 0.145,
+           label = expression(Y[2]^"s"), color = "darkorange", hjust = 0, size = 3.5) +
+  annotate("text", x = 76, y = r_star1 + 0.005,
+           label = expression(r[1]^"*"), color = "darkgreen",  hjust = 0, size = 3.2) +
+  annotate("text", x = 76, y = r_star2 + 0.005,
+           label = expression(r[2]^"*"), color = "darkorange", hjust = 0, size = 3.2) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(x = expression(Y[t]), y = expression(r[t]),
+       title = expression(paste("IS–", Y^"s", " diagram: increase in ", Y[t],
+                                " lowers equilibrium ", r[t])),
+       subtitle = expression(paste(Y^"s", " shifts right; IS unchanged; ",
+                                   r[t]^"*", " falls")))
+```
+
+### Part (h) — Hurricane in $t+1$
+
+The forecast **reduces expected $Y_{t+1}$**. From the IS condition
+$Y_t = C^d(Y_t, Y_{t+1}, r_t)$: lower $Y_{t+1}$ reduces $C^d$ at any given $(Y_t, r_t)$
+— households feel poorer and cut current consumption. To restore goods market clearing
+at the same $\bar{Y}_t$, $r_t$ must fall (to stimulate $C^d$ back up). The IS curve
+shifts **leftward/downward** — each level of $Y_t$ is now consistent with a lower $r_t$.
+The $Y^s$ curve is unchanged. The new equilibrium has the same $Y_t$ but a **lower
+$r_t^*$**.
+
+**Intuition.** Anticipating scarce fruit next period, households try to save today (reduce
+current consumption) to transfer resources to $t+1$. But in equilibrium all agents are
+identical — they cannot collectively save. The interest rate must fall to make saving less
+attractive and discourage this behavior, restoring $S_t = 0$.
+
+```{r ex111_hurricane, fig.cap="Hurricane forecast reduces expected $Y_{t+1}$, shifting IS left. $Y^s$ is unchanged; equilibrium $r_t$ falls from $r_1^*$ to $r_2^*$.", fig.alt="Two downward sloping IS curves: original and shifted left after hurricane. Same vertical Ys supply curve; new equilibrium has lower interest rate."}
+Y_star <- 90   # endowment unchanged
+
+# Baseline IS
+is_base <- tibble(Y = c(75, 120), r = c(0.14, 0.02), scenario = "IS (baseline)")
+r_base  <- 0.14 + (Y_star - 75) * (0.02 - 0.14) / (120 - 75)
+
+# Post-hurricane IS: shifts down by 0.04 at every Y
+shift <- 0.045
+is_hurr <- tibble(Y = c(75, 120), r = c(0.14 - shift, 0.02 - shift),
+                  scenario = "IS (after hurricane)")
+r_hurr  <- r_base - shift
+
+ggplot() +
+  geom_line(data = bind_rows(is_base, is_hurr),
+            aes(x = Y, y = r, color = scenario), linewidth = 1.2) +
+  geom_vline(xintercept = Y_star, color = "darkgreen", linewidth = 1) +
+  geom_point(aes(x = c(Y_star, Y_star), y = c(r_base, r_hurr)),
+             color = c("firebrick", "steelblue"), size = 3) +
+  geom_segment(aes(x = 75, xend = Y_star, y = r_base, yend = r_base),
+               linetype = "dotted", color = "firebrick") +
+  geom_segment(aes(x = 75, xend = Y_star, y = r_hurr, yend = r_hurr),
+               linetype = "dotted", color = "steelblue") +
+  annotate("text", x = Y_star + 0.5, y = 0.145,
+           label = expression(Y^"s"), color = "darkgreen", hjust = 0, size = 3.5) +
+  annotate("text", x = 76, y = r_base + 0.005,
+           label = expression(r[1]^"*"), color = "firebrick", hjust = 0, size = 3.2) +
+  annotate("text", x = 76, y = r_hurr + 0.005,
+           label = expression(r[2]^"*"), color = "steelblue", hjust = 0, size = 3.2) +
+  scale_color_manual(values = c("steelblue", "firebrick")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(x = expression(Y[t]), y = expression(r[t]),
+       title = expression(paste("Hurricane forecast: IS shifts left, ", r[t]^"*", " falls")),
+       subtitle = expression(paste("Lower ", Y[t+1]^d, " → less desired ", C[t],
+                                   " → IS shifts down → lower ", r[t]^"*")),
+       color = NULL)
+```
+
+### Part (i) — What does $r_t$ tell us about expected growth?
+
+With log utility, imposing goods market clearing ($C_t = Y_t$, $C_{t+1} = Y_{t+1}$) into
+the Euler equation $C_{t+1} = \beta(1+r_t)C_t$ gives:
+$$Y_{t+1} = \beta(1+r_t)\,Y_t \implies 1 + r_t = \frac{Y_{t+1}}{\beta\, Y_t}$$
+
+The equilibrium interest rate is a **sufficient statistic for expected income growth**:
+
+- $r_t$ **high** $\Leftrightarrow$ $Y_{t+1}$ large relative to $Y_t$ (expected growth):
+  households want to borrow against the good times ahead; $r_t$ must be high to deter
+  excess borrowing.
+- $r_t$ **low** $\Leftrightarrow$ $Y_{t+1}$ small relative to $Y_t$ (expected contraction):
+  households want to save to smooth the coming shortfall; $r_t$ must be low to deter
+  excess saving.
+
+In general, $r_t$ moves one-for-one with the expected growth rate of the economy. This is
+a key insight of intertemporal macroeconomics: **the real interest rate summarizes the
+economy's expectations about future income relative to current income**.
+
+---
+
+# Exercise 11.2 — Equilibrium with Linear Utility
+
+**Problem.** The representative household has lifetime utility $U = C_t + \beta C_{t+1}$
+and faces the intertemporal budget constraint:
+$$C_t + \frac{C_{t+1}}{1+r_t} = Y_t + \frac{Y_{t+1}}{1+r_t} \equiv W$$
+
+**(a)** Derive the (piecewise) consumption function.
+
+**(b)** Derive the saving function $S_t = Y_t - C_t$.
+
+**(c)** Solve for the equilibrium value of $r_t$.
+
+**(d)** How does $r_t$ react to changes in $Y_t$ and $Y_{t+1}$? Economic intuition?
+
+**(e)** Does $S_{i,t} = 0$ for every individual $i$? How does this differ from the
+standard (concave utility) case?
+
+---
+
+## Solution
+
+### Part (a) — Consumption function
+
+Substitute $C_{t+1} = (1+r_t)(W - C_t)$ from the IBC into the objective:
+$$U = C_t + \beta(1+r_t)(W - C_t) = \underbrace{\beta(1+r_t)W}_{\text{constant}} + \underbrace{\bigl[1 - \beta(1+r_t)\bigr]}_{\text{slope in }C_t} C_t$$
+
+$U$ is **linear in $C_t$**, so the optimum is always a corner solution determined by the
+sign of the slope:
+
+$$C_t = \begin{cases} W = Y_t + \dfrac{Y_{t+1}}{1+r_t} & \text{if } r_t < \dfrac{1}{\beta} - 1 \\[6pt] \text{any } C_t \in [0,\, W] & \text{if } r_t = \dfrac{1}{\beta} - 1 \\[6pt] 0 & \text{if } r_t > \dfrac{1}{\beta} - 1 \end{cases}$$
+
+**Intuition.** When the interest rate exceeds $1/\beta - 1$, saving is so rewarding that
+the household prefers to postpone all consumption to $t+1$ ($C_t = 0$). When the rate is
+below $1/\beta - 1$, saving is not worthwhile and the household consumes everything today
+($C_t = W$). At exactly $r_t = 1/\beta - 1$, the household is indifferent across all
+feasible allocations.
+
+```{r ex112_cases, fig.cap="Linear utility: optimal consumption in each of the three interest-rate cases. The budget constraint (solid) and the highest attainable indifference curve (dashed) are shown for r < r* (left), r = r* (center), and r > r* (right).", fig.alt="Three panels showing budget lines and linear indifference curves. Left: IC flatter than BC, corner at Ct=W. Center: IC parallel to BC, entire line optimal. Right: IC steeper, corner at Ct=0."}
+beta_l <- 0.95
+r_star <- 1 / beta_l - 1   # ≈ 0.0526
+W_l    <- 200               # normalized wealth
+ic_slope <- -1 / beta_l     # slope of every IC = -1/beta
+
+# Helper: build (Ct, Ct1) endpoints for a line segment
+bc_seg <- function(r, col, lbl) {
+  tibble(Ct  = c(0, W_l),
+         Ct1 = c((1 + r) * W_l, 0),
+         scenario = lbl, color = col)
+}
+ic_seg <- function(k, col, lbl) {   # IC: Ct1 = (k - Ct)/beta
+  tibble(Ct  = c(0, W_l),
+         Ct1 = c(k / beta_l, (k - W_l) / beta_l),
+         scenario = lbl, color = col)
+}
+
+r_lo  <- 0.02; r_hi  <- 0.10
+
+# Optimal IC levels
+k_lo <- W_l                          # Ct=W, Ct1=0 → U = W
+k_hi <- beta_l * (1 + r_hi) * W_l   # Ct=0, Ct1=(1+r)W → U = beta*(1+r)*W
+k_eq <- W_l                          # entire BC is optimal (U = W for all points)
+
+make_panel <- function(r, k_ic, title_str, dot_Ct, dot_Ct1, bc_col, ic_col) {
+  bc  <- tibble(Ct = c(0, W_l), Ct1 = c((1+r)*W_l, 0))
+  ic  <- tibble(Ct = c(0, W_l), Ct1 = c(k_ic/beta_l, (k_ic - W_l)/beta_l))
+  ggplot() +
+    geom_line(data = bc, aes(x = Ct, y = Ct1), color = bc_col,  linewidth = 1.1) +
+    geom_line(data = ic, aes(x = Ct, y = Ct1), color = ic_col,  linewidth = 1,
+              linetype = "dashed") +
+    geom_point(aes(x = dot_Ct, y = dot_Ct1), color = "black", size = 3) +
+    coord_cartesian(xlim = c(0, W_l * 1.05), ylim = c(0, (1 + r_hi) * W_l * 1.1)) +
+    labs(x = expression(C[t]), y = expression(C[t+1]), title = title_str) +
+    theme(plot.title = element_text(size = 11))
+}
+
+p_lo <- make_panel(r_lo, k_lo,
+  expression(paste(r[t] < 1/beta - 1, ":  ", C[t]^"*" == W)),
+  dot_Ct = W_l, dot_Ct1 = 0, "steelblue", "darkorange")
+
+p_eq <- make_panel(r_star, k_eq,
+  expression(paste(r[t] == 1/beta - 1, ":  entire BC optimal")),
+  dot_Ct = 100, dot_Ct1 = (1 + r_star) * (W_l - 100),
+  "steelblue", "steelblue")   # BC and IC overlap → same color
+
+p_hi <- make_panel(r_hi, k_hi,
+  expression(paste(r[t] > 1/beta - 1, ":  ", C[t]^"*" == 0)),
+  dot_Ct = 0, dot_Ct1 = (1 + r_hi) * W_l, "steelblue", "darkorange")
+
+gridExtra::grid.arrange(p_lo, p_eq, p_hi, ncol = 3)
+```
+
+### Part (b) — Saving function
+
+Substituting the consumption function into $S_t = Y_t - C_t$:
+
+$$S_t = \begin{cases} Y_t - W = -\dfrac{Y_{t+1}}{1+r_t} & \text{if } r_t < \dfrac{1}{\beta}-1 \\[6pt] \text{any } S_t \in \!\left[-\dfrac{Y_{t+1}}{1+r_t},\; Y_t\right] & \text{if } r_t = \dfrac{1}{\beta}-1 \\[6pt] Y_t & \text{if } r_t > \dfrac{1}{\beta}-1 \end{cases}$$
+
+When the rate is too low, the household borrows the entire present value of its future
+income ($S_t = -Y_{t+1}/(1+r_t)$). When the rate is too high, the household saves its
+entire current income ($S_t = Y_t$).
+
+### Part (c) — Equilibrium interest rate
+
+With identical households, goods-market clearing requires aggregate saving equal zero:
+$S_t = 0$. Inspecting the saving function:
+
+- If $r_t < 1/\beta - 1$: $S_t = -Y_{t+1}/(1+r_t) < 0$ — cannot equal zero for $Y_{t+1} > 0$.
+- If $r_t > 1/\beta - 1$: $S_t = Y_t > 0$ — cannot equal zero for $Y_t > 0$.
+- If $r_t = 1/\beta - 1$: $S_t$ is indeterminate. Setting $S_t = 0$ (i.e.\ $C_t = Y_t$) is
+  feasible since $0 < Y_t < W$.
+
+The equilibrium interest rate is therefore:
+
+$$r_t^* = \frac{1}{\beta} - 1$$
+
+### Part (d) — Response of $r_t^*$ to $Y_t$ and $Y_{t+1}$
+
+$$\frac{\partial r_t^*}{\partial Y_t} = 0 \qquad \frac{\partial r_t^*}{\partial Y_{t+1}} = 0$$
+
+The equilibrium interest rate is **completely independent** of both $Y_t$ and $Y_{t+1}$.
+
+**Intuition.** Linear utility implies an infinite intertemporal elasticity of substitution:
+any rate other than $1/\beta - 1$ sends the household to a corner (all current or all
+future consumption), making goods-market clearing impossible. The interest rate is pinned
+entirely by the household's patience parameter $\beta$. Endowments determine the
+quantities consumed ($C_t = Y_t$, $C_{t+1} = Y_{t+1}$) but not the equilibrium price.
+This contrasts sharply with the concave-utility case (Exercise 11.1), where $r_t^*$
+rises with $Y_{t+1}$ and falls with $Y_t$.
+
+### Part (e) — Individual versus aggregate saving
+
+**No — $S_{i,t} = 0$ is not required for every household $i$.** At $r_t^* = 1/\beta - 1$
+each individual is indifferent across the entire budget line. Market clearing only
+requires **aggregate** saving to be zero:
+$$\sum_i S_{i,t} = 0$$
+Households can borrow and lend among themselves — some with $S_{i,t} < 0$, others with
+$S_{i,t} > 0$ — provided the cross-sectional net is zero. The individual allocation is
+indeterminate; only the aggregate is pinned down by the endowment.
+
+**Contrast with concave utility.** When $u''(C) < 0$, each identical household has a
+unique interior optimum $C_t^* = Y_t$, forcing $S_{i,t} = Y_t - C_t^* = 0$ for every
+$i$ individually. Linear utility breaks this uniqueness: the cross-sectional distribution
+of consumption and saving is indeterminate, and bond trading among households (that nets
+to zero in aggregate) is consistent with equilibrium.
+
+---
+
+# Exercise 11.3 — The Yield Curve
+
+**Problem.** Three-period economy with log utility and IBC:
+$$U = \ln C_t + \beta\ln C_{t+1} + \beta^2\ln C_{t+2}$$
+$$C_t + \frac{C_{t+1}}{1+r_t} + \frac{C_{t+2}}{(1+r_t)(1+r_{t+1})} = Y_t + \frac{Y_{t+1}}{1+r_t} + \frac{Y_{t+2}}{(1+r_t)(1+r_{t+1})}$$
+where $r_t$ is the one-period rate from $t$ to $t+1$ and $r_{t+1}$ from $t+1$ to $t+2$.
+
+**(a)** Derive two Euler equations relating adjacent consumption pairs.
+
+**(b)** Impose equilibrium ($C_j = Y_j$) and solve for $r_t$ and $r_{t+1}$.
+
+**(c)** Define the two-period rate by $(1+r_{2,t})^2 = (1+r_t)(1+r_{t+1})$. Derive $r_{2,t}$.
+
+**(d)** If $Y_t = Y_{t+1} = Y_{t+2}$, what is the slope of the yield curve?
+
+**(e)** Can the yield curve be inverted if $Y_{t+2}$ is sufficiently low? Explain.
+
+---
+
+## Solution
+
+### Part (a) — Euler equations
+
+The setup is identical to Exercise 10.1(c). Substituting $C_{t+2}$ from the IBC and
+taking FOCs with respect to $C_t$ and $C_{t+1}$ (see Ex 10.1 for the full derivation):
+
+$$C_{t+1} = \beta(1+r_t)\,C_t \qquad C_{t+2} = \beta(1+r_{t+1})\,C_{t+1}$$
+
+### Part (b) — Equilibrium interest rates
+
+Imposing $C_t = Y_t$, $C_{t+1} = Y_{t+1}$, $C_{t+2} = Y_{t+2}$ in each Euler equation:
+
+$$r_t = \frac{Y_{t+1}}{\beta Y_t} - 1 \qquad r_{t+1} = \frac{Y_{t+2}}{\beta Y_{t+1}} - 1$$
+
+Each short rate reflects the ratio of adjacent endowments: a high $r_t$ signals rising
+income from $t$ to $t+1$ (households want to borrow against it; $r_t$ must be high to
+clear the bond market).
+
+### Part (c) — Two-period rate $r_{2,t}$
+
+$$(1+r_{2,t})^2 = (1+r_t)(1+r_{t+1}) = \frac{Y_{t+1}}{\beta Y_t}\cdot\frac{Y_{t+2}}{\beta Y_{t+1}} = \frac{Y_{t+2}}{\beta^2 Y_t}$$
+
+$$r_{2,t} = \left(\frac{Y_{t+2}}{\beta^2\, Y_t}\right)^{\!\frac{1}{2}} - 1$$
+
+The two-period rate is determined by the ratio of the terminal to initial endowment — it
+"averages" the two short rates via the geometric mean of their gross factors.
+
+### Part (d) — Slope of the yield curve with equal endowments
+
+Setting $Y_t = Y_{t+1} = Y_{t+2} = Y$:
+
+$$r_t = \frac{1}{\beta}-1 \qquad r_{t+1} = \frac{1}{\beta}-1 \qquad r_{2,t} = \left(\frac{1}{\beta^2}\right)^{1/2}-1 = \frac{1}{\beta}-1$$
+
+All rates coincide: the yield curve is **flat** (slope = 0). When income is expected to
+be constant, there is no reason for short and long rates to differ.
+
+### Part (e) — Inverted yield curve
+
+The yield curve is inverted when $r_{2,t} < r_t$, i.e.:
+$$\sqrt{(1+r_t)(1+r_{t+1})} < 1+r_t$$
+
+Squaring (both sides positive) and cancelling $(1+r_t)$:
+
+$$1 + r_{t+1} < 1 + r_t \implies r_{t+1} < r_t \implies \frac{Y_{t+2}}{\beta Y_{t+1}} < \frac{Y_{t+1}}{\beta Y_t}$$
+
+$$\frac{Y_{t+2}}{Y_{t+1}} < \frac{Y_{t+1}}{Y_t}$$
+
+The yield curve is inverted **if and only if the income growth rate is falling** between
+the two periods. If $Y_{t+2}$ is sufficiently low relative to $Y_{t+1}$, this holds.
+
+**Connection to the empirical fact.** Low expected $Y_{t+2}$ (anticipated recession)
+pulls $r_{t+1}$ down. The long rate — the geometric mean of $r_t$ and $r_{t+1}$ — is
+dragged below the current short rate $r_t$, inverting the yield curve. This gives a
+model-based rationale for why an inverted yield curve predicts recessions.
+
+```{r ex113_yield, fig.cap="Yield curves for three scenarios: flat (equal endowments), upward-sloping (growing economy), and inverted (anticipated contraction in $t+2$). $\\beta = 0.95$, $Y_t = Y_{t+1} = 100$.", fig.alt="Line plot of interest rate vs maturity for 1 and 2 periods. Three lines: flat at 5.3%, upward sloping to 9.4%, and inverted falling to 2.6%."}
+beta_y <- 0.95
+Yt <- 100; Yt1 <- 100
+
+r_short <- Yt1 / (beta_y * Yt) - 1   # short rate = 1/beta - 1 for all scenarios
+
+tribble(
+  ~Yt2, ~label,
+  100,  "Flat",
+  108,  "Upward",
+   95,  "Inverted"
+) |>
+  mutate(
+    r_t  = r_short,
+    r_t1 = Yt2 / (beta_y * Yt1) - 1,
+    r_2t = sqrt((1 + r_t) * (1 + r_t1)) - 1
+  ) |>
+  pivot_longer(c(r_t, r_2t), names_to = "mat", values_to = "rate") |>
+  mutate(maturity = if_else(mat == "r_t", 1L, 2L)) |>
+  ggplot(aes(x = maturity, y = rate, color = label)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 3) +
+  scale_x_continuous(breaks = c(1, 2),
+                     labels = expression(atop("1 period", r[t]),
+                                         atop("2 periods", r["2,t"]))) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 0.1)) +
+  scale_color_manual(
+    values = c("steelblue", "firebrick", "darkgreen"),
+    labels = expression(
+      "Flat  (" * Y[t+2] * " = 100)",
+      "Inverted  (" * Y[t+2] * " = 95)",
+      "Upward  (" * Y[t+2] * " = 108)"
+    )
+  ) +
+  labs(x = "Maturity", y = "Interest rate",
+       title = "Yield curves: flat, upward-sloping, and inverted",
+       subtitle = expression(paste(beta, " = 0.95,  ", Y[t], " = ", Y[t+1], " = 100")),
+       color = NULL)
+```
+
+---
+
+# Exercise 11.4 — Heterogeneity in an Endowment Economy
+
+**Problem.** Two household types, A and B, each solve:
+$$\max_{C_{i,t},\,C_{i,t+1}} \ln C_{i,t} + \beta \ln C_{i,t+1}$$
+subject to:
+$$C_{i,t} + \frac{C_{i,t+1}}{1+r_t} = Y_{i,t} + \frac{Y_{i,t+1}}{1+r_t}$$
+Both share the same utility function and discount factor $\beta$; only endowments may differ.
+
+**(a)** Write down the Euler equation for households A and B.
+
+**(b)** Solve for the period-$t$ and period-$(t+1)$ consumption functions for A and B.
+
+**(c)** Suppose $(Y_{A,t}, Y_{A,t+1}) = (1,2)$ and $(Y_{B,t}, Y_{B,t+1}) = (2,1)$. Solve for the equilibrium interest rate.
+
+**(d)** Substitute $r_t^*$ back into the consumption functions. Which household borrows and which saves? What is the economic intuition?
+
+**(e)** Describe why borrowing and saving occur in this economy but not in the representative-household economy. Why does household B have higher consumption in each period?
+
+**(f)** Assuming $\beta=0.9$, compare the lifetime utility of each household when consuming their endowment versus their equilibrium allocation. Which is higher? What is the economic intuition?
+
+---
+
+## Solution
+
+### Part (a) — Euler equations
+
+Both households have the same log utility, so both satisfy:
+
+$$C_{i,t+1} = \beta(1+r_t)\,C_{i,t}, \qquad i \in \{A,\, B\}$$
+
+Heterogeneity enters only through the budget constraint; the optimality condition is identical for A and B.
+
+### Part (b) — Consumption functions
+
+Let $W_i \equiv Y_{i,t} + \dfrac{Y_{i,t+1}}{1+r_t}$ be household $i$'s present-value wealth. Substituting the Euler equation into the IBC:
+
+$$C_{i,t} + \frac{\beta(1+r_t)\,C_{i,t}}{1+r_t} = W_i \implies (1+\beta)\,C_{i,t} = W_i$$
+
+$$C_{i,t}^{*} = \frac{W_i}{1+\beta} = \frac{1}{1+\beta}\!\left(Y_{i,t} + \frac{Y_{i,t+1}}{1+r_t}\right)$$
+
+$$C_{i,t+1}^{*} = \frac{\beta(1+r_t)\,W_i}{1+\beta}$$
+
+Each household spends a fixed share $1/(1+\beta)$ of wealth in period $t$, regardless of how income is distributed across time.
+
+### Part (c) — Equilibrium interest rate
+
+Aggregate endowments: $Y_{t}^{\text{agg}} = 1+2 = 3$ and $Y_{t+1}^{\text{agg}} = 2+1 = 3$. Total endowment is **equal in both periods**.
+
+Bond-market clearing requires $C_{A,t}^* + C_{B,t}^* = 3$:
+
+$$\frac{W_A + W_B}{1+\beta} = 3 \implies W_A + W_B = 3(1+\beta)$$
+
+Computing aggregate wealth directly:
+
+$$W_A + W_B = 3 + \frac{3}{1+r_t}$$
+
+Setting equal and solving:
+
+$$3 + \frac{3}{1+r_t} = 3(1+\beta) \implies \frac{1}{1+r_t} = \beta \implies r_t^{*} = \frac{1}{\beta}-1$$
+
+As in Ex 11.1–11.2: whenever aggregate income is equal across periods, the equilibrium rate equals the household's subjective rate of time preference.
+
+### Part (d) — Equilibrium allocations and who borrows/saves
+
+With $r_t^* = 1/\beta-1$, so $1+r_t^* = 1/\beta$:
+
+**Household A** — wealth $W_A = 1 + 2\beta$:
+
+$$C_{A,t}^{*} = \frac{1+2\beta}{1+\beta}, \qquad C_{A,t+1}^{*} = \frac{\beta\cdot(1/\beta)\cdot(1+2\beta)}{1+\beta} = \frac{1+2\beta}{1+\beta}$$
+
+$$S_{A,t} = Y_{A,t} - C_{A,t}^{*} = 1 - \frac{1+2\beta}{1+\beta} = \frac{-\beta}{1+\beta} < 0 \quad\Rightarrow\quad \textbf{A borrows.}$$
+
+**Household B** — wealth $W_B = 2 + \beta$:
+
+$$C_{B,t}^{*} = \frac{2+\beta}{1+\beta}, \qquad C_{B,t+1}^{*} = \frac{2+\beta}{1+\beta}$$
+
+$$S_{B,t} = 2 - \frac{2+\beta}{1+\beta} = \frac{\beta}{1+\beta} > 0 \quad\Rightarrow\quad \textbf{B saves.}$$
+
+Note $S_{A,t}+S_{B,t}=0$ (bond market clears). Both households achieve **perfectly smooth consumption** — the same amount in both periods — despite having different, unequal income paths.
+
+**Economic intuition.** A has rising income ($Y_{A,t} < Y_{A,t+1}$) and wants to borrow against the larger future income to smooth consumption today. B has falling income ($Y_{B,t} > Y_{B,t+1}$) and wants to save current income to top up future consumption. The bond market enables this trade: B lends $\beta/(1+\beta)$ units to A at rate $r_t^*$, and both fully smooth.
+
+### Part (e) — Heterogeneity, trade, and B's higher consumption
+
+**Why trade occurs here but not in the representative-household economy.** When all households are identical, every agent wants to take the same position in the bond market. Market clearing then forces $S_{j,t}=0$ for every $j$ individually — no one is on the other side. Heterogeneous endowment paths create *opposing* incentives: A wants to borrow and B wants to save. Market clearing is achieved through mutually beneficial trade between them.
+
+**Why B has higher consumption in each period.**
+
+$$C_{B,t}^{*} - C_{A,t}^{*} = \frac{2+\beta}{1+\beta} - \frac{1+2\beta}{1+\beta} = \frac{1-\beta}{1+\beta} > 0$$
+
+B has greater wealth ($W_B - W_A = 1-\beta > 0$ when $\beta<1$). The reason: B's income stream $(2,1)$ is front-loaded. Because $r_t^*>0$ (i.e.\ $\beta<1$), future income is discounted. A's back-loaded stream $(1,2)$ is worth less in present value than B's front-loaded stream $(2,1)$. Higher wealth translates one-for-one into higher consumption in both periods.
+
+### Part (f) — Gains from trade ($\beta = 0.9$)
+
+```{r ex114_alloc}
+beta_h <- 0.9
+YA <- c(1, 2); YB <- c(2, 1)
+
+r_eq  <- 1/beta_h - 1                       # equilibrium interest rate
+
+WA    <- YA[1] + YA[2] / (1 + r_eq)         # 1 + 2*beta = 2.8
+WB    <- YB[1] + YB[2] / (1 + r_eq)         # 2 + beta   = 2.9
+
+CA_eq <- WA / (1 + beta_h)                  # (1+2β)/(1+β)
+CB_eq <- WB / (1 + beta_h)                  # (2+β)/(1+β)
+
+# Autarky (consume the endowment)
+UA_end <- log(YA[1]) + beta_h * log(YA[2])  # ln(1) + β ln(2)
+UB_end <- log(YB[1]) + beta_h * log(YB[2])  # ln(2) + β ln(1)
+
+# Equilibrium (consume C* each period)
+UA_eq  <- (1 + beta_h) * log(CA_eq)
+UB_eq  <- (1 + beta_h) * log(CB_eq)
+
+tibble(
+  Household       = c("A", "B"),
+  `C*(t)`         = round(c(CA_eq, CB_eq), 4),
+  `C*(t+1)`       = round(c(CA_eq, CB_eq), 4),
+  `U (endowment)` = round(c(UA_end, UB_end), 4),
+  `U (equil.)`    = round(c(UA_eq,  UB_eq),  4),
+  `Gain`          = round(c(UA_eq - UA_end, UB_eq - UB_end), 4)
+) |> knitr::kable(align = "c", caption = "Equilibrium allocations and utility gains from trade (β = 0.9).")
+```
+
+Both households are strictly better off trading than consuming their endowments ($\text{Gain}>0$ for each). **Economic intuition:** Log utility is strictly concave. Perfectly smooth consumption ($C_t^* = C_{t+1}^*$) yields strictly higher utility than consuming an unequal income stream — even holding present-value wealth fixed. Trade lets both types exploit this concavity: A borrows to raise $C_t$, and B saves to raise $C_{t+1}$, until both have flat consumption paths.

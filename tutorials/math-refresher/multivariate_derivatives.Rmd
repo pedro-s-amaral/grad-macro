@@ -1,22 +1,21 @@
 ---
 title: "Multivariate derivatives"
-author: "Pedro Amaral"
-date: "2025-01-10"
 output:
   html_document: default
   pdf_document: default
-css: style.css
+css: ../style.css
 ---
 
 ```{r setup, include=FALSE,}
 knitr::opts_chunk$set(echo = TRUE,  message=FALSE, warning=FALSE)
 ```
 
+## Pedro Amaral
 
-```{r, include=FALSE}
-setwd("C:/Users/pamaral/CSU Fullerton Dropbox/Pedro Amaral/CSUF/Teaching/Econ 503/Resources/R")
-```
-# Partial derivatives of multivariate functions
+## 2026-01-14
+
+
+## Partial derivatives of multivariate functions
 
 Consider the function $z=f(x,y).$
 
@@ -32,7 +31,7 @@ Take for example the function $z=f(x,y)=-x^2-2y^2+3x-2y+20.$
 
 Let's plot it first.
 
-```{r}
+```{r, fig.alt="3D plot of the multivariate function f(x,y)=x^2-2y^2+3x-2y+20"}
 # Load libraries
 library(ggplot2)
 library(plotly)
@@ -133,6 +132,7 @@ d2u_dhdc <- Deriv(du_dh, "c")
 print(d2u_dhdc)
 ```
 Note how the marginal utility of consumption is independent of hours worked and how the marginal utility of hours worked is independent of consumption.
+
 
 
 
